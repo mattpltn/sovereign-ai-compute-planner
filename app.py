@@ -205,9 +205,6 @@ setup_panel = ui.nav_panel(
             ui.card_header("Country"),
             ui.input_selectize("iso", None, iso_choices, selected="XEX"),
             ui.output_ui("country_facts"),
-            ui.input_radio_buttons("provider", "Is there an in-country GPU cloud provider?",
-                                   {"no": "No / not sure", "yes": "Yes"}, selected="no", inline=True),
-            ui.input_checkbox("shared", "Confidential and Restricted data share one secure site", value=True),
             ui.input_radio_buttons("grid", "Grid reliability",
                                    {"auto": "From data", "reliable": "Reliable", "weak": "Weak (frequent outages)"},
                                    selected="auto", inline=True),
@@ -216,6 +213,25 @@ setup_panel = ui.nav_panel(
             ui.p("Leave empty to use the regional value. For a specific site, run the Schneider Electric "
                  "Data center efficiency and PUE calculator [S48] and enter its PUE here.", class_="hint"),
             ui.p("Leave empty to use the country value, or the default range if none.", class_="hint"),
+        ),
+        ui.card(
+            ui.card_header("In-country capability"),
+            ui.p("These answers decide where each data class can run and what must be built. "
+                 "If there is no in-country GPU provider, all in-country work runs on government-owned servers "
+                 "in the government data centre.", class_="hint"),
+            ui.input_radio_buttons("provider", "Is there an in-country GPU cloud provider (GPU-as-a-service)?",
+                                   {"no": "No / not sure", "yes": "Yes"}, selected="no", inline=True),
+            ui.input_radio_buttons("residency", "Is there a cloud with acceptable data residency for Internal data?",
+                                   {"in_country": "Yes, in-country region", "regional": "Yes, regional",
+                                    "none": "No (keep Internal data in-country)"}, selected="regional"),
+            ui.input_radio_buttons("gov_dc", "Can a government data centre host GPU servers?",
+                                   {"ready": "Yes, with enough power and cooling (facility cost excluded)",
+                                    "fitout": "Yes, after fit-out or expansion (facility cost included)",
+                                    "none": "No, a room must be built or leased (facility cost included)"},
+                                   selected="fitout"),
+            ui.input_radio_buttons("colo", "Is there a commercial colocation data centre in-country?",
+                                   {"no": "No / not sure", "yes": "Yes"}, selected="no", inline=True),
+            ui.input_checkbox("shared", "Confidential and Restricted workloads share the government data centre", value=True),
         ),
         ui.card(
             ui.card_header("Adoption scenario"),
@@ -380,7 +396,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.7 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.8 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -618,6 +634,9 @@ def server(input, output, session):
         p.speed = input.speed()
         p.local_gpu_provider = input.provider() == "yes"
         p.shared_sovereign_site = bool(input.shared())
+        p.residency_cloud = input.residency()
+        p.gov_dc = input.gov_dc()
+        p.colocation = input.colo() == "yes"
         pct = lambda v: (num(v) or 0) / 100
         p.finance = {"discount_rate": pct(input.disc()), "demand_growth": pct(input.growth()),
                      "price_decline": pct(input.decline())}
@@ -651,6 +670,11 @@ def server(input, output, session):
     def warnings():
         _, notes = country()
         msgs = list(notes)
+        if apps.get():
+            msgs += result().get("placement_notes", [])
+            if input.provider() != "yes" and any(t in ("T3",) for t in result()["class_to_tier"].values()):
+                msgs.append("No in-country GPU provider: Confidential data runs on government-owned servers in the "
+                            "government data centre (capex), not on rented GPUs.")
         if not apps.get():
             msgs.append("Add applications in step 2 to see results.")
         if input.iso() == "XEX":
@@ -686,20 +710,22 @@ def server(input, output, session):
     DEST = {"T1": "Public data", "T2": "Internal data", "T3": "Confidential data", "T4": "Restricted data"}
     SCEN_LABEL = {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}
 
-    SHORT = {"build": "sovereign site", "rent": "GPU rental", "service": "API"}
+    def short_loc(v):
+        loc = v.get("location", "")
+        return ("government data centre" if loc.startswith("Government data centre")
+                else "colocation" if "colocation" in loc else "GPU rental" if "rented" in loc
+                else "API" if "API" in loc else "")
 
     def where(r, t):
         v = r["tiers"][t]
-        k = v["capacity"]["kind"]
-        if v.get("shared_site"):
-            return "Sovereign site (shared)"
-        if k == "build":
-            return f"Sovereign site ({DEST[t].split()[0].lower()})"
-        if k == "rent":
-            return "In-country GPU rental"
-        if k == "service":
-            return "API service" + (" (residency)" if t == "T2" else "")
-        return DEST[t]
+        loc = v.get("location") or "-"
+        return DEST[t] if loc == "-" else loc
+
+    def served(r, t):
+        """Data classes served by a destination, from the effective placement."""
+        tiers = {t} | ({"T3"} if r["tiers"][t].get("shared_site") else set())
+        names = [CLASS_LABELS[c].split(" · ")[1] for c, x in sorted(r["class_to_tier"].items()) if x in tiers]
+        return " + ".join(names) or DEST[t]
 
     def _build_summary(r):
         builds = [(t, v) for t, v in r["tiers"].items() if v["capacity"]["kind"] == "build"]
@@ -720,10 +746,13 @@ def server(input, output, session):
         svc = [v for v in r["tiers"].values() if v["capacity"]["kind"] == "service"]
         parts = []
         if servers:
-            parts.append(f"Build in-country: {servers} server{'s' if servers != 1 else ''} ({gpus} GPUs), "
-                         f"about {power(fkw / 1000)} of facility power, {money(capex)} upfront.")
+            colo = any(v["capacity"]["kind"] == "build" and "colocation" in v.get("location", "") for v in r["tiers"].values())
+            place = "Government data centre" + (" and colocation" if colo else "")
+            parts.append(f"{place}: {servers} government-owned server{'s' if servers != 1 else ''} ({gpus} GPUs), "
+                         f"about {power(fkw / 1000)} of facility power, {money(capex)} upfront"
+                         + (" (existing facility, no build cost)." if input.gov_dc() == "ready" else "."))
         if rent:
-            parts.append(f"Rent about {sum(v['capacity']['gpus'] for v in rent)} GPUs from an in-country provider.")
+            parts.append(f"Rent about {sum(v['capacity']['gpus'] for v in rent)} GPUs from the in-country GPU provider.")
         if svc:
             yr = sum(v["detail"]["base"]["API / managed"]["annual_y1"] for v in svc if "API / managed" in v["detail"]["base"])
             parts.append(f"Buy the rest as cloud or API services, about {money(yr)} per year.")
@@ -827,9 +856,12 @@ def server(input, output, session):
                    _m(money(pv["software"] + pv["maintenance_gpu"]), "GPU software + maintenance"),
                    _m(money(fac), "facility build + maintenance"),
                    _m(money(pv["energy"]), "energy"), _m(money(pv["staff"]), "staff"), class_="row2"),
-            ui.p(f"GPU part alone: {money(gpu)}. With colocation or an existing server room, the facility "
-                 f"({money(fac)}) drops out and is replaced by colocation rent or the room's existing costs (not included); "
-                 "energy and staff usually remain, unless the colocation fee bundles power.", class_="hint"))
+            ui.p(f"GPU part alone: {money(gpu)}. " + (
+                 "Existing government data centre: no facility build cost is included." if not fac else
+                 f"With colocation or an existing server room, the facility ({money(fac)}) drops out and is replaced by "
+                 "colocation rent or the room's existing costs (not included); energy and staff usually remain, unless "
+                 "the colocation fee bundles power. Answer the Setup question on the government data centre to exclude it."),
+                 class_="hint"))
 
     @render.ui
     def capacity_cards():
@@ -843,8 +875,7 @@ def server(input, output, session):
             if v.get("merged_into") or cap["kind"] == "none":
                 continue
             color = TIER_COLORS[t]
-            title = ("Shared sovereign site · Confidential + Restricted data" if v.get("shared_site")
-                     else f'{DEST[t]} · {D["tiers"][t]["name"]}')
+            title = f'{v.get("location", D["tiers"][t]["name"])} · {served(r, t)} data'
             if cap["kind"] == "service":
                 api = det.get("API / managed", {}).get("annual_y1")
                 body = [ui.div(_m(money(api) if api is not None else "-", "per year"),
@@ -913,7 +944,7 @@ def server(input, output, session):
         g, mw = t["gpus_range"], t["mw_range"]
         return ui.layout_columns(
             kpi("GPUs (all tiers)", f'about {fmt(t["gpus"])}', f'range {fmt(g["low"])}–{fmt(g["high"])} · {SCEN[input.ambition()]} adoption'),
-            kpi("Facility power", f'about {power(t["facility_mw"])}', f'range {power(mw["low"])}–{power(mw["high"])} · in-country sovereign: {power(local)}'),
+            kpi("Facility power", f'about {power(t["facility_mw"])}', f'range {power(mw["low"])}–{power(mw["high"])} · in-country: {power(local)}'),
             kpi("10-year cost (present value)", f'about {money(t["cost"])}', f"range {money_range(lo, hi)} · discount {num(input.disc()) or 0:g}%"),
             col_widths=[4, 4, 4])
 
@@ -996,7 +1027,7 @@ def server(input, output, session):
         y = range(len(items))
         ax.barh(y, [c for _, c, _ in items], color=[TIER_COLORS[t] for _, _, t in items], height=0.6)
         for yi, (_, c, t) in zip(y, items):
-            ax.text(c * 1.02 + max(x for _, x, _ in items) * 0.01, yi, f"{money(c)} · {SHORT.get(r['tiers'][t]['capacity']['kind'], '')}",
+            ax.text(c * 1.02 + max(x for _, x, _ in items) * 0.01, yi, f"{money(c)} · {short_loc(r['tiers'][t])}",
                     va="center", fontsize=7.5, color="#0b0b0b")
         ax.set_yticks(list(y), [n if len(n) <= 40 else n[:38] + "…" for n, _, _ in items])
         ax.set_xlim(0, max(c for _, c, _ in items) * 2.5)
@@ -1087,7 +1118,7 @@ def server(input, output, session):
             phys = kind in ("build", "rent")
             sz = v["sizing"]
             rows.append({
-                "tier": t, "buying_option": v["cheapest_mode"], "capacity": kind, "step": v["step"], "grid": v["grid"],
+                "tier": t, "location": v.get("location", ""), "buying_option": v["cheapest_mode"], "capacity": kind, "step": v["step"], "grid": v["grid"],
                 "hardware": v["hardware"] if phys else "",
                 "servers": sz.get("servers", "") if kind == "build" else "",
                 "gpus": sz["gpus"] if phys else "", "it_kw": sz["it_kw"] if phys else "",
@@ -1103,7 +1134,9 @@ def server(input, output, session):
                + pd.DataFrame(rows).to_csv(index=False))
 
     def scenario_dict():
-        return {"version": "0.7", "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
+        return {"version": "0.8", "capability": {"provider": input.provider(), "residency": input.residency(),
+                                                 "gov_dc": input.gov_dc(), "colo": input.colo(), "shared": bool(input.shared())},
+                "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
                 "speed": input.speed(), "finance": {"disc": input.disc(), "growth": input.growth(),
                                                     "decline": input.decline()},
                 "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
@@ -1119,6 +1152,12 @@ def server(input, output, session):
         ui.update_selectize("iso", selected=sc.get("iso", "XEX"))
         ui.update_radio_buttons("ambition", selected=sc.get("ambition", "Base"))
         ui.update_radio_buttons("grid", selected=sc.get("grid", "auto"))
+        cap = sc.get("capability", {})
+        ui.update_radio_buttons("provider", selected=cap.get("provider", "no"))
+        ui.update_radio_buttons("residency", selected=cap.get("residency", "regional"))
+        ui.update_radio_buttons("gov_dc", selected=cap.get("gov_dc", "fitout"))
+        ui.update_radio_buttons("colo", selected=cap.get("colo", "no"))
+        ui.update_checkbox("shared", value=cap.get("shared", True))
         ui.update_select("hw", selected=sc.get("hw", "auto"))
         ui.update_radio_buttons("speed", selected=sc.get("speed", "base"))
         f = sc.get("finance", {})

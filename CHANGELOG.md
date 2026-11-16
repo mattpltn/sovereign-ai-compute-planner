@@ -5,6 +5,16 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-16
+### Added
+- Setup: "In-country capability" questions. GPU provider (moved here); cloud with acceptable data residency (in-country, regional, none: with none, Internal data stays in-country); can a government data centre host GPU servers (ready: no facility build cost; fit-out or none: cost included); commercial colocation in-country (Confidential servers in colocation, Step 2 wording). Saved with the scenario; defaults keep earlier results.
+### Changed
+- One vocabulary for locations everywhere: Offshore cloud (API), Cloud with data residency (API or rented), In-country GPU provider (rented), Government data centre, Government-owned servers in private colocation. "Sovereign site" is no longer used. Site cards are titled by location and the data classes they serve.
+- Tier names: T1 Offshore cloud or API; T2 Cloud with data residency; T3 In-country, private provider (government data centre if none); T4 Government data centre.
+- Warnings explain when there is no in-country GPU provider (Confidential data on government-owned servers) and when Internal data is kept in-country.
+- Step 1 and Step 2 wording follow the government data centre and colocation answers.
+- Raw CSV adds the location.
+
 ## [0.7.1] - 2026-11-16
 ### Fixed
 - Data sync failed at its test step: two agriculture tests read the freshly synced Estonia share instead of their own fixture. The sync itself had worked (all three agriculture indicator codes confirmed against API metadata; outages per month found for 145 countries).

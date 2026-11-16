@@ -31,7 +31,33 @@ class Profile:
     speed: str = "base"                 # response speed target -> throughput point: low (fast) / base / high (relaxed)
     finance: dict = field(default_factory=dict)       # discount_rate, demand_growth, price_decline (fractions)
     local_gpu_provider: bool = True     # is there an in-country GPU-as-a-service provider (needed to rent in T3)?
-    shared_sovereign_site: bool = True  # Confidential (T3) and Restricted (T4) share one secure site
+    shared_sovereign_site: bool = True  # Confidential (T3) and Restricted (T4) share the government data centre
+    # In-country capability (v0.8). Defaults reproduce earlier results.
+    residency_cloud: str = "regional"   # cloud with data residency for Internal data: in_country | regional | none
+    gov_dc: str = "fitout"              # government data centre for GPU servers: ready | fitout | none
+    colocation: bool = False            # commercial colocation data centre in-country
+
+
+def government_run(tier: str, p: "Profile") -> bool:
+    """Owned capacity in this tier sits in a government facility (not in private colocation)."""
+    return not (tier == "T3" and p.colocation)
+
+
+def location(tier: str, mode: str, p: "Profile", shared: bool = False) -> str:
+    """One vocabulary for where work runs, used in every label."""
+    if shared:
+        return "Government data centre"
+    if mode == "API / managed":
+        return {"T1": "Offshore cloud (API)",
+                "T2": "Cloud with in-country data residency (API)" if p.residency_cloud == "in_country"
+                else "Cloud with regional data residency (API)"}.get(tier, "Cloud (API)")
+    if mode == "GPU-as-a-service":
+        return "In-country GPU provider (rented)" if tier == "T3" else (
+            "Offshore cloud GPUs (rented)" if tier == "T1" else "Cloud GPUs with data residency (rented)")
+    if mode == "Owned":
+        return ("Government-owned servers in private colocation" if not government_run(tier, p)
+                else "Government data centre")
+    return "-"
 
 
 # ----------------------------------------------------------------- Layers 0-3
@@ -308,7 +334,9 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
         detail["GPU-as-a-service"] = dict(annual_y1=gpus[1] * 8760 * rate)
     if t["owned"]:
         it_mw_max = _server_round(max(gpus.values()), hw) * hw["kw_per_gpu"] / 1000
-        fac_capex = it_mw_max * cp["fac"]
+        # An existing government data centre with enough power and cooling: no facility build cost.
+        existing = p.gov_dc == "ready" and government_run(tier, p)
+        fac_capex = 0.0 if existing else it_mw_max * cp["fac"]
         total = fac_capex  # facility built in year 1, sized for the last year
         # Present-value breakdown, so a client using colocation or an existing room can see the GPU part alone.
         pv = {"gpu_servers": 0.0, "facility_build": fac_capex, "energy": 0.0, "staff": 0.0,
@@ -347,7 +375,7 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
     return {"modes": out, "detail": detail, "tokens_pv_m": tokens_pv}
 
 
-def step_for(tier: str, sz: dict, d: dict, mode: str = "", owned: dict | None = None) -> str:
+def step_for(tier: str, sz: dict, d: dict, mode: str = "", owned: dict | None = None, p: "Profile | None" = None) -> str:
     """Recommended step, worded after the buying option actually chosen."""
     if sz["below_threshold"]:
         return "Below GPU threshold: run on existing servers (CPU or a shared GPU)"
@@ -361,10 +389,20 @@ def step_for(tier: str, sz: dict, d: dict, mode: str = "", owned: dict | None = 
     mw = (owned or {}).get("facility_kw", sz["facility_mw"] * 1000) / 1000
     srv = (owned or {}).get("servers")
     what = f"own {srv} server{'s' if srv != 1 else ''}" if srv else "own the servers"
+    gov_dc = p.gov_dc if p else "fitout"
+    colo = p.colocation if p else True
+    if p is not None and not government_run(tier, p):
+        if mw < d["step3_min_facility_mw"]["value"]:
+            return f"Step {1 if mw < d['step1_max_facility_mw']['value'] else 2}: {what} in an in-country colocation data centre"
+        return "Step 3: dedicated facility via PPP or private operator (IFC-investable)"
     if mw < d["step1_max_facility_mw"]["value"]:
-        return f"Step 1: {what} in an existing secure server room"
+        room = {"ready": "the existing government data centre",
+                "fitout": "the government data centre (fit-out needed)",
+                "none": "a secure server room to be built or leased"}[gov_dc]
+        return f"Step 1: {what} in {room}" if p else f"Step 1: {what} in an existing secure server room"
     if mw < d["step3_min_facility_mw"]["value"]:
-        return f"Step 2: {what} in a colocation data centre run by a private operator"
+        return (f"Step 2: {what} in a colocation data centre run by a private operator" if colo
+                else f"Step 2: {what} in a new or expanded government data centre (no colocation in-country)")
     return "Step 3: dedicated facility via PPP or private operator (IFC-investable)"
 
 
@@ -439,11 +477,27 @@ def _solve_tier(t, dem, nt, p, hardware, d, api_prices):
                 tco=tco, detail=detail, facility=facility_for(p.country, hw, d), cheapest_mode=mode, cheapest_cost=cost,
                 winners=winners, winner_changes=len(set(winners.values())) > 1, cost_range=cost_range,
                 usd_per_m_eq_tokens=per_m, capacity=cap, grid=grid_status(p, hw, sz, t, d),
-                step=step_for(t, sz, d, mode, owned), hardware=hw["id"], merged_into=None)
+                step=step_for(t, sz, d, mode, owned, p), hardware=hw["id"], merged_into=None,
+                location=location(t, mode, p))
+
+
+def effective_placement(p: Profile) -> tuple[dict, list]:
+    """Placement after in-country capability: with no acceptable residency cloud, Internal data stays in-country."""
+    c2t, notes = dict(p.class_to_tier), []
+    if p.residency_cloud == "none":
+        moved = [c for c, t in c2t.items() if t == "T2"]
+        for c in moved:
+            c2t[c] = "T3"
+        if moved:
+            notes.append("No cloud with acceptable data residency: Internal data runs in-country (T3).")
+    return c2t, notes
 
 
 def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) -> dict:
     api_prices = api_prices or d["api_prices_fallback"]
+    import dataclasses
+    c2t, notes = effective_placement(p)
+    p = dataclasses.replace(p, class_to_tier=c2t)
     dem = demand_rows(p, d)
     nt = nontoken_rows(p, d)
     hardware = catalogue["hardware"]
@@ -459,9 +513,11 @@ def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) ->
         tiers["T4"]["shared_site"] = True
         tiers["T3"] = _solve_tier("T3", dem, nt, p, hardware, d, api_prices)   # now empty
         tiers["T3"]["merged_into"] = "T4"
-        tiers["T3"]["step"] = "Served by the shared sovereign site (with Restricted data)"
+        tiers["T3"]["step"] = "Served by the government data centre (shared with Restricted data)"
+        tiers["T4"]["location"] = location("T4", "Owned", p, shared=True)
+        tiers["T3"]["location"] = "-"
     alloc = allocate(dem, nt, tiers)
-    return dict(demand=dem, nontoken=nt, tiers=tiers, by_app=alloc,
+    return dict(demand=dem, nontoken=nt, tiers=tiers, by_app=alloc, placement_notes=notes, class_to_tier=c2t,
                 totals=dict(gpus_range={sc: sum(v["sizing_range"][sc]["gpus"] for v in tiers.values()) for sc in SCENARIOS},
                             mw_range={sc: sum(v["sizing_range"][sc]["facility_mw"] for v in tiers.values()) for sc in SCENARIOS},
                             gpus=sum(v["sizing"]["gpus"] for v in tiers.values()),

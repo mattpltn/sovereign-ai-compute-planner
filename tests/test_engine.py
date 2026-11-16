@@ -529,3 +529,38 @@ def test_save_link_round_trip():
     txt = mod.encode_state(sc)
     assert all(ch.isalnum() or ch in "-_" for ch in txt)
     assert mod.decode_state(txt) == json.loads(json.dumps(sc))
+
+
+# ---------------------------------------------------------------- in-country capability (v0.8)
+def test_no_residency_cloud_keeps_internal_data_in_country():
+    app = dict(uid="t", name="Teach", type="teacher_assistant", volume=20000, data_class=2)
+    r0 = one([app])
+    assert r0["demand"][0]["tier"] == "T2" and r0["tiers"]["T2"]["location"].endswith("(API)")
+    r1 = one([app], residency_cloud="none", local_gpu_provider=False)
+    assert r1["demand"][0]["tier"] == "T3" and r1["placement_notes"]
+    assert r1["tiers"]["T3"]["cheapest_mode"] == "Owned"
+    assert r1["tiers"]["T3"]["location"] == "Government data centre"
+
+
+def test_existing_government_dc_drops_facility_build():
+    app = [dict(COP, data_class=4)]
+    fit, ready = one(app, gov_dc="fitout"), one(app, gov_dc="ready")
+    f = fit["tiers"]["T4"]["detail"]["base"]["Owned"]
+    g = ready["tiers"]["T4"]["detail"]["base"]["Owned"]
+    assert f["facility_capex"] > 0 and g["facility_capex"] == 0 and g["pv_breakdown"]["facility_build"] == 0
+    assert ready["totals"]["cost"] < fit["totals"]["cost"]
+    assert "existing government data centre" in ready["tiers"]["T4"]["step"]
+
+
+def test_colocation_for_confidential_owned_servers():
+    app = [dict(COP, data_class=3)]
+    r = one(app, local_gpu_provider=False, colocation=True, gov_dc="ready")
+    t = r["tiers"]["T3"]
+    assert t["cheapest_mode"] == "Owned" and "colocation" in t["location"] and "colocation" in t["step"]
+    assert t["detail"]["base"]["Owned"]["facility_capex"] > 0        # colocation is not the government's existing room
+
+
+def test_shared_site_label():
+    r = one([dict(COP, data_class=3), dict(DOC, data_class=4)], local_gpu_provider=False)
+    assert r["tiers"]["T4"]["location"] == "Government data centre" and r["tiers"]["T4"]["shared_site"]
+    assert "government data centre" in r["tiers"]["T3"]["step"]
