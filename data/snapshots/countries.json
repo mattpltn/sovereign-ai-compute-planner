@@ -1,0 +1,6 @@
+{
+  "_meta": {"note": "Populated by sync/worldbank.py (GitHub Actions). XEX is a fictional example country used in tests.", "synced_at": null},
+  "XEX": {"name": "Example country (fictional)", "population": 20000000, "internet_share": 0.45, "civil_servants": 400000,
+          "egdi": 0.5, "outages_per_month": 5, "electricity_usd_kwh": 0.15,
+          "_sources": {"all": "fictional example matching the Excel v0.1"}}
+}

@@ -1,0 +1,471 @@
+# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+- id: UC01
+  name: Citizen services assistant (multilingual chat)
+  category: Chatbot
+  include: 1
+  stage: Production
+  driver: Population
+  eligible_share: 1
+  fixed_base: 0
+  pilot_users: 500
+  adoption_low: 0.02
+  adoption_base: 0.05
+  adoption_high: 0.1
+  citizen_facing: 1
+  tasks_per_user_day: 0.1
+  isl: 1500
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 800
+  cache_hit: 0.5
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.5
+  model_class: M
+  data_class: 2
+  sources:
+  - S01
+  - S07
+  note: Sporadic use (~3 queries/month per adopter). ISL includes retrieved context (RAG).
+- id: UC02
+  name: Civil servant copilot (drafting, summarising)
+  category: Copilot
+  include: 1
+  stage: Production
+  driver: Civil servants
+  eligible_share: 0.3
+  fixed_base: 0
+  pilot_users: 200
+  adoption_low: 0.1
+  adoption_base: 0.3
+  adoption_high: 0.6
+  citizen_facing: 0
+  tasks_per_user_day: 8
+  isl: 3000
+  osl: 600
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 1000
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.2
+  model_class: M
+  data_class: 3
+  sources:
+  - S01
+  - S26
+  note: Eligible share = desk-based staff. Check against US Army allowance of 200k tokens/user/month [S26].
+- id: UC03
+  name: Document intake and extraction (permits, land, registries)
+  category: Content / extraction
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 20000
+  pilot_users: 1000
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 0.8
+  citizen_facing: 0
+  tasks_per_user_day: 1
+  isl: 4000
+  osl: 500
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  system_prompt_tokens: 500
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.3
+  model_class: S
+  data_class: 3
+  sources:
+  - S01
+  note: Fixed base = documents per day; 1 task per document. Assumes text already digitised (OCR in NonToken).
+- id: UC04
+  name: Translation into national and local languages
+  category: Translation
+  include: 1
+  stage: Production
+  driver: Population
+  eligible_share: 1
+  fixed_base: 0
+  pilot_users: 500
+  adoption_low: 0.01
+  adoption_base: 0.03
+  adoption_high: 0.06
+  citizen_facing: 1
+  tasks_per_user_day: 0.2
+  isl: 500
+  osl: 500
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  system_prompt_tokens: 200
+  cache_hit: 0.5
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.2
+  model_class: S
+  data_class: 2
+  sources:
+  - S01
+  note: ''
+- id: UC05
+  name: Community health worker triage assistant
+  category: Chatbot
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 20000
+  pilot_users: 300
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 0.8
+  citizen_facing: 0
+  tasks_per_user_day: 10
+  isl: 2000
+  osl: 500
+  reasoning_tokens: 1000
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 1000
+  cache_hit: 0.5
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.2
+  seasonal: 1.5
+  model_class: M
+  data_class: 4
+  sources:
+  - S01
+  note: Fixed base = health workers. Seasonal factor covers epidemic peaks.
+- id: UC06
+  name: Education tutor (secondary students)
+  category: Chatbot
+  include: 1
+  stage: Pilot
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 500000
+  pilot_users: 2000
+  adoption_low: 0.05
+  adoption_base: 0.15
+  adoption_high: 0.3
+  citizen_facing: 1
+  tasks_per_user_day: 2
+  isl: 1500
+  osl: 500
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 800
+  cache_hit: 0.5
+  peak_share: 0.7
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.3
+  model_class: M
+  data_class: 2
+  sources:
+  - S01
+  note: Fixed base = students.
+- id: UC07
+  name: Agriculture advisory (voice / SMS)
+  category: Chatbot
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 2000000
+  pilot_users: 1000
+  adoption_low: 0.01
+  adoption_base: 0.03
+  adoption_high: 0.08
+  citizen_facing: 1
+  tasks_per_user_day: 0.1
+  isl: 800
+  osl: 300
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  system_prompt_tokens: 500
+  cache_hit: 0.5
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 2
+  model_class: S
+  data_class: 1
+  sources:
+  - S01
+  note: Fixed base = farming households. Speech handled in NonToken. Seasonal factor = planting season.
+- id: UC08
+  name: Tax and customs risk agent
+  category: Agent
+  include: 1
+  stage: Pilot
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 10000
+  pilot_users: 500
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 1
+  citizen_facing: 0
+  tasks_per_user_day: 1
+  isl: 6000
+  osl: 800
+  reasoning_tokens: 2000
+  agent_steps: 6
+  retry: 1.2
+  system_prompt_tokens: 1500
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.3
+  model_class: L
+  data_class: 4
+  sources:
+  - S01
+  - S25
+  note: Fixed base = declarations per day. Agentic workloads use 4-15x more tokens than chat [S25].
+- id: UC09
+  name: Legal and regulatory research
+  category: Agent / reasoning
+  include: 1
+  stage: Production
+  driver: Civil servants
+  eligible_share: 0.02
+  fixed_base: 0
+  pilot_users: 50
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 0.8
+  citizen_facing: 0
+  tasks_per_user_day: 3
+  isl: 8000
+  osl: 1000
+  reasoning_tokens: 3000
+  agent_steps: 3
+  retry: 1.1
+  system_prompt_tokens: 1000
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1
+  model_class: L
+  data_class: 2
+  sources:
+  - S01
+  - S25
+  note: ''
+- id: UC10
+  name: Government software engineering assistant
+  category: Copilot
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 2000
+  pilot_users: 100
+  adoption_low: 0.3
+  adoption_base: 0.6
+  adoption_high: 0.9
+  citizen_facing: 0
+  tasks_per_user_day: 30
+  isl: 4000
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 1000
+  cache_hit: 0.6
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1
+  model_class: M
+  data_class: 3
+  sources:
+  - S01
+  note: Fixed base = government developers.
+- id: UC11
+  name: Call centre and court transcript summaries
+  category: Content / extraction
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 30000
+  pilot_users: 1000
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 0.8
+  citizen_facing: 0
+  tasks_per_user_day: 1
+  isl: 3000
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  system_prompt_tokens: 500
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.2
+  seasonal: 1.2
+  model_class: S
+  data_class: 3
+  sources:
+  - S01
+  note: Fixed base = calls/hearings per day. Speech-to-text itself is in NonToken.
+- id: UC12
+  name: Policy analysis agent
+  category: Agent
+  include: 1
+  stage: Pilot
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 300
+  pilot_users: 30
+  adoption_low: 0.3
+  adoption_base: 0.6
+  adoption_high: 0.9
+  citizen_facing: 0
+  tasks_per_user_day: 4
+  isl: 10000
+  osl: 1500
+  reasoning_tokens: 4000
+  agent_steps: 8
+  retry: 1.2
+  system_prompt_tokens: 2000
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 1.5
+  sla_headroom: 1.2
+  seasonal: 1
+  model_class: L
+  data_class: 3
+  sources:
+  - S01
+  - S25
+  note: Fixed base = analysts.
+- id: UC13
+  name: Security and intelligence analysis
+  category: Agent
+  include: 0
+  stage: Pilot
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 200
+  pilot_users: 20
+  adoption_low: 0.3
+  adoption_base: 0.6
+  adoption_high: 0.9
+  citizen_facing: 0
+  tasks_per_user_day: 5
+  isl: 8000
+  osl: 1000
+  reasoning_tokens: 3000
+  agent_steps: 6
+  retry: 1.2
+  system_prompt_tokens: 1500
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 1.5
+  sla_headroom: 1.2
+  seasonal: 1
+  model_class: L
+  data_class: 4
+  sources:
+  - S01
+  note: 'Excluded by default (Include = 0): usually outside World Bank engagement.'
+- id: UC14
+  name: Open data and statistics Q&A
+  category: Chatbot
+  include: 1
+  stage: Production
+  driver: Population
+  eligible_share: 1
+  fixed_base: 0
+  pilot_users: 200
+  adoption_low: 0.002
+  adoption_base: 0.005
+  adoption_high: 0.01
+  citizen_facing: 1
+  tasks_per_user_day: 0.3
+  isl: 2500
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 800
+  cache_hit: 0.5
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.2
+  model_class: M
+  data_class: 1
+  sources:
+  - S01
+  note: ''
+- id: UC15
+  name: Social protection case management
+  category: Copilot
+  include: 1
+  stage: Production
+  driver: Fixed
+  eligible_share: 1
+  fixed_base: 5000
+  pilot_users: 200
+  adoption_low: 0.2
+  adoption_base: 0.5
+  adoption_high: 0.8
+  citizen_facing: 0
+  tasks_per_user_day: 15
+  isl: 3000
+  osl: 500
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  system_prompt_tokens: 1000
+  cache_hit: 0.5
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.2
+  seasonal: 1.3
+  model_class: M
+  data_class: 4
+  sources:
+  - S01
+  note: Fixed base = caseworkers.

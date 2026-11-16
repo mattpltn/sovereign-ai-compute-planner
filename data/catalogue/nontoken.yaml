@@ -1,0 +1,99 @@
+# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+- id: NT01
+  name: Biometric 1:N deduplication at enrolment
+  include: 1
+  unit: enrolments
+  units_per_day: 5000
+  gpu_seconds_per_unit: 2.0
+  mode: Batch
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 4
+  sources:
+  - S08
+  note: PLACEHOLDER GPU-seconds (depends on gallery size and vendor ABIS). Obtain from ABIS vendor benchmark.
+- id: NT02
+  name: Face 1:1 verification (authentication)
+  include: 1
+  unit: authentications
+  units_per_day: 100000
+  gpu_seconds_per_unit: 0.02
+  mode: Interactive
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  data_class: 4
+  sources:
+  - S08
+  note: PLACEHOLDER. Many deployments run 1:1 on CPU; set Include = 0 if so.
+- id: NT03
+  name: Document OCR and layout extraction
+  include: 1
+  unit: pages
+  units_per_day: 50000
+  gpu_seconds_per_unit: 0.3
+  mode: Batch
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 3
+  sources:
+  - S08
+  note: PLACEHOLDER. Calibrate with MLPerf vision results or a vendor OCR test.
+- id: NT04
+  name: Speech-to-text (call centres, courts, voice channels)
+  include: 1
+  unit: audio hours
+  units_per_day: 2000
+  gpu_seconds_per_unit: 60
+  mode: Interactive
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 3
+  sources:
+  - S08
+  note: 'PLACEHOLDER ~60 GPU-seconds per audio hour (~60x real time). MLPerf Inference includes Whisper: use its result.'
+- id: NT05
+  name: Satellite / aerial image analysis
+  include: 1
+  unit: image tiles
+  units_per_day: 20000
+  gpu_seconds_per_unit: 0.1
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 1
+  sources:
+  - S08
+  note: PLACEHOLDER.
+- id: NT06
+  name: Model fine-tuning and evaluation
+  include: 1
+  unit: GPU-hours (annual / 365)
+  units_per_day: 54.794521
+  gpu_seconds_per_unit: 3600
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 3
+  sources:
+  - S03
+  note: Input annual GPU-hours (20,000 placeholder) divided by 365. 1 unit = 1 GPU-hour = 3,600 GPU-seconds. (20,000 GPU-hours/year / 365)
+- id: NT07
+  name: Classical ML scoring (fraud, risk, forecasting)
+  include: 0
+  unit: transactions
+  units_per_day: 0
+  gpu_seconds_per_unit: 0
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 3
+  sources:
+  - S30
+  note: 'OUT OF GPU SCOPE: runs on CPU (US Census example [S30]). Size in the conventional data centre tool.'

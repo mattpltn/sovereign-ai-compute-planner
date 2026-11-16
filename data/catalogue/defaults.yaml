@@ -1,0 +1,45 @@
+# Global defaults. Maintainers update yearly; users override only via "client quotes".
+# Each entry: value, and for cost items low/base/high for the TCO range.
+global_egdi_average: {value: 0.638, source: S17, note: "UN E-Government Survey 2024 world average"}
+pue: {value: 1.6, source: S22, note: "Uptime Institute global average ~1.56; hot climates and small sites higher"}
+diversity_factor: {value: 0.7, source: method, note: "Coincident peak / sum of standalone peaks, applied within a tier"}
+production_derating: {value: 0.6, source: "S11, S06", note: "Benchmarks overstate production throughput; calibrate with GenAI-Perf"}
+prefill_weight: {value: 0.15, source: "S03, S07", note: "Cost of an uncached input token relative to an output token"}
+idle_power_fraction: {value: 0.3, source: "S09, S10", note: "Share of rated IT power drawn when idle"}
+horizon_years: {value: 10, source: "-", note: "Demand held flat in v0.1"}
+tokens_per_user_day_ceiling: {value: 240000, source: S24, note: "Epoch AI human-equivalent ceiling"}
+weak_grid_outages_threshold: {value: 1, source: analyst, note: "Outages per month above which liquid-cooled dense racks are excluded"}
+step1_max_facility_mw: {value: 1, source: analyst, note: "Below this, a sovereign tier fits in an existing facility"}
+dense_profile_min_it_mw: {value: 1, source: analyst, note: "Below this IT load, a 130 kW liquid-cooled rack is not worth it; use air-cooled"}
+maintenance_share: {value: 0.05, source: analyst, note: "Share of capex per year"}
+fte_per_owned_tier: {value: 4, source: analyst}
+cost_per_fte_usd: {value: 60000, source: analyst, note: "Local market; override if known"}
+gpu_refresh_years: {value: 5, source: S03}
+
+# Cost items with ranges (low / base / high). Overridden by client quotes.
+costs:
+  electricity_usd_kwh: {low: 0.10, base: 0.15, high: 0.25, source: S20, note: "Used only if the country snapshot has no tariff"}
+  facility_capex_usd_per_mw_it: {low: 8000000, base: 11000000, high: 15000000, source: S23}
+  gpu_capex_multiplier: {low: 0.8, base: 1.0, high: 1.3, source: analyst, note: "Applied to hardware profile capex per GPU"}
+  gpu_hour_multiplier: {low: 0.7, base: 1.0, high: 1.5, source: S11, note: "Applied to hardware profile $/GPU-hour; local providers price higher"}
+  api_price_multiplier: {low: 0.7, base: 1.0, high: 1.5, source: S21, note: "Applied to synced API prices; residency premium in high case"}
+
+# API prices per model class, $ per million tokens. Overwritten by data/snapshots/api_prices.json when present.
+api_prices_fallback:
+  S: {input: 0.10, output: 0.40}
+  M: {input: 0.50, output: 1.50}
+  L: {input: 1.00, output: 4.00}
+
+# OpenRouter model ids used to compute the median price per class (sync/openrouter.py).
+api_reference_models:
+  S: [meta-llama/llama-3.1-8b-instruct, qwen/qwen-2.5-7b-instruct, mistralai/mistral-7b-instruct]
+  M: [meta-llama/llama-3.3-70b-instruct, qwen/qwen-2.5-72b-instruct]
+  L: [deepseek/deepseek-r1, qwen/qwen3-235b-a22b]
+
+# Default mapping data class -> tier (World Bank data classification approach, S14). Users can change it per country.
+class_to_tier: {1: T1, 2: T2, 3: T3, 4: T4}
+tiers:
+  T1: {name: "Public cloud / API, offshore permitted", api: true, gpuaas: true, owned: true}
+  T2: {name: "Cloud with in-country or regional residency", api: true, gpuaas: true, owned: true}
+  T3: {name: "Sovereign local, privately operated", api: false, gpuaas: true, owned: true}
+  T4: {name: "Government enclave, state-operated", api: false, gpuaas: false, owned: true}
