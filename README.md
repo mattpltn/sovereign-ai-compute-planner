@@ -4,6 +4,8 @@ Planning tool for governments: from AI use cases to tokens, GPUs, megawatts, pla
 
 **Status:** private draft. Not cleared for publication. Do not share outside the core team until clearance.
 
+**Methodology:** [docs/METHODOLOGY.md](docs/METHODOLOGY.md) (formulas, evidence, sources). **Changes:** [CHANGELOG.md](CHANGELOG.md).
+
 ## Flow
 
 1. **Layer 0, use cases.** The user picks applications from a catalogue, sets stage (Pilot/Production) and data class.
