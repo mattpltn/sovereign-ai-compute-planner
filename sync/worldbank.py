@@ -11,6 +11,7 @@ import csv
 import datetime as dt
 import json
 import sys
+import time
 from pathlib import Path
 
 import requests
@@ -23,7 +24,8 @@ API = "https://api.worldbank.org/v2"
 INDICATORS = {
     "population": ("SP.POP.TOTL", None, lambda v: v),
     "internet_share": ("IT.NET.USER.ZS", None, lambda v: v / 100),
-    "outages_per_month": ("IC.ELC.OUTG", None, lambda v: v),           # Enterprise Surveys, via WDI
+    # Enterprise Surveys outages: archived from WDI in 2026; candidates tried in order (see CANDIDATES).
+    "outages_per_month": ("IC.ELC.OUTG", None, lambda v: v),
     "labour_force": ("SL.TLF.TOTL.IN", None, lambda v: v),
     "unemployment_share": ("SL.UEM.TOTL.ZS", None, lambda v: v / 100),
     # Worldwide Bureaucracy Indicators: public sector employment as share of total employment.
@@ -32,11 +34,26 @@ INDICATORS = {
 }
 
 
+# Alternative (indicator, source) pairs tried when the first one fails.
+CANDIDATES = {
+    "outages_per_month": [("IC.ELC.OUTG", 13), ("IC.ELC.OUTG", 1), ("IC.ELC.OUTG.ZS", None)],
+}
+
+
 def get(path: str, **params) -> list:
     params = {"format": "json", "per_page": 20000, **params}
-    r = requests.get(f"{API}/{path}", params=params, timeout=60)
-    r.raise_for_status()
-    data = r.json()
+    last = None
+    for attempt in range(3):
+        try:
+            r = requests.get(f"{API}/{path}", params=params, timeout=180)
+            r.raise_for_status()
+            data = r.json()
+            break
+        except requests.RequestException as e:  # timeouts are common on large sources
+            last = e
+            time.sleep(10 * (attempt + 1))
+    else:
+        raise last
     if not isinstance(data, list) or len(data) < 2 or data[1] is None:
         raise ValueError(f"no data for {path}: {str(data)[:200]}")
     return data[1]
@@ -75,10 +92,15 @@ def main() -> int:
     data = {k: {**v, "_sources": {}} for k, v in meta.items()}
     log = []
     for field, (code, src, f) in INDICATORS.items():
-        try:
-            vals = latest(code, src)
-        except Exception as e:  # noqa: BLE001
-            log.append(f"{field} ({code}): FAILED {e}")
+        vals = None
+        for c, s_ in [(code, src)] + CANDIDATES.get(field, []):
+            try:
+                vals = latest(c, s_)
+                code = c
+                break
+            except Exception as e:  # noqa: BLE001
+                log.append(f"{field} ({c}, source {s_}): FAILED {str(e)[:160]}")
+        if vals is None:
             continue
         for iso, (v, year) in vals.items():
             if iso in data:
