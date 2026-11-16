@@ -414,6 +414,8 @@ def _est(share=0.03, year=2025):
     """Estonia: synced labour force and unemployment; ILO agriculture share supplied here (~3%) so the test
     does not depend on the next sync."""
     c = json.loads(json.dumps(SNAP["EST"]))
+    c.pop("agri_employment_share", None)              # ignore whatever the last sync stored
+    c["_sources"].pop("agri_employment_share", None)
     if share is not None:
         c["agri_employment_share"] = share
         c["_sources"]["agri_employment_share"] = f"World Bank API SL.AGR.EMPL.ZS, {year}"
