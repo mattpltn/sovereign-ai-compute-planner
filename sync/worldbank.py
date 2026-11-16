@@ -34,7 +34,19 @@ INDICATORS = {
     # VERIFY the code on first run (WWBI is API source 64).
     # WWBI publishes shares as fractions (0-1), not percentages: no division by 100.
     "public_employment_share": ("BI.EMP.TOTL.PB.ZS", 64, lambda v: v),
+    # Agriculture (v0.7): employment share is % of total employment, ILO modeled estimate.
+    "agri_employment_share": ("SL.AGR.EMPL.ZS", None, lambda v: v / 100),
+    "rural_population": ("SP.RUR.TOTL", None, lambda v: v),   # context only
 }
+
+# Indicators whose code is confirmed against live API metadata before use. If the name returned by the API
+# does not match, the field is NOT stored and the sync log says STOPPED (code changed or missing).
+VERIFY = {
+    "labour_force": r"^labor force, total$",
+    "agri_employment_share": r"^employment in agriculture \(% of total employment\)",
+    "rural_population": r"^rural population$",
+}
+AGRI_MIN_YEAR = 2015
 
 
 # Alternative (indicator, source) pairs tried when the first one fails.
@@ -83,6 +95,55 @@ def latest(code: str, source: int | None) -> dict:
     return vals
 
 
+def check_metadata(code: str, payload, pattern: str) -> dict:
+    """Parse the API's /indicator/{code} response and confirm the name. Raises ValueError if it does not match."""
+    import re
+    if not isinstance(payload, list) or len(payload) < 2 or not payload[1]:
+        raise ValueError(f"{code}: not found in API metadata")
+    m = payload[1][0]
+    name = m.get("name", "")
+    if m.get("id") != code or not re.search(pattern, name, re.I):
+        raise ValueError(f"{code}: API name '{name}' does not match the expected indicator")
+    return {"code": code, "name": name, "source_id": int(m["source"]["id"]), "source": m["source"]["value"]}
+
+
+def verify(code: str, pattern: str) -> dict:
+    r = requests.get(f"{API}/indicator/{code}", params={"format": "json"}, timeout=180)
+    r.raise_for_status()
+    return check_metadata(code, r.json(), pattern)
+
+
+def store(data: dict, field: str, code: str, vals: dict, f) -> None:
+    """Store latest values with indicator code and year."""
+    for iso, (v, year) in vals.items():
+        if iso in data:
+            data[iso][field] = f(v)
+            data[iso]["_sources"][field] = f"World Bank API {code}, {year}"
+
+
+def year_of(src: str) -> int | None:
+    import re
+    y = re.findall(r"\b(19\d\d|20\d\d)\b", src or "")
+    return int(y[-1]) if y else None
+
+
+def derive_agri(c: dict) -> None:
+    """agri_workers_est = employed labour force x agriculture share of employment.
+
+    The ILO share is a share of EMPLOYMENT, so it is applied to labour force x (1 - unemployment) when unemployment
+    is known (labour force alone otherwise). Missing data or a share older than 2015: unknown, no value stored.
+    """
+    s, lf = c.get("agri_employment_share"), c.get("labour_force")
+    y = year_of(c.get("_sources", {}).get("agri_employment_share", ""))
+    if s is None or lf is None or y is None or y < AGRI_MIN_YEAR:
+        c.pop("agri_workers_est", None)
+        c.get("_sources", {}).pop("agri_workers_est", None)
+        return
+    employed = lf * (1 - c.get("unemployment_share", 0))
+    c["agri_workers_est"] = employed * s
+    c["_sources"]["agri_workers_est"] = f"derived: employed labour force x ILO modeled agriculture share of employment, {y}"
+
+
 def read_csv(name: str, field: str) -> dict:
     p = ROOT / "data" / name
     if not p.exists():
@@ -115,8 +176,16 @@ def main() -> int:
     meta = countries()
     data = {k: {**v, "_sources": {}} for k, v in meta.items()}
     log = []
+    checked = {}
     for field, (code, src, f) in INDICATORS.items():
         vals = None
+        if field in VERIFY:
+            try:
+                checked[code] = verify(code, VERIFY[field])
+                log.append(f"{field}: confirmed {code} = '{checked[code]['name']}' (source {checked[code]['source_id']})")
+            except Exception as e:  # noqa: BLE001
+                log.append(f"{field}: STOPPED, not stored. {str(e)[:200]}")
+                continue
         cands = [(code, src)] + CANDIDATES.get(field, [])
         if field == "outages_per_month":
             try:
@@ -133,10 +202,7 @@ def main() -> int:
                 log.append(f"{field} ({c}, source {s_}): FAILED {str(e)[:160]}")
         if vals is None:
             continue
-        for iso, (v, year) in vals.items():
-            if iso in data:
-                data[iso][field] = f(v)
-                data[iso]["_sources"][field] = f"World Bank API {code}, {year}"
+        store(data, field, code, vals, f)
         log.append(f"{field} ({code}): {len(vals)} countries")
 
     # Derived: civil servants = labour force x (1 - unemployment) x public employment share
@@ -144,6 +210,9 @@ def main() -> int:
         if all(k in c for k in ("labour_force", "unemployment_share", "public_employment_share")):
             c["civil_servants"] = c["labour_force"] * (1 - c["unemployment_share"]) * c["public_employment_share"]
             c["_sources"]["civil_servants"] = "derived: labour force x (1 - unemployment) x WWBI public employment share"
+
+    for c in data.values():
+        derive_agri(c)
 
     # Curated files (no free API): EGDI (UN, biennial) and electricity tariff.
     for field, fname, col, label in [("egdi", "egdi.csv", "egdi", "UN E-Government Survey"),
@@ -158,7 +227,7 @@ def main() -> int:
     if "XEX" in old:
         data["XEX"] = old["XEX"]
 
-    data = {"_meta": {"synced_at": dt.date.today().isoformat(), "log": log}, **dict(sorted(data.items()))}
+    data = {"_meta": {"synced_at": dt.date.today().isoformat(), "log": log, "indicators": checked}, **dict(sorted(data.items()))}
     OUT.write_text(json.dumps(data, indent=1, ensure_ascii=False))
     print("\n".join(log))
     return 0

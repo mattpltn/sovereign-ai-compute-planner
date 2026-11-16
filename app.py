@@ -14,8 +14,13 @@ import pandas as pd
 from shiny import App, reactive, render, ui
 
 from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
-from engine.archetypes import (EXAMPLE_PORTFOLIO, build_profile, is_llm, load_archetypes, reference_sizes,
-                               volume_warning)
+from engine.archetypes import (EXAMPLE_PORTFOLIO, POPULATION_BASIS, basis_label, build_profile, is_llm,
+                               load_archetypes, low_usage_note, normalize_app, parse_custom_types, rate_for,
+                               reference_sizes, volume_warning, CUSTOM_TEMPLATE)
+import base64
+import math
+import datetime as _dt
+import zlib
 
 CAT = load_catalogue()
 D = load_defaults()
@@ -24,13 +29,73 @@ COUNTRIES = load_countries()
 API_PRICES, API_PROV = load_api_prices(D)
 SRC = {s["id"]: s for s in CAT["sources"]}
 
+
+def cite(text: str) -> list:
+    """Turn source IDs (S36) in evidence text into internal links to the Sources list on the Evidence tab."""
+    out = []
+    for i, part in enumerate(re.split(r"\b(S\d{2,3})\b", str(text))):
+        if i % 2 and part in SRC:
+            out.append(ui.tags.a(part, href=f"#src-{part}", title=SRC[part]["title"]))
+        elif part:
+            out.append(part)
+    return out
+
+
+def cited_ids(t: dict) -> list:
+    ids = sorted({x for v in t["evidence"].values() for x in re.findall(r"\b(S\d{2,3})\b", str(v)) if x in SRC},
+                 key=lambda x: int(x[1:]))
+    return ids
+
 TIER_COLORS = {"T1": "#2a78d6", "T2": "#eb6834", "T3": "#1baf7a", "T4": "#eda100"}
 CLASS_LABELS = {1: "1 · Public", 2: "2 · Internal", 3: "3 · Confidential", 4: "4 · Restricted"}
 SCEN = {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}
 
-type_choices = {}
-for a in ARCH.values():
-    type_choices.setdefault(a["group"], {})[a["id"]] = a["label"]
+def type_choices_for(arch: dict) -> dict:
+    """Dropdown entries grouped, with the evidence confidence in parentheses (usage rate / size)."""
+    out = {}
+    for a in arch.values():
+        c = a["confidence"]
+        conf = (f'confidence: usage {c["volume"]}, size {c["tokens"]}' if "isl" in a else f'confidence: {c["tokens"]}')
+        out.setdefault(a["group"], {})[a["id"]] = f'{a["label"]} ({conf})'
+    return out
+
+
+type_choices = type_choices_for(ARCH)
+
+
+def encode_state(sc: dict) -> str:
+    """Scenario -> compact URL-safe text (zlib + base64). The link carries the whole scenario; nothing is stored on a server."""
+    return base64.urlsafe_b64encode(zlib.compress(json.dumps(sc, separators=(",", ":")).encode(), 9)).decode().rstrip("=")
+
+
+def decode_state(txt: str) -> dict:
+    return json.loads(zlib.decompress(base64.urlsafe_b64decode(txt + "=" * (-len(txt) % 4))).decode())
+
+
+SAVE_JS = """
+(function () {
+  const KEY = 'saicp_saved_v1';
+  const W = (function () { try { return window.top.location.href && window.top; } catch (e) { return window; } })();
+  function list() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function put(l) { try { localStorage.setItem(KEY, JSON.stringify(l.slice(0, 100))); } catch (e) {} }
+  function push() { Shiny.setInputValue('saved_list', list(), {priority: 'event'}); }
+  $(document).one('shiny:connected', function () {
+    Shiny.addCustomMessageHandler('save_link', function (m) {
+      const url = W.location.origin + W.location.pathname + '#v=' + m.id + '&s=' + m.state;
+      try { W.history.replaceState(null, '', url); } catch (e) {}
+      const l = list(); l.unshift({id: m.id, name: m.name, date: m.date, state: m.state, url: url}); put(l);
+      if (navigator.clipboard) { navigator.clipboard.writeText(url).catch(function () {}); }
+      Shiny.setInputValue('share_url', url, {priority: 'event'}); push();
+    });
+    Shiny.addCustomMessageHandler('saved_remove', function (id) { put(list().filter(function (x) { return x.id !== id; })); push(); });
+  });
+  $(document).one('shiny:sessioninitialized', function () {
+    push();
+    const h = (W.location.hash || '').match(/[#&]s=([^&]+)/);
+    if (h) { Shiny.setInputValue('url_state', h[1], {priority: 'event'}); }
+  });
+})();
+"""
 iso_choices = {k: v.get("name", k) for k, v in sorted(COUNTRIES.items(), key=lambda kv: kv[1].get("name", ""))}
 
 CSS = """
@@ -208,6 +273,13 @@ apps_panel = ui.nav_panel(
             ui.input_select("a_type", "Type", type_choices, selected="staff_copilot"),
             ui.input_text("a_name", "Name", placeholder="e.g. Ministry of Finance copilot"),
             ui.input_numeric("a_volume", ARCH["staff_copilot"]["unit_label"], value=None, min=0),
+            ui.panel_conditional(
+                "input.a_type === 'agriculture_advisory'",
+                ui.input_radio_buttons("a_basis", "Who are these farmers?", {
+                    "eligible": "Everyone eligible (all farmers, or all beneficiaries of a scheme; most will not use the AI service)",
+                    "users": "Farmers using the advisory service (onboarded through extension, cooperatives, or app users)"},
+                    selected="eligible"),
+            ),
             ui.input_select("a_class", "Data class", {str(k): v for k, v in CLASS_LABELS.items()}, selected="3"),
             ui.accordion(ui.accordion_panel(
                 "Advanced",
@@ -220,6 +292,16 @@ apps_panel = ui.nav_panel(
             ), open=False),
             ui.output_ui("a_type_hint"),
             ui.input_action_button("add", "Add application", class_="btn-primary w-100"),
+            ui.accordion(ui.accordion_panel(
+                "Custom application types (upload)",
+                ui.p("For an application that no type fits: fill one row per type in the CSV template, then upload it. "
+                     "Custom types appear in the Type list under \"Custom (uploaded)\" and are saved with the scenario.",
+                     class_="hint"),
+                ui.download_button("dl_template", "Download template (CSV)", class_="btn-sm"),
+                ui.input_file("ul_custom", None, accept=[".csv"], button_label="Upload custom types",
+                              placeholder="custom_application_types.csv"),
+                ui.output_ui("custom_status"),
+            ), open=False, style="margin-top:12px"),
         ),
         ui.card(
             ui.card_header(ui.div(ui.span("Application portfolio"),
@@ -240,7 +322,7 @@ results_panel = ui.nav_panel(
     ui.layout_columns(
         ui.card(ui.card_header("10-year cost by adoption scenario (present value, stacked by data class; whisker = price range)"),
                 ui.output_plot("chart_scen", height="300px")),
-        ui.card(ui.card_header("The same numbers"), ui.output_table("scen_table"),
+        ui.card(ui.card_header("The same numbers"), ui.output_table("scen_table"), ui.output_ui("range_note"),
                 ui.p("Adoption scenario: how much people use the applications. Price range: low and high costs for "
                      "hardware, cloud and API prices, and GPU efficiency. All figures rounded.", class_="hint")),
         col_widths=[7, 5]),
@@ -249,7 +331,11 @@ results_panel = ui.nav_panel(
     ui.h4("3 · Where does the cost come from?", class_="sec"),
     ui.layout_columns(
         ui.card(ui.card_header("10-year cost by application (present value)"), ui.output_plot("chart_app", height="360px")),
-        ui.card(ui.card_header("By application"), ui.output_table("app_table")),
+        ui.card(ui.card_header("By application"), ui.output_table("app_table"),
+                ui.p("Share of site: each application carries part of the site's fixed costs (servers, facility, staff) in "
+                     "proportion to its GPU need. Removing it would not save that amount. Extra cost if added last: what "
+                     "this application adds on top of all the others (often close to zero when it fits in spare capacity).",
+                     class_="hint")),
         col_widths=[6, 6]),
     ui.accordion(
         ui.accordion_panel("Details: every buying option, Low – Base – High",
@@ -274,11 +360,27 @@ evidence_panel = ui.nav_panel(
     ui.card(ui.card_header("Sources"), ui.output_ui("sources")),
 )
 
+saved_panel = ui.nav_panel(
+    "Saved work",
+    ui.card(
+        ui.card_header("Save and resume"),
+        ui.p("Each save creates a new link with a timestamp, so you can keep several versions. The link contains the "
+             "whole scenario (setup, applications, custom types, quotes); nothing is stored on a server. Saved links are "
+             "listed below in this browser only: keep the link (bookmark, email) to open it elsewhere. "
+             "Anyone with a link can see that scenario.", class_="hint"),
+        ui.layout_columns(ui.input_text("save_name", None, placeholder="Version name (optional), e.g. Ghana, cautious"),
+                          ui.input_action_button("save_link", "Save and get link", class_="btn-primary"),
+                          col_widths=[8, 4]),
+        ui.output_ui("share_out"),
+    ),
+    ui.card(ui.card_header("Saved versions (this browser)"), ui.output_ui("saved_list_ui")),
+)
+
 app_ui = ui.page_navbar(
-    setup_panel, apps_panel, results_panel, evidence_panel,
+    setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
-    header=ui.tags.style(CSS),
-    footer=ui.div("v0.6 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
+    footer=ui.div("v0.7 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -286,16 +388,60 @@ app_ui = ui.page_navbar(
 
 # ------------------------------------------------------------------ server
 def server(input, output, session):
+    custom = reactive.value({})
+
+    def A():
+        return {**ARCH, **custom.get()}
+
     apps = reactive.value([])
 
     # ---- add / remove
 
+    @render.download(filename="custom_application_types.csv")
+    def dl_template():
+        yield CUSTOM_TEMPLATE.read_text()
+
+    custom_msg = reactive.value(None)
+
+    @reactive.effect
+    @reactive.event(input.ul_custom)
+    def _custom_upload():
+        f = input.ul_custom()
+        if not f:
+            return
+        types, errs = parse_custom_types(open(f[0]["datapath"], encoding="utf-8-sig").read(), ARCH)
+        custom.set({**custom.get(), **types})
+        custom_msg.set((types, errs))
+
+    @reactive.effect
+    def _refresh_types():
+        arch = A()
+        with reactive.isolate():
+            cur = input.a_type()
+        ui.update_select("a_type", choices=type_choices_for(arch), selected=cur if cur in arch else "staff_copilot")
+
+    @render.ui
+    def custom_status():
+        m = custom_msg.get()
+        items = [ui.tags.li(t["label"]) for t in custom.get().values()]
+        out = []
+        if items:
+            out.append(ui.p(f"{len(items)} custom type{'s' if len(items) != 1 else ''} loaded:", class_="hint", style="margin:6px 0 0"))
+            out.append(ui.tags.ul(*items, class_="hint"))
+        if m and m[1]:
+            out.append(ui.div(ui.tags.b("Rows skipped:"), ui.tags.ul(*[ui.tags.li(e) for e in m[1]]),
+                              style="color:#92400e;font-size:.82rem"))
+        return ui.div(*out) if out else None
+
     @render.ui
     def a_type_hint():
-        t = ARCH[input.a_type()]
+        t = A()[input.a_type()]
         ev = t["evidence"].get("rate") or t["evidence"].get("gpu", "")
         ref = reference_sizes(country()[0])
         bits = []
+        if input.a_type() == "agriculture_advisory":
+            bits.append(f'~{sig2(ref["agri_workers"]):,.0f} agricultural workers (ILO modeled estimate, {ref["agri_year"]})'
+                        if ref["agri_workers"] else "agricultural workers unknown (no recent data): volume not checked")
         if ref["population"]:
             bits.append(f'population {ref["population"]:,.0f}')
         if ref["civil_servants"]:
@@ -306,7 +452,7 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.a_type)
     def _default_class():
-        t = ARCH[input.a_type()]
+        t = A()[input.a_type()]
         ui.update_select("a_class", selected=str(t["data_class"]))
         ui.update_numeric("a_volume", label=t["unit_label"])
         if is_llm(t) and t["unit"] == "users":
@@ -317,7 +463,7 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.add)
     def _add():
-        t = ARCH[input.a_type()]
+        t = A()[input.a_type()]
         vol = num(input.a_volume())
         if not vol:
             ui.notification_show(f'Enter {t["unit_label"].lower()} first.', type="warning")
@@ -332,8 +478,9 @@ def server(input, output, session):
         rate = num(input.a_rate()) if is_llm(t) and t["unit"] == "users" else None
         new = dict(uid=uuid.uuid4().hex[:8], name=input.a_name().strip() or t["label"], type=t["id"], volume=vol,
                    data_class=int(input.a_class()), rate_override=rate, model_class=input.a_model() or None,
-                   traffic_split=split)
-        w = volume_warning(new, country()[0], ARCH)
+                   traffic_split=split,
+                   population_basis=input.a_basis() if t.get("rate_by_basis") else "eligible")
+        w = volume_warning(new, country()[0], A(), D["agri_volume_tolerance"]["value"])
         if w:
             ui.notification_show(w, type="warning", duration=10)
         apps.set(apps.get() + [new])
@@ -365,7 +512,7 @@ def server(input, output, session):
         ntr = {x["id"]: x for x in result()["nontoken"]}
         rows = []
         for a in lst:
-            t = ARCH[a["type"]]
+            t = A()[a["type"]]
             if a["uid"] in res:
                 d = res[a["uid"]]
                 load = f'{fmt(d["sessions"])} requests/day'
@@ -377,8 +524,11 @@ def server(input, output, session):
             rows.append(ui.tags.tr(
                 ui.tags.td(ui.tags.b(a["name"]), ui.br(), ui.span(t["label"], class_="hint"),
                            *([ui.br(), ui.span("⚠ " + w, style="color:#92400e;font-size:.82rem")]
-                             if (w := volume_warning(a, country()[0], ARCH)) else [])),
-                ui.tags.td(f'{fmt(a["volume"])}', ui.br(), ui.span(t["unit_label"], class_="hint")),
+                             if (w := volume_warning(a, country()[0], A(), D["agri_volume_tolerance"]["value"])) else []),
+                           *([ui.br(), ui.span("ⓘ " + n, style="color:#1e40af;font-size:.82rem")]
+                             if (n := low_usage_note(a, A(), input.ambition())) else [])),
+                ui.tags.td(f'{fmt(a["volume"])}', ui.br(), ui.span(t["unit_label"], class_="hint"),
+                           *([ui.br(), ui.span(f"({b})", class_="hint")] if (b := basis_label(a, A())) else [])),
                 ui.tags.td(ui.span(CLASS_LABELS[a["data_class"]], class_=f'badge-c badge-{a["data_class"]}'),
                            " → ", tier),
                 ui.tags.td(load),
@@ -438,7 +588,10 @@ def server(input, output, session):
         cs = c.get("civil_servants")
         if cs:
             yr = c.get("_sources", {}).get("public_employment_share", "")[-4:]
-            bits.append(f"civil servants ~{sig2(cs):,.0f} (all public sector employees, {c['public_employment_share']:.0%} of jobs, {yr})")
+            bits.append(f"civil servants ~{sig2(cs):,.0f} (all public sector employees, {c.get('public_employment_share', 0):.0%} of jobs, {yr})" if c.get('public_employment_share') else f"civil servants ~{sig2(cs):,.0f}")
+        ref = reference_sizes(c)
+        if ref["agri_workers"]:
+            bits.append(f'~{sig2(ref["agri_workers"]):,.0f} agricultural workers (ILO modeled estimate, {ref["agri_year"]})')
         cc = COUNTRIES[input.iso()]
         o, s = cc.get("outages_per_month"), cc.get("firms_with_outages_share")
         if o is not None:
@@ -458,10 +611,10 @@ def server(input, output, session):
                 q[key] = v
         return q
 
-    def _run(ambition):
+    def _run(ambition, app_list=None, tiers=None):
         c, _ = country()
-        p = build_profile(c, ambition, apps.get(), ARCH,
-                          {cl: input[f"map{cl}"]() for cl in (1, 2, 3, 4)}, quotes(), input.hw())
+        p = build_profile(c, ambition, apps.get() if app_list is None else app_list, A(),
+                          tiers or {cl: input[f"map{cl}"]() for cl in (1, 2, 3, 4)}, quotes(), input.hw())
         p.speed = input.speed()
         p.local_gpu_provider = input.provider() == "yes"
         p.shared_sovereign_site = bool(input.shared())
@@ -473,6 +626,21 @@ def server(input, output, session):
     @reactive.calc
     def result():
         return _run(input.ambition())
+
+    @reactive.calc
+    def added_last():
+        """Extra 10-year cost of each application if added last: total minus the total without it."""
+        lst = apps.get()
+        tot = result()["totals"]["cost"]
+        return {a["uid"]: tot - _run(input.ambition(), [x for x in lst if x["uid"] != a["uid"]])["totals"]["cost"]
+                for a in lst} if len(lst) > 1 else {a["uid"]: tot for a in lst}
+
+    @reactive.calc
+    def placement_delta():
+        """Versus the default placement: servers and 10-year cost added by the user's placement rules."""
+        r0 = _run(input.ambition(), tiers=dict(D["class_to_tier"]))
+        r1 = result()
+        return dict(servers=_build_summary(r1)[0] - _build_summary(r0)[0], cost=r1["totals"]["cost"] - r0["totals"]["cost"])
 
     @reactive.calc
     def scenarios():
@@ -489,8 +657,8 @@ def server(input, output, session):
             msgs.append("Example country (fictional) selected in Setup.")
         if "fallback" in API_PROV:
             msgs.append(f"API prices: {API_PROV}.")
-        lows = sorted({ARCH[a["type"]]["label"] for a in apps.get() if ARCH[a["type"]]["confidence"]["volume"] == "Low"
-                       and not a.get("rate_override") and ARCH[a["type"]]["unit"] == "users"})
+        lows = sorted({A()[a["type"]]["label"] for a in apps.get() if A()[a["type"]]["confidence"]["volume"] == "Low"
+                       and not a.get("rate_override") and A()[a["type"]]["unit"] == "users"})
         if lows:
             msgs.append("Usage rate is a weak assumption for: " + "; ".join(lows) +
                         ". Set requests per person per day under Advanced if the client knows it.")
@@ -500,9 +668,20 @@ def server(input, output, session):
         moved = [a["name"] for a in apps.get()
                  if order[input[f'map{a["data_class"]}']()] > order[D["class_to_tier"][a["data_class"]]]]
         if moved:
+            pdl = placement_delta()
+            srv = (f'{pdl["servers"]:+d} server{"s" if abs(pdl["servers"]) != 1 else ""}' if pdl["servers"]
+                   else "no extra servers (they use spare capacity)")
             msgs.append(f'{len(moved)} application{"s" if len(moved) != 1 else ""} placed above the default tier by your '
-                        f'placement rules ({", ".join(moved)}): this enlarges the sovereign site.')
-        return ui.div(ui.tags.ul(*[ui.tags.li(m) for m in msgs], style="margin:0"), class_="warn") if msgs else None
+                        f'placement rules ({", ".join(moved)}). Versus the default placement: {srv}, '
+                        f'10-year cost {"+" if pdl["cost"] >= 0 else "−"}{money(abs(pdl["cost"]))}.')
+        info = [n for a in apps.get() if (n := low_usage_note(a, A(), input.ambition()))]
+        out = []
+        if msgs:
+            out.append(ui.div(ui.tags.ul(*[ui.tags.li(m) for m in msgs], style="margin:0"), class_="warn"))
+        if info:
+            out.append(ui.div(ui.tags.ul(*[ui.tags.li(m) for m in info], style="margin:0"),
+                              style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:8px 12px;margin:8px 0;font-size:.9rem"))
+        return ui.div(*out) if out else None
 
     DEST = {"T1": "Public data", "T2": "Internal data", "T3": "Confidential data", "T4": "Restricted data"}
     SCEN_LABEL = {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}
@@ -615,8 +794,42 @@ def server(input, output, session):
                          "Facility power": power(fkw / 1000) if fkw else "-"})
         return pd.DataFrame(rows)
 
+    @render.ui
+    def range_note():
+        if not apps.get():
+            return None
+        r = result()
+        per = {h["id"]: h.get("gpus_per_server", 1) for h in CAT["hardware"]}
+        extra = []
+        for t, v in r["tiers"].items():
+            if v["capacity"]["kind"] != "build" or v.get("merged_into"):
+                continue
+            n = per.get(v["hardware"], 1)
+            hi = math.ceil((v["sizing_range"]["high"]["gpus"] or 0) / n)
+            if hi > (v["sizing"].get("servers") or 0):
+                extra.append(hi - v["sizing"]["servers"])
+        if not extra:
+            return None
+        k = sum(extra)
+        return ui.p(f'The high end of the price range adds {k} server{"s" if k != 1 else ""}: with lower GPU efficiency the same '
+                    'load no longer fits, which is why the range is lopsided.', class_="hint")
+
     def _m(v, l):
         return ui.div(ui.div(v, class_="v"), ui.div(l, class_="l"), class_="m")
+
+    def _pv_breakdown(pv):
+        """10-year present value of owning, split so a client with colocation or an existing room sees the GPU part."""
+        gpu = pv["gpu_servers"] + pv["software"] + pv["maintenance_gpu"]
+        fac = pv["facility_build"] + pv["maintenance_facility"]
+        return ui.div(
+            ui.p(ui.tags.b("10-year cost of owning, present value"), class_="hint", style="margin:6px 0 2px"),
+            ui.div(_m(money(pv["gpu_servers"]), "GPU servers incl. refresh"),
+                   _m(money(pv["software"] + pv["maintenance_gpu"]), "GPU software + maintenance"),
+                   _m(money(fac), "facility build + maintenance"),
+                   _m(money(pv["energy"]), "energy"), _m(money(pv["staff"]), "staff"), class_="row2"),
+            ui.p(f"GPU part alone: {money(gpu)}. With colocation or an existing server room, the facility "
+                 f"({money(fac)}) drops out and is replaced by colocation rent or the room's existing costs (not included); "
+                 "energy and staff usually remain, unless the colocation fee bundles power.", class_="hint"))
 
     @render.ui
     def capacity_cards():
@@ -652,6 +865,10 @@ def server(input, output, session):
                                _m(money(own["annual_opex_y1"]), "per year to run"),
                                _m(", ".join(f"{money(x)} in year {y}" for y, x in own["refresh"]) or "-", "GPU refresh"),
                                class_="row2"),
+                        ui.p(f'Headroom at the busiest hour: about {max(0, 1 - v["sizing"].get("gpu_need", 0) / cap["gpus"]):.0%} '
+                             'of the GPUs, room for more applications without new hardware.' if cap["gpus"] else "",
+                             class_="hint", style="margin:4px 0"),
+                        _pv_breakdown(own["pv_breakdown"]),
                         ui.p(f'Hardware: {hwname.get(v["hardware"], v["hardware"])} · utilisation {v["sizing"]["utilisation"]:.0%}'
                              + (f' · renting instead: {money(rent)} per year' if rent else
                                 " · renting not available (no in-country provider)" if t == "T3" or v.get("shared_site") else ""),
@@ -674,14 +891,16 @@ def server(input, output, session):
         for a in sorted(apps.get(), key=lambda a: -sum(r["by_app"].get(a["uid"], {}).values())):
             cost = sum(r["by_app"].get(a["uid"], {}).values())
             dest = [t for t in r["by_app"].get(a["uid"], {})]
-            t = ARCH[a["type"]]
+            t = A()[a["type"]]
             rows.append({"Application": a["name"],
-                         "Volume": f'{fmt(a["volume"])} {t["unit_label"].lower()}',
+                         "Volume": f'{fmt(a["volume"])} {t["unit_label"].lower()}'
+                                   + (f" ({b})" if (b := basis_label(a, A())) else ""),
                          "Requests/day": fmt(req[a["uid"]]) if a["uid"] in req else "GPU job",
                          "Data class": CLASS_LABELS[a["data_class"]].split(" · ")[1],
                          "Runs in": ", ".join(where(r, x) for x in dest) or "-",
-                         "10-year cost": money(cost) if cost else "-",
-                         "Share": f"{cost / total:.0%}" if cost else "-"})
+                         "10-year cost (share of site)": money(cost) if cost else "-",
+                         "Share": f"{cost / total:.0%}" if cost else "-",
+                         "Extra cost if added last": money(max(0, al)) if (al := added_last().get(a["uid"])) is not None and al > 1 else "≈ 0"})
         return pd.DataFrame(rows)
 
     @render.ui
@@ -766,7 +985,7 @@ def server(input, output, session):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Patch
         r = result()
-        names = {a["uid"]: a["name"] for a in apps.get()}
+        names = {a["uid"]: a["name"] + (f" ({b})" if (b := basis_label(a, A())) else "") for a in apps.get()}
         items = sorted(((names.get(k, k), sum(v.values()), max(v, key=v.get)) for k, v in r["by_app"].items()),
                        key=lambda x: x[1])
         fig, ax = plt.subplots(figsize=(7.5, max(3.2, 0.3 * len(items) + 0.9)))
@@ -779,14 +998,14 @@ def server(input, output, session):
         for yi, (_, c, t) in zip(y, items):
             ax.text(c * 1.02 + max(x for _, x, _ in items) * 0.01, yi, f"{money(c)} · {SHORT.get(r['tiers'][t]['capacity']['kind'], '')}",
                     va="center", fontsize=7.5, color="#0b0b0b")
-        ax.set_yticks(list(y), [n if len(n) <= 26 else n[:24] + "…" for n, _, _ in items])
+        ax.set_yticks(list(y), [n if len(n) <= 40 else n[:38] + "…" for n, _, _ in items])
         ax.set_xlim(0, max(c for _, c, _ in items) * 2.5)
         tiers_used = sorted({t for _, _, t in items})
         _style(ax)
         _money_axis(ax)
         ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
         ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(3))
-        fig.subplots_adjust(left=0.36, right=0.97, bottom=0.1, top=0.97)
+        fig.subplots_adjust(left=0.44, right=0.97, bottom=0.1, top=0.97)
         return fig
 
     @render.table
@@ -877,25 +1096,26 @@ def server(input, output, session):
                 "utilisation": sz["utilisation"] if phys else "",
                 "notional_gpus_if_api": sz["gpus"] if kind == "service" else "",
                 **{f"cost_pv_{s_}": v["cost_range"][s_] for s_ in ("low", "base", "high")},
+                **{f"owned_pv_{k}": x for k, x in
+                   (v["detail"]["base"].get("Owned", {}).get("pv_breakdown", {}) if kind == "build" else {}).items()},
             })
         yield ("# Raw, unrounded figures for analysts. Planning-grade estimates: present to clients rounded, as ranges.\n"
                + pd.DataFrame(rows).to_csv(index=False))
 
+    def scenario_dict():
+        return {"version": "0.7", "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
+                "speed": input.speed(), "finance": {"disc": input.disc(), "growth": input.growth(),
+                                                    "decline": input.decline()},
+                "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
+                "quotes": quotes(), "apps": apps.get(), "custom_types": custom.get()}
+
     @render.download(filename="scenario.json")
     def dl_scenario():
-        yield json.dumps({"iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
-                          "speed": input.speed(), "finance": {"disc": input.disc(), "growth": input.growth(),
-                                                              "decline": input.decline()},
-                          "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
-                          "quotes": quotes(), "apps": apps.get()}, indent=1)
+        yield json.dumps(scenario_dict(), indent=1)
 
-    @reactive.effect
-    @reactive.event(input.ul_scenario)
-    def _load():
-        f = input.ul_scenario()
-        if not f:
-            return
-        sc = json.loads(open(f[0]["datapath"]).read())
+    def apply_scenario(sc):
+        custom.set(sc.get("custom_types") or {})
+        known = {**ARCH, **custom.get()}
         ui.update_selectize("iso", selected=sc.get("iso", "XEX"))
         ui.update_radio_buttons("ambition", selected=sc.get("ambition", "Base"))
         ui.update_radio_buttons("grid", selected=sc.get("grid", "auto"))
@@ -907,13 +1127,79 @@ def server(input, output, session):
                 ui.update_numeric(k, value=f[k])
         for c, t in sc.get("class_to_tier", {}).items():
             ui.update_select(f"map{c}", selected=t)
-        apps.set(sc.get("apps", []))
+        lst = [normalize_app(a) for a in sc.get("apps", [])]
+        missing = [a["name"] for a in lst if a["type"] not in known]
+        if missing:
+            ui.notification_show("Skipped applications with an unknown type: " + ", ".join(missing), type="warning")
+        apps.set([a for a in lst if a["type"] in known])
+
+    @reactive.effect
+    @reactive.event(input.url_state)
+    def _from_link():
+        try:
+            apply_scenario(decode_state(input.url_state()))
+            ui.notification_show("Scenario loaded from the link.", duration=4)
+        except Exception:  # noqa: BLE001
+            ui.notification_show("This link could not be read: it may be truncated.", type="warning")
+
+    @reactive.effect
+    @reactive.event(input.save_link)
+    async def _save_link():
+        now = _dt.datetime.now()
+        vid = now.strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:4]
+        name = (input.save_name() or "").strip() or f'{COUNTRIES.get(input.iso(), {}).get("name", input.iso())}, {len(apps.get())} applications'
+        await session.send_custom_message("save_link", {"id": vid, "name": name, "date": now.strftime("%Y-%m-%d %H:%M"),
+                                                  "state": encode_state(scenario_dict())})
+
+    @render.ui
+    def share_out():
+        url = input.share_url() if "share_url" in input else None
+        if not url:
+            return None
+        return ui.div(ui.p("Saved. Link copied to the clipboard (if the browser allows):", class_="hint", style="margin:8px 0 2px"),
+                      ui.tags.textarea(url, readonly=True, rows=3, style="width:100%;font-size:.75rem",
+                                       onclick="this.select()"))
+
+    @render.ui
+    def saved_list_ui():
+        lst = input.saved_list() if "saved_list" in input else None
+        if not lst:
+            return ui.div("No saved versions in this browser yet.", class_="empty")
+        rows = [ui.tags.tr(
+            ui.tags.td(ui.tags.b(x.get("name", "")), ui.br(), ui.span(x.get("date", ""), class_="hint")),
+            ui.tags.td(ui.tags.a("Open", href="#", onclick=f"Shiny.setInputValue('open_saved', '{x['id']}', {{priority: 'event'}}); return false;"),
+                       " · ", ui.tags.a("Copy link", href="#", onclick=f"navigator.clipboard && navigator.clipboard.writeText('{x.get('url', '')}'); return false;"),
+                       " · ", ui.tags.a("Remove", href="#", style="color:#b91c1c",
+                                        onclick=f"Shiny.setInputValue('remove_saved', '{x['id']}', {{priority: 'event'}}); return false;")))
+            for x in lst]
+        return ui.tags.table(ui.tags.tbody(*rows), class_="table table-sm")
+
+    @reactive.effect
+    @reactive.event(input.open_saved)
+    def _open_saved():
+        x = next((x for x in (input.saved_list() or []) if x["id"] == input.open_saved()), None)
+        if x:
+            apply_scenario(decode_state(x["state"]))
+            ui.notification_show(f'Opened "{x["name"]}" ({x["date"]}).', duration=4)
+
+    @reactive.effect
+    @reactive.event(input.remove_saved)
+    async def _remove_saved():
+        await session.send_custom_message("saved_remove", input.remove_saved())
+
+    @reactive.effect
+    @reactive.event(input.ul_scenario)
+    def _load():
+        f = input.ul_scenario()
+        if not f:
+            return
+        apply_scenario(json.loads(open(f[0]["datapath"]).read()))
 
     # ---- evidence
     @render.ui
     def evidence():
         blocks = []
-        for t in ARCH.values():
+        for t in A().values():
             if is_llm(t):
                 facts = (f'{t["unit_label"]} × {t["rate"]["low"]:g} / {t["rate"]["base"]:g} / {t["rate"]["high"]:g} requests per active day '
                          f'(Low / Base / High), {t.get("active_days_per_year", 365)} active days per year · per call {t["isl"]:,} in + {t["system_prompt_tokens"]:,} system, '
@@ -927,7 +1213,9 @@ def server(input, output, session):
                 ui.span(f'size {t["confidence"]["tokens"]}', class_=f'hint conf-{t["confidence"]["tokens"]}'), " · ",
                 ui.span("basis: " + ", ".join(f"{k} {v}" for k, v in t.get("basis", {}).items()), class_="hint"),
                 ui.p(facts, class_="hint", style="margin:2px 0"),
-                ui.tags.ul(*[ui.tags.li(ui.tags.i(k), ": ", v) for k, v in t["evidence"].items()], class_="hint"),
+                ui.tags.ul(*[ui.tags.li(ui.tags.i(k), ": ", *cite(v)) for k, v in t["evidence"].items()], class_="hint"),
+                ui.p("Sources: ", *[x for i in cited_ids(t) for x in (ui.tags.a(i, href=f"#src-{i}", title=SRC[i]["title"]), " ")]
+                     if cited_ids(t) else "Sources: none (assumption)", class_="hint", style="margin:0"),
                 style="padding:8px 0;border-bottom:1px solid #e5e7eb"))
         return ui.div(*blocks)
 
@@ -952,7 +1240,8 @@ def server(input, output, session):
     def sources():
         return ui.tags.ol(*[ui.tags.li(ui.tags.b(s["id"]), f' {s["title"]}, {s["publisher"]}. ',
                                        ui.tags.a(s["url"], href=s["url"], target="_blank"), f' · {s["used_for"]}',
-                                       class_="hint") for s in CAT["sources"]])
+                                       id=f'src-{s["id"]}', class_="hint", style="scroll-margin-top:70px")
+                            for s in CAT["sources"]])
 
 
 app = App(app_ui, server)

@@ -5,6 +5,23 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-16
+### Added
+- Agriculture advisory: "Who are these farmers?" choice. Everyone eligible keeps the Kisan e-Mitra rates (0.00015 / 0.0005 / 0.002); farmers using the advisory service use 0.05 / 0.1 / 0.3 per farmer per day (assumption, Low confidence). Saved as `population_basis`; older scenarios load as "everyone eligible" with identical results. Shown next to the volume in the results.
+- Agriculture advisory volume check against estimated agricultural workers (employed labour force x ILO modeled agriculture share, World Bank WDI, S68). Warns above 1.5x (`agri_volume_tolerance`, global default). No check when the data is missing or older than 2015.
+- Sync: SL.AGR.EMPL.ZS, SL.TLF.TOTL.IN and SP.RUR.TOTL are confirmed against live API metadata before use; code, name and source are recorded in the snapshot. Run the sync once to fill the new values.
+- Information note when a citizen assistant, agriculture advisory or tutor makes fewer than 100 requests per day.
+- Owned capacity: 10-year cost split into GPU servers, GPU software and maintenance, facility, energy and staff, so a client using colocation or an existing room can read the GPU part alone. Also in the raw CSV.
+- Custom application types: CSV template to download, fill and upload; rows are validated and saved with the scenario.
+- Save and resume: each save creates a timestamped link carrying the whole scenario; saved versions are listed in the browser with open, copy and remove.
+- Evidence tab: source IDs in the evidence link to the Sources list; each type lists its sources. Same internal links in the methodology.
+- The application type list shows the evidence confidence of each type.
+- Cost by application shown two ways: share of the site (as before) and extra cost if added last, with a note that shares spread fixed costs and are not savings.
+- Placement warning states the effect of moving applications above their default tier versus the default placement: servers added and change in 10-year cost.
+- Owned site cards show the headroom at the busiest hour; the scenario table notes when the high end of the price range adds a server.
+### Fixed
+- Setup country line failed for countries without a public employment share (e.g. the example country).
+
 ## [0.6.1] - 2026-11-16
 ### Fixed
 - Outage data: the sync had stored the share of firms experiencing outages (% of firms, IC.ELC.OUTG.ZS) as outages per month, so Ghana showed 74 "outages per month". The two measures are now separate fields. Outages per month decide when available; otherwise the grid is weak if at least 50% of firms report outages (assumption, Low confidence).

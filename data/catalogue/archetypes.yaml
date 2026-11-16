@@ -40,6 +40,7 @@
     burst: "Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption."
 
 - id: citizen_assistant
+  # TODO: add the same population_basis choice (everyone eligible vs service users) as agriculture_advisory.
   label: Citizen assistant (chat or voice)
   group: Generative AI
   unit: users
@@ -343,9 +344,13 @@
   group: Generative AI
   unit: users
   unit_label: Farmers in the target population
-  rate: {low: 0.00015, base: 0.0005, high: 0.002}
+  rate: {low: 0.00015, base: 0.0005, high: 0.002}   # = rate_by_basis.eligible (shown in tables)
+  # Who are the farmers entered as volume? Chosen per application; default "eligible" keeps earlier results.
+  rate_by_basis:
+    eligible: {low: 0.00015, base: 0.0005, high: 0.002}
+    users: {low: 0.05, base: 0.1, high: 0.3}
   active_days_per_year: 365
-  basis: {rate: "observed (Low), assumption (Base, High)", size: derived}
+  basis: {rate: "eligible: observed (Low), assumption (Base, High); users: assumption", size: derived}
   isl: 1500
   system_prompt_tokens: 800
   osl: 300
@@ -362,7 +367,7 @@
   data_class: 1
   confidence: {volume: Medium, tokens: Medium}
   evidence:
-    rate: "Queries per farmer in the target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40): Low = 0.00015, the midpoint. Base and High (~3x, ~13x) are assumptions for services built around advisory rather than grievances. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate."
+    rate: "Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate."
     tokens: "Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels."
     seasonal: "2.0 for planting season: assumption."
 

@@ -401,3 +401,9 @@
   url: https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial
   used_for: Copilot usage frequency (most users daily or weekly), qualitative cross-check
   type: Government evaluation
+- id: S68
+  title: "Employment in agriculture (% of total employment) (modeled ILO estimate), SL.AGR.EMPL.ZS; Labor force, total, SL.TLF.TOTL.IN; Rural population, SP.RUR.TOTL"
+  publisher: World Bank, World Development Indicators (ILO modelled estimates, ILOSTAT)
+  url: https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS
+  used_for: Estimated agricultural workers for the agriculture advisory volume check
+  type: Data
