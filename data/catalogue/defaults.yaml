@@ -30,11 +30,12 @@ api_prices_fallback:
   M: {input: 0.50, output: 1.50}
   L: {input: 1.00, output: 4.00}
 
-# OpenRouter model ids used to compute the median price per class (sync/openrouter.py).
+# OpenRouter model id prefixes used to compute the median price per class (sync/openrouter.py).
+# A prefix matches every listed version (e.g. deepseek/deepseek-r1 matches deepseek/deepseek-r1-0528).
 api_reference_models:
-  S: [meta-llama/llama-3.1-8b-instruct, qwen/qwen-2.5-7b-instruct, mistralai/mistral-7b-instruct]
-  M: [meta-llama/llama-3.3-70b-instruct, qwen/qwen-2.5-72b-instruct]
-  L: [deepseek/deepseek-r1, qwen/qwen3-235b-a22b]
+  S: [meta-llama/llama-3.1-8b-instruct, qwen/qwen-2.5-7b-instruct, mistralai/mistral-7b-instruct, qwen/qwen3-8b]
+  M: [meta-llama/llama-3.3-70b-instruct, qwen/qwen-2.5-72b-instruct, qwen/qwen3-32b]
+  L: [deepseek/deepseek-r1, deepseek/deepseek-v3, deepseek/deepseek-chat, qwen/qwen3-235b, moonshotai/kimi-k2]
 
 # Default mapping data class -> tier (World Bank data classification approach, S14). Users can change it per country.
 class_to_tier: {1: T1, 2: T2, 3: T3, 4: T4}

@@ -120,3 +120,41 @@ def test_citizen_rate_matches_calibration():
     uc01 = next(x for x in r["demand"] if x["id"] == "UC01")
     per_10k = uc01["sessions"] / p.country["population"] * 10000
     assert per_10k == pytest.approx(5, rel=0.02)
+
+
+# ---------------------------------------------------------------- archetypes (v0.2 builder)
+from engine.archetypes import build_profile, load_archetypes  # noqa: E402
+
+ARCH = load_archetypes()
+
+
+def test_copilot_volume_from_user_input():
+    p = build_profile(default_profile("XEX").country, "Base",
+                      [dict(uid="a", name="x", type="staff_copilot", volume=1000, data_class=3)],
+                      ARCH, dict(D["class_to_tier"]))
+    r = run(p, CAT, D)
+    assert r["demand"][0]["sessions"] == pytest.approx(1800)   # 1.8 requests per person with access [S36]
+    assert r["demand"][0]["tier"] == "T3"
+
+
+def test_scenario_and_override_change_result():
+    c = default_profile("XEX").country
+    app = dict(uid="a", name="x", type="staff_copilot", volume=50000, data_class=3)
+    g = lambda amb, a: run(build_profile(c, amb, [a], ARCH, dict(D["class_to_tier"])), CAT, D)["totals"]["gpus"]
+    assert g("Low", app) < g("Base", app) < g("High", app)
+    assert g("Base", dict(app, rate_override=10)) > g("Base", app)
+
+
+def test_nontoken_archetype_and_fine_tuning():
+    c = default_profile("XEX").country
+    apps = [dict(uid="s", name="stt", type="speech_to_text", volume=500, data_class=3),
+            dict(uid="f", name="ft", type="fine_tuning", volume=36500, data_class=3)]
+    r = run(build_profile(c, "Base", apps, ARCH, dict(D["class_to_tier"])), CAT, D)
+    ft = next(x for x in r["nontoken"] if x["id"] == "f")
+    assert ft["gpu_hours_day"] == pytest.approx(100 / D["production_derating"]["value"])
+    assert r["tiers"]["T3"]["sizing"]["gpus"] > 0
+
+
+def test_all_archetypes_have_evidence():
+    for a in ARCH.values():
+        assert a["evidence"] and set(a["confidence"]) == {"volume", "tokens"}

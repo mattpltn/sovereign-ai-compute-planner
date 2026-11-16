@@ -38,9 +38,12 @@ def load_api_prices(defaults: dict) -> tuple[dict, str]:
     p = SNAP / "api_prices.json"
     if p.exists():
         data = json.loads(p.read_text())
-        prices = {k: v for k, v in data.items() if k in ("S", "M", "L")}
-        if len(prices) == 3:
-            return prices, f"OpenRouter, synced {data.get('_meta', {}).get('synced_at')}"
+        synced = {k: v for k, v in data.items() if k in ("S", "M", "L")}
+        if synced:
+            prices = {**defaults["api_prices_fallback"], **synced}
+            missing = [k for k in ("S", "M", "L") if k not in synced]
+            note = f" (fallback for {', '.join(missing)})" if missing else ""
+            return prices, f"OpenRouter, synced {data.get('_meta', {}).get('synced_at')}{note}"
     return defaults["api_prices_fallback"], "fallback defaults (not yet synced)"
 
 
