@@ -17,6 +17,7 @@ throughput_uncertainty: {low: 1.3, base: 1.0, high: 0.75, source: "S44", note: "
 gpu_threshold: {value: 0.25, source: assumption, note: "Tiers with only non-LLM workloads needing less than this many GPUs run on existing servers"}
 tokens_per_user_day_ceiling: {value: 240000, source: S24, note: "Epoch AI human-equivalent ceiling"}
 weak_grid_outages_threshold: {value: 1, source: analyst, note: "Outages per month above which liquid-cooled dense racks are excluded"}
+weak_grid_firm_share_threshold: {value: 0.5, source: "assumption (confidence Low), S19", note: "Fallback when outages per month are missing: grid treated as weak if at least this share of firms experienced outages (Enterprise Surveys)"}
 step1_max_facility_mw: {value: 1, source: analyst, note: "Below this, a sovereign tier fits in an existing facility"}
 step3_min_facility_mw: {value: 10, source: assumption, note: "From this size, a dedicated facility via PPP or private operator is realistic; between 1 and 10 MW, colocation in an existing commercial data centre"}
 dense_profile_min_it_mw: {value: 1, source: analyst, note: "Below this IT load, a 130 kW liquid-cooled rack is not worth it; use air-cooled"}
