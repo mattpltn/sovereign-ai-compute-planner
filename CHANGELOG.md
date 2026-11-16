@@ -5,6 +5,21 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-16
+### Changed
+- Usage rates are now per **active day** (working day 250, school day 190, clinic day 300, calendar day 365 for always-on services). Peak sizing uses the active-day rate; annual tokens and API cost use active days per year instead of 365. Office tools and per-item office workloads now cost about 30% less per year in API mode; GPU sizing is unchanged.
+- Clinical decision support: 3 / 10 / 20 → 0.3 / 1 / 3 queries per worker with access per day, anchored on OpenEvidence (37.1 queries per active physician-month, JAMA 2026, S62). One query per consultation is kept as an override scenario.
+- Teacher assistant: 0.7 / 1.4 / 3.6 → 0.34 / 1 / 2 per school day, from the EEF/NFER trial (about a third of lessons prepared with AI, S63); volume confidence Low → Medium.
+- Student tutor restated per school day: 0.07 / 0.19 / 1.08 per calendar day → 0.1 / 0.27 / 1.5 per school day (same annual order of magnitude).
+- OCR: 0.3 → 0.75 GPU-seconds per page, from the PP-OCRv5 A10 benchmark (S64).
+- Units made explicit: retrieval indexing per 500-token chunk after overlap; image analysis per model-specific image chip; item volumes per working or clinic day.
+- Staff copilot evidence: Base 1.4 described as a scenario estimate; the 0.8 factor is a scenario adjustment, not a validated bias correction.
+### Added
+- Each application type states the basis of its figures (observed, derived, assumption, uncalibrated, client), shown in the Evidence tab and the methodology.
+- Coding assistant, research agent, biometric deduplication and image analysis marked uncalibrated, with calibration routes.
+- Face verification and text-to-speech evidence (InsightFace-REST S65, Kokoro benchmarks S66); DWP Copilot evaluation (S67).
+- Methodology: agent token totals stated with and without the ×1.1 retry (3,740 / 18,150 / 55,000 with it).
+
 ## [0.5.1] - 2026-11-16
 ### Fixed
 - Server rounding now reaches the physical figures: for owned capacity, GPUs are rounded to whole servers before IT load, facility power, racks, energy and utilisation are calculated (previously only the cost used the rounded count).

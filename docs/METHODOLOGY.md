@@ -91,14 +91,17 @@ Each application type carries defaults for usage rate, request size, peak patter
 For each application:
 
 ```
-requests per day = volume × rate(scenario)
+requests per active day = volume × rate(scenario)
+annual requests         = requests per active day × active days per year
 ```
 
-- For types measured in **people** (staff copilot, citizen assistant, tutor, health, coding, research agent), `rate` is requests per person with access per day. It already includes the fact that most people with access are not active every day.
-- For types measured in **items** (documents, texts, calls, cases), `rate` = 1: each item is one request.
+- Every rate is per **active day**: a working day for office tools (250 per year), a school day for education (190), a clinic day for patient visits (300), and a calendar day for always-on services (365). Each type states its active days.
+- **Peak sizing uses the active-day rate**, because the busiest day is an active day. **Annual tokens and API cost use active days per year.** A working-day rate is never multiplied by 365.
+- For types measured in **people** (staff copilot, citizen assistant, tutor, health, coding, research agent, teacher, farmer), `rate` is requests per person with access per active day. It already includes the fact that most people with access are not active every day.
+- For types measured in **items** (documents, texts, calls, cases, visits), `rate` = 1: each item is one request, and the client gives the volume per active day.
 - The user can override `rate` per application under Advanced.
 
-Example: the staff copilot rate of 1.4 comes from the UK cross-government trial [S36]. Among survey respondents, 39% used Copilot several times a day and 43% several times a week: 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is scaled by the 80% of licence holders who were active in the last 30 days: 1.78 × 0.8 ≈ 1.4 per person with access.
+Example: the staff copilot rate of 1.4 per working day is a **scenario estimate**, not an observed requests-per-licence rate. It is derived from the UK cross-government trial [S36]: among survey respondents, 39% used Copilot several times a day and 43% several times a week, so 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is multiplied by 0.8, the share of licence holders active in the last 30 days: 1.78 × 0.8 ≈ 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias.
 
 ## 5. Layers 1-2: tokens per request
 
@@ -247,43 +250,51 @@ The user can force a profile in Setup.
 
 Each default below has a source or is marked as an assumption. Confidence: **High** = direct measurement or client data, **Medium** = indirect evidence or a derivation, **Low** = assumption to replace with client data.
 
+Each type also states the **basis** of its rate and size, so a reader can tell measurement from estimate:
+
+- **observed**: a measured usage figure or benchmark, used with its stated denominator and hardware.
+- **derived**: computed from observed data with stated assumptions (for example a survey frequency turned into a daily rate, or a benchmark on one GPU applied to another).
+- **assumption**: a planning value with no direct measurement.
+- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, biometric deduplication, satellite and image analysis).
+- **client**: the volume comes from the client and the rate is 1 per item.
+
 ### Generative AI types
 
-| Type | Volume entered by user | Requests per unit per day (Low / Base / High) | Input + system / output / reasoning tokens per call | Calls per task | Model | Peak share / window (h) | Burst / SLA headroom / seasonal | Default data class | Confidence (volume / size) |
-|---|---|---|---|---|---|---|---|---|---|
-| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
-| Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
-| Learning tutor (students) | Students with access | 0.07 / 0.19 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
-| Clinical decision support (frontline health workers) | Health workers with access | 3 / 10 / 20 | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
-| Developer coding assistant | Developers with access | 10 / 30 / 60 | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1 | 3 | Low / Medium |
-| Document intake and extraction | Documents per day | 1 / 1 / 1 | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1.2 | 3 | High / Medium |
-| Translation | Texts translated per day | 1 / 1 / 1 | 500 + 200 / 500 / 0 | 1 x retry 1.05 | S | 60% / 10 | 2 / 1.1 / 1 | 2 | High / Medium |
-| Call, meeting or hearing summaries | Calls or hearings per day | 1 / 1 / 1 | 3,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1 | 3 | High / High |
-| Process agent (single agent, e.g. tax or customs risk check) | Cases per day | 1 / 1 / 1 | 2,500 + 1,500 / 500 / 1,000 | 3 x retry 1.1 | L | 80% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Medium |
-| Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
-| Clinical safety net (runs automatically on every patient visit) | Patient visits per day | 1 / 1 / 1 | 2,000 + 1,000 / 200 / 0 | 3 x retry 1.05 | M | 70% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Low |
-| Teacher assistant (lesson planning, differentiated materials) | Teachers with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 600 / 0 | 1 x retry 1.1 | M | 70% / 10 | 2 / 1.1 / 1.2 | 2 | Low / Medium |
-| Agriculture advisory for farmers (chat or voice) | Farmers in the target population | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Medium / Medium |
-| Voice agent for public services (phone line, real time) | Calls per day | 1 / 1 / 1 | 1,500 + 800 / 80 / 0 | 6 x retry 1.05 | M | 70% / 10 | 2 / 1.3 / 1.3 | 3 | High / Low |
+| Type | Volume entered by user | Requests per unit per active day (Low / Base / High) | Active days per year | Basis (rate / size) | Input + system / output / reasoning tokens per call | Calls per task | Model | Peak share / window (h) | Burst / SLA headroom / seasonal | Default data class | Confidence (volume / size) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 250 | derived / derived | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
+| Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 365 | observed (Low), assumption (Base, High) / derived | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
+| Learning tutor (students) | Students with access | 0.1 / 0.27 / 1.5 | 190 | derived / derived | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
+| Clinical decision support (frontline health workers) | Health workers with access | 0.3 / 1 / 3 | 365 | derived / derived | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
+| Developer coding assistant | Developers with access | 10 / 30 / 60 | 250 | uncalibrated / derived | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1 | 3 | Low / Medium |
+| Document intake and extraction | Documents per working day | 1 / 1 / 1 | 250 | client / derived | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1.2 | 3 | High / Medium |
+| Translation | Texts translated per working day | 1 / 1 / 1 | 250 | client / derived | 500 + 200 / 500 / 0 | 1 x retry 1.05 | S | 60% / 10 | 2 / 1.1 / 1 | 2 | High / Medium |
+| Call, meeting or hearing summaries | Calls or hearings per working day | 1 / 1 / 1 | 250 | client / derived | 3,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1 | 3 | High / High |
+| Process agent (single agent, e.g. tax or customs risk check) | Cases per working day | 1 / 1 / 1 | 250 | client / derived | 2,500 + 1,500 / 500 / 1,000 | 3 x retry 1.1 | L | 80% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Medium |
+| Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 250 | uncalibrated / derived | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
+| Clinical safety net (runs automatically on every patient visit) | Patient visits per clinic day | 1 / 1 / 1 | 300 | client / derived | 2,000 + 1,000 / 200 / 0 | 3 x retry 1.05 | M | 70% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Low |
+| Teacher assistant (lesson planning, differentiated materials) | Teachers with access | 0.34 / 1 / 2 | 190 | derived / assumption | 2,000 + 1,000 / 600 / 0 | 1 x retry 1.1 | M | 70% / 10 | 2 / 1.1 / 1.2 | 2 | Medium / Medium |
+| Agriculture advisory for farmers (chat or voice) | Farmers in the target population | 0.00015 / 0.0005 / 0.002 | 365 | observed (Low), assumption (Base, High) / derived | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Medium / Medium |
+| Voice agent for public services (phone line, real time) | Calls per working day | 1 / 1 / 1 | 250 | client / derived | 1,500 + 800 / 80 / 0 | 6 x retry 1.05 | M | 70% / 10 | 2 / 1.3 / 1.3 | 3 | High / Low |
 
 ### Other AI types (non-LLM)
 
-| Type | Volume entered by user | GPU-seconds per unit | Mode | Default data class | Confidence |
-|---|---|---|---|---|---|
-| Speech-to-text | Audio hours per day | 12 | Interactive | 3 | Medium |
-| OCR and layout extraction | Pages per day | 0.3 | Batch | 3 | Low |
-| Face verification (1:1 authentication) | Verifications per day | 0.02 | Interactive | 4 | Low |
-| Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | Batch | 4 | Low |
-| Satellite or image analysis | Images or tiles per day | 0.1 | Batch | 1 | Low |
-| Model fine-tuning and evaluation | GPU-hours per year | 3600 | Batch | 3 | Medium |
-| Text-to-speech (voice replies) | Audio hours generated per day | 40 | Interactive | 3 | Low |
-| Retrieval indexing (embeddings for document search) | Document pages indexed per day (new + re-indexing) | 0.01 | Batch | 3 | Low |
+| Type | Volume entered by user | GPU-seconds per unit | Basis | Mode | Default data class | Confidence |
+|---|---|---|---|---|---|---|
+| Speech-to-text | Audio hours per day | 12 | derived | Interactive | 3 | Medium |
+| OCR and layout extraction | Pages per day | 0.75 | observed | Batch | 3 | Low |
+| Face verification (1:1 authentication) | Verifications per day | 0.02 | derived | Interactive | 4 | Low |
+| Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | uncalibrated | Batch | 4 | Low |
+| Satellite or image analysis | Image chips per day (fixed size for the chosen model, e.g. 512 x 512 pixels) | 0.1 | uncalibrated | Batch | 1 | Low |
+| Model fine-tuning and evaluation | GPU-hours per year | 3600 | client | Batch | 3 | Medium |
+| Text-to-speech (voice replies) | Audio hours generated per day | 40 | derived | Interactive | 3 | Low |
+| Retrieval indexing (embeddings for document search) | 500-token chunks embedded per day, after overlap (new + re-indexing) | 0.01 | assumption | Batch | 3 | Low |
 
 ### Evidence for each type
 
 **Staff copilot (drafting, summarising, Q&A)**
 
-- *rate*: UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate.
+- *rate*: Requests per person with access per WORKING day (250 per year). Base 1.4 is a scenario estimate derived from survey frequency categories and an assumed adjustment for adoption; it is not an observed requests-per-licence rate. UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is multiplied by 0.8, the share of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias. DWP's later trial (3,500+ licences) also found most users engaged daily or weekly (S67). Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate.
 - *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two.
 - *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34).
 - *burst*: Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption.
@@ -296,18 +307,18 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Learning tutor (students)**
 
-- *rate*: Base 0.19 interactions per student with access per day, averaged over the 7-day week: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59), i.e. 0.27 per weekday x 5/7. Only ~15% of students with access engage with it (S58). Khan Academy does not define an interaction; it is treated as one message. Low 0.07: about a third of Base, for schools without classroom integration. High 1.08 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39).
+- *rate*: Per student with access per SCHOOL day (190 per year, assumption). Base 0.27: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59). Only ~15% of students with access engage with it (S58). Khan Academy does not define an interaction; it is treated as one message. Low 0.1: about a third of Base, for schools without classroom integration. High 1.5 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39) x 7/5 to concentrate a calendar-day rate on school days.
 - *tokens*: As citizen assistant (S31, S32).
 
 **Clinical decision support (frontline health workers)**
 
-- *rate*: One request per consultation typed by the health worker, 3-20 per worker per day: assumption, replace with programme data. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, S57).
+- *rate*: Queries per health worker WITH ACCESS per calendar day (clinics run most days, so 365). Anchor: OpenEvidence, a clinical information platform: 952,008 US clinicians submitted 271 million queries over 2.5 years; physicians averaged 37.1 queries per active user-month, nurse practitioners and physician assistants 44.5 (S62), i.e. ~1.2-1.5 per calendar day for an ACTIVE user. Base 1 per worker with access assumes most workers are active; Low 0.3 for partial adoption; High 3 for a tool embedded in protocols. Caveats: US clinicians, voluntary use, and three authors had roles at OpenEvidence, which supplied the data. One query per consultation (3-20 per worker per day, the earlier default) is an intensive scenario to enter as an override, not a default. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, S57).
 - *tokens*: Chat shape (S31, S32) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question (S43).
 - *seasonal*: 1.5 for epidemic peaks: assumption.
 
 **Developer coding assistant**
 
-- *rate*: Requests per developer per day: assumption.
+- *rate*: UNCALIBRATED. Requests per developer per working day: assumption. Completions, chat and agents differ by orders of magnitude in requests and tokens; this type models completions plus some chat. Calibrate with the client's own usage metrics (GitHub Copilot and similar tools report completions, chat turns and active users per day); model agentic coding as a process agent.
 - *tokens*: Azure production coding median 1,500 in / 13 out for completions (S31); chat answers are longer, so 100. Agentic coding is far heavier (inputs ~294x outputs, mostly cached) (S42): model it as a process agent if planned.
 
 **Document intake and extraction**
@@ -332,8 +343,8 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Research agent (multi-agent, e.g. legal or policy analysis)**
 
-- *rate*: Research tasks per analyst per day: assumption.
-- *tokens*: About 15x a copilot request (≈55k vs ≈3.7k tokens per task, 14.7x). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
+- *rate*: UNCALIBRATED. Research tasks per analyst per working day: assumption. Replace with pilot data.
+- *tokens*: About 15x a copilot request: ≈55,000 vs ≈3,740 tokens per task (14.7x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈3,400. Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
 
 **Clinical safety net (runs automatically on every patient visit)**
 
@@ -342,7 +353,7 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Teacher assistant (lesson planning, differentiated materials)**
 
-- *rate*: Modelled on the staff copilot rates (S36, S37, S39): no published per-teacher usage data found yet. Often a more realistic first step than student tutors.
+- *rate*: Requests per teacher with access per SCHOOL day (190 per year, assumption). Activity anchor: EEF/NFER randomised trial, 259 science teachers in 68 English schools over ten weeks in 2024; teachers used ChatGPT to prepare about a third of their Year 7-8 lessons, usually for one activity per lesson (S63). That is ~1.7 AI-assisted preparations per week, ~0.34 per school day. Requests per preparation 1 / 3 / 6 (assumption) give 0.34 / 1 / 2 per school day (about 0.24 / 0.73 / 1.46 per calendar day). Confidence: Medium for the activity, Low-Medium for requests per preparation. Often a more realistic first step than student tutors.
 - *tokens*: Copilot shape with longer outputs (lesson plans, worksheets): 600 output tokens.
 
 **Agriculture advisory for farmers (chat or voice)**
@@ -362,19 +373,19 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **OCR and layout extraction**
 
-- *gpu*: PLACEHOLDER 0.3 GPU-seconds per page. Calibrate with a vendor OCR benchmark (S08).
+- *gpu*: 0.75 GPU-seconds per page, provisional. PaddleOCR PP-OCRv5 server pipeline: 0.74 s per image on an NVIDIA A10 (Intel 8350C host), 1.17 s on a T4; lightweight pipeline 0.31 s on A10 (S64). These are wall times including reading the image from disk, so they overstate pure GPU time; derated 0.6 on top, and newer GPUs are faster, so the default is conservative. Layout analysis and table extraction are separate models: calibrate them separately if in scope.
 
 **Face verification (1:1 authentication)**
 
-- *gpu*: PLACEHOLDER. Many deployments run 1:1 matching on CPU; check with the vendor.
+- *gpu*: 0.02 GPU-seconds (20 ms) per verification, for face detection plus one ArcFace embedding, unbatched. Embedding alone: ArcFace ResNet-100 takes 2.6 ms per face at batch 1 and ~0.9 ms per face at batch 64 with TensorRT on an RTX 2080 Super (S65); a reviewer-provided 17 ms per cropped face is a slower, unoptimised figure. Excludes liveness / presentation-attack detection, which can cost more than matching. Many deployments run 1:1 matching on CPU; check with the vendor.
 
 **Biometric deduplication (1:N at enrolment)**
 
-- *gpu*: PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark.
+- *gpu*: UNCALIBRATED PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark.
 
 **Satellite or image analysis**
 
-- *gpu*: PLACEHOLDER. Calibrate with MLPerf vision results (S08).
+- *gpu*: UNCALIBRATED PLACEHOLDER. The unit is one model-specific image chip (for example 512 x 512 pixels at the model resolution): convert scenes to chips (scene area / chip area, plus overlap) before entering the volume. Calibrate with the chosen model on the target GPU, or with MLPerf vision results (S08).
 
 **Model fine-tuning and evaluation**
 
@@ -382,16 +393,16 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Text-to-speech (voice replies)**
 
-- *gpu*: PLACEHOLDER 40 GPU-seconds per generated audio hour (~90x real time). Calibrate with the chosen TTS model on the target GPU. Needed for any voice service.
+- *gpu*: 40 GPU-seconds per generated audio hour (~90x real time), for a small fast model such as Kokoro-82M. Kokoro is reported at close to 100x real time on a GPU and a real-time factor of ~0.03 for single short clips (S66), i.e. ~36-110 GPU-seconds per audio hour. A reviewer-provided A10G figure of 40 is consistent but not independently verified. Larger expressive or voice-cloning models are several times slower: use 100 or 180 as a scenario envelope. Needed for any voice service.
 
 **Retrieval indexing (embeddings for document search)**
 
-- *gpu*: PLACEHOLDER 0.01 GPU-seconds per page (~500 tokens per page with a small embedding model). Almost every assistant depends on an index; size it from the pages in scope divided by the re-indexing period, plus new pages per day.
+- *gpu*: PLACEHOLDER 0.01 GPU-seconds per 500-token chunk with a small embedding model. Count chunks AFTER overlap: a ~500-token page split with 20% overlap is ~1.25 chunks. Almost every assistant depends on an index; size it from the chunks in scope divided by the re-indexing period, plus new chunks per day.
 
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request (≈18.2k vs ≈3.7k tokens) and the research agent at 14.7 times (≈55k). The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request and the research agent at 14.7 times. Per task, the copilot uses ≈3,740 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈3,400, ≈16,500 and ≈50,000. The ratios are the same either way. The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 
@@ -399,7 +410,15 @@ India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 
 
 ### Units used for usage rates
 
-All rates are **requests per person with access per day**, averaged over every day of the week. When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). ChatGPT's 3.6 is messages per *weekly* active user per day [S39].
+All rates are **requests per person with access per active day**, with the active days per year stated for each type (Section 4). When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). When a source gives a calendar-day rate for a working-day tool, it is converted to the active day (× 365 / active days), never the reverse. ChatGPT's 3.6 is messages per *weekly* active user per calendar day [S39].
+
+Non-LLM units are stated explicitly: OCR per page; face verification per verification (detection plus one embedding, liveness excluded); retrieval indexing per 500-token chunk counted after overlap; image analysis per model-specific image chip (for example 512 × 512 pixels), so scenes must be converted to chips first.
+
+### How the newer rates were checked
+
+- **Clinical decision support** [S62]: on OpenEvidence, US physicians averaged 37.1 queries per active user-month, and nurse practitioners and physician assistants 44.5. That is about 1.2-1.5 per calendar day for an active user. The default is 0.3 / 1 / 3 per worker with access per calendar day. One query per consultation (3-20 per day) is an intensive scenario, entered as an override. Caveat: US clinicians, voluntary use, and the data came from the platform operator.
+- **Teacher assistant** [S63]: in the EEF/NFER trial, teachers prepared about a third of their lessons with ChatGPT, about 1.7 preparations per week, or 0.34 per school day. With 1 / 3 / 6 requests per preparation (assumption) the rate is 0.34 / 1 / 2 per school day, equivalent to 0.24 / 0.73 / 1.46 per calendar day.
+- **OCR** [S64]: PP-OCRv5 server pipeline, 0.74 s per image on an A10 (wall time, including image reading). Default 0.75 GPU-seconds per page, provisional; layout and table models need separate calibration.
 
 ## 10. Hardware profiles
 
@@ -496,7 +515,7 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 | IT load / facility | GPUs x 1.4 kW; x PUE 1.56 (global average; example country has no region) | 1.4 kW / 2.2 kW |
 | Cheapest allowed option (T3, in-country provider available) | min(GPU-as-a-service, Owned), present value over 10 years at 8%, rounded | GPU-as-a-service, about $170,000 |
 
-Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
+Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
 
 ## 14. Global defaults
 
@@ -581,7 +600,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 
 ## 16. Limitations
 
-- **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
+- **Usage rates for several types are assumptions** (marked Low, basis "assumption" or "uncalibrated"). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
 - **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
 - **Backup fuel on weak grids**: facility construction costs include UPS and generators, but diesel and fuel logistics are not costed; the tool flags weak or unknown grids.
@@ -739,5 +758,11 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | S59 | Sal Khan: AI tutors need human input | McGraw Prize in Education | Khanmigo reach: nearly 1 million students | https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input |
 | S60 | NVIDIA DGX B200 datasheet (system power ~14.3 kW max, 8x B200) | NVIDIA | B200 power per GPU | https://www.nvidia.com/en-us/data-center/dgx-b200/ |
 | S61 | Digital Green Farmer.Chat Study, Kenya (Lean Data, 450 farmers, July-August 2025) | 60 Decibels | 61% meaningful users (impact metric, not usage frequency) | https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf |
+| S62 | Patel VR et al. Clinician Use of an Artificial Intelligence-Enabled Clinical Information Platform. JAMA, 15 October 2026. doi:10.1001/jama.2026.21868 | JAMA (Harvard Medical School authors; data from OpenEvidence) | Clinical decision support rate (37.1 queries per active physician-month; 44.5 for NPs and PAs; 952,008 clinicians, 271M queries) | https://doi.org/10.1001/jama.2026.21868 |
+| S63 | ChatGPT in lesson preparation - a Teacher Choices trial (259 teachers, 68 schools, 2024) | Education Endowment Foundation / NFER | Teacher assistant activity (about a third of lessons prepared with AI) | https://www.nfer.ac.uk/publications/chatgpt-in-lesson-preparation-a-teacher-choices-trial/ |
+| S64 | PP-OCRv5 inference benchmark (A10, T4) | PaddlePaddle / PaddleOCR | OCR GPU-seconds per page (0.74 s server pipeline on A10, wall time) | https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html |
+| S65 | InsightFace-REST model benchmarks (ArcFace R100, TensorRT, RTX 2080 Super) | SthPhoenix (open source) | Face embedding time per face (2.6 ms at batch 1, ~0.9 ms at batch 64) | https://github.com/SthPhoenix/InsightFace-REST |
+| S66 | Open-source TTS latency benchmarks (Kokoro-82M real-time factor ~0.03 on GPU) | GigaGPU | Text-to-speech GPU-seconds per audio hour | https://gigagpu.com/tts-latency-benchmarks |
+| S67 | An Evaluation of DWP's Microsoft 365 Copilot Trial (published 29 January 2026) | UK Department for Work and Pensions | Copilot usage frequency (most users daily or weekly), qualitative cross-check | https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

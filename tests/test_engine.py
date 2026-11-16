@@ -343,3 +343,36 @@ def test_server_rounding_reaches_physical_figures():
     assert sz["gpus"] % 8 == 0 and sz["gpus"] == cap["gpus"]
     assert sz["it_kw"] == pytest.approx(cap["it_kw"])
     assert sz["facility_mw"] * 1000 == pytest.approx(cap["facility_kw"])
+
+
+def test_active_days_scale_annual_not_peak():
+    # Rates are per active day: annual tokens use active days, peak sizing uses the active-day rate.
+    r = one([COP])
+    x = r["demand"][0]
+    assert x["active_days"] == 250
+    assert x["annual_eq_m"] == pytest.approx(x["daily_eq"] * 250 / 1e6)
+    full = dict(ARCH["staff_copilot"], active_days_per_year=365)
+    p = build_profile(default_profile("XEX").country, "Base", [COP], dict(ARCH, staff_copilot=full), dict(D["class_to_tier"]))
+    y = run(p, CAT, D)["demand"][0]
+    assert y["peak_eq_tps"] == pytest.approx(x["peak_eq_tps"])
+    assert y["annual_eq_m"] == pytest.approx(x["annual_eq_m"] * 365 / 250)
+
+
+def test_every_archetype_states_its_basis():
+    for t in ARCH.values():
+        assert t.get("basis"), t["id"]
+        if "rate" in t:
+            assert t.get("active_days_per_year") in (190, 250, 300, 365), t["id"]
+
+
+def test_evidence_based_rates():
+    # OpenEvidence 37.1 queries per active physician-month [S62]; EEF/NFER ~1.7 AI-assisted preparations per week [S63]
+    assert ARCH["frontline_health"]["rate"]["base"] == pytest.approx(37.1 * 12 / 365, rel=0.25)
+    assert ARCH["teacher_assistant"]["rate"]["base"] == pytest.approx(1.7 / 5 * 3, rel=0.05)
+    assert ARCH["ocr"]["gpu_seconds_per_unit"] == pytest.approx(0.74, rel=0.05)   # PP-OCRv5 on A10 [S64]
+
+
+def test_agent_token_totals_include_retry():
+    tok = lambda t: (t["isl"] + t["system_prompt_tokens"] + t["osl"] + t["reasoning_tokens"]) * t["agent_steps"] * t["retry"]
+    assert tok(ARCH["staff_copilot"]) == pytest.approx(3740)     # 3,400 before the x1.1 retry
+    assert tok(ARCH["research_agent"]) == pytest.approx(55000)   # 50,000 before the x1.1 retry

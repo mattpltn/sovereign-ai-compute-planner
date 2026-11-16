@@ -41,6 +41,7 @@ def to_engine_rows(apps: list[dict], archetypes: dict) -> tuple[list, list]:
                 sla_headroom=t["sla_headroom"], seasonal=t["seasonal"],
                 model_class=a.get("model_class") or t["model_class"], data_class=cls,
                 traffic_split=a.get("traffic_split") or None, type=a["type"],
+                active_days_per_year=t.get("active_days_per_year", 365),
             ))
         else:
             per_day = vol / 365 if t["unit"] == "gpu_hours_year" else vol

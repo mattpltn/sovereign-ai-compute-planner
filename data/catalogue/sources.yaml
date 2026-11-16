@@ -365,3 +365,39 @@
   url: https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf
   used_for: 61% meaningful users (impact metric, not usage frequency)
   type: Independent evaluation
+- id: S62
+  title: "Patel VR et al. Clinician Use of an Artificial Intelligence-Enabled Clinical Information Platform. JAMA, 15 October 2026. doi:10.1001/jama.2026.21868"
+  publisher: JAMA (Harvard Medical School authors; data from OpenEvidence)
+  url: https://doi.org/10.1001/jama.2026.21868
+  used_for: Clinical decision support rate (37.1 queries per active physician-month; 44.5 for NPs and PAs; 952,008 clinicians, 271M queries)
+  type: Peer-reviewed study (authors include OpenEvidence staff)
+- id: S63
+  title: ChatGPT in lesson preparation - a Teacher Choices trial (259 teachers, 68 schools, 2024)
+  publisher: Education Endowment Foundation / NFER
+  url: https://www.nfer.ac.uk/publications/chatgpt-in-lesson-preparation-a-teacher-choices-trial/
+  used_for: Teacher assistant activity (about a third of lessons prepared with AI)
+  type: Randomised controlled trial
+- id: S64
+  title: PP-OCRv5 inference benchmark (A10, T4)
+  publisher: PaddlePaddle / PaddleOCR
+  url: https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html
+  used_for: OCR GPU-seconds per page (0.74 s server pipeline on A10, wall time)
+  type: Vendor benchmark (open source)
+- id: S65
+  title: InsightFace-REST model benchmarks (ArcFace R100, TensorRT, RTX 2080 Super)
+  publisher: SthPhoenix (open source)
+  url: https://github.com/SthPhoenix/InsightFace-REST
+  used_for: Face embedding time per face (2.6 ms at batch 1, ~0.9 ms at batch 64)
+  type: Open-source benchmark
+- id: S66
+  title: Open-source TTS latency benchmarks (Kokoro-82M real-time factor ~0.03 on GPU)
+  publisher: GigaGPU
+  url: https://gigagpu.com/tts-latency-benchmarks
+  used_for: Text-to-speech GPU-seconds per audio hour
+  type: Hosting-provider benchmark
+- id: S67
+  title: An Evaluation of DWP's Microsoft 365 Copilot Trial (published 29 January 2026)
+  publisher: UK Department for Work and Pensions
+  url: https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial
+  used_for: Copilot usage frequency (most users daily or weekly), qualitative cross-check
+  type: Government evaluation
