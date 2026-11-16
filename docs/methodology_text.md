@@ -1,6 +1,28 @@
 # Sovereign AI Compute Planner: Methodology
 
-Version 0.4 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+Version 0.5 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+
+## Summary for presenters (one page)
+
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, accurate to roughly ±30%, not an engineering design or a procurement specification.
+
+**The four inputs that matter.**
+1. *The applications and their volume*: who uses each one and how many (staff with access, documents per day, citizens served). This is the single biggest driver.
+2. *The data class of each application*: it decides where the application may run (public cloud, in-country cloud, sovereign site).
+3. *The country*: grid reliability, electricity price, construction cost, and whether an in-country GPU provider exists.
+4. *The adoption scenario*: cautious, expected or aggressive use.
+
+**How to read the results page.**
+- *The banner* gives the answer in two lines: the 10-year cost and what to build in-country.
+- *1 · How much will it cost?* compares the three adoption scenarios. Each bar is split by data class, and the whisker shows the price range (hardware, cloud and API prices, GPU efficiency).
+- *2 · What needs to be built or bought?* shows one card per destination. A cloud or API card shows the annual bill and nothing to build. A sovereign-site card shows servers, GPUs, power, the upfront capex next to the annual running cost, and renting as the alternative where an in-country provider exists.
+- *3 · Where does the cost come from?* splits the cost by application.
+
+**What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
+
+**What they cannot be used for.** Procurement quantities, budget lines, or quotes. Before any commitment, replace the defaults with the client's own data: pilot logs, vendor quotes, and a site assessment (Annex A explains how).
+
+**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Demand is held flat over 10 years unless a growth rate is entered. Backup fuel on weak grids is not costed.
 
 ## 1. Purpose and scope
 
@@ -33,7 +55,9 @@ GPUs per tier → IT kW → facility MW → energy                         Layer
    │
 10-year cost per allowed buying mode → cheapest option                Layer 5
    │
-Recommended step (0 cloud now, 1 small sovereign node, 2 dedicated capacity)
+Recommended step, worded after the option chosen:
+  below GPU threshold · Step 0 buy as a service · Step 1 rent in-country or own servers in an existing room
+  · Step 2 own servers in a colocation data centre · Step 3 dedicated facility via PPP
 ```
 
 The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01], with two corrections: input and output tokens are kept separate, because they load the hardware differently [S07], and the system prompt is added to input before cache savings are removed.
@@ -198,16 +222,18 @@ cooling multiplier (liquid vs air) = 0.90 / 1.085 / 1.10 (Low / Base / High)
 
 Why a range for the liquid multiplier: Turner & Townsend measured liquid-cooled AI facilities in the US at 7-10% more than air-cooled facilities of the same IT capacity [S53]. Schneider Electric's cost model found the two equal at the same rack density, and 10-14% cheaper for liquid when it allows 2-4 times denser racks [S54]. Construction costs normally include UPS and generators; diesel and fuel logistics on weak grids are not costed (Section 16).
 
-{{FACILITY}}
+Country and regional values, and how to calibrate a specific site with the Schneider Electric calculators: Annex A.
 
-**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
-1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
-2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
+**Owned capacity comes in whole servers.** GPUs are sold in servers, not one by one: 8 GPUs per HGX server (H200, B200) and 72 per GB300 NVL72 rack. Owned capacity, its power and its cost are rounded up to whole servers. Rented GPUs are counted one by one.
+
+**One shared sovereign site (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. The result is one facility, one operations team and pooled GPUs. The option can be switched off in Setup.
+
+**Is there an in-country GPU provider?** Renting GPUs for Confidential data assumes an in-country provider exists. Setup asks the question (default: no or not sure). Without one, owning is the only option for Confidential data.
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
 1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup), **unknown**, or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
-2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest GPU-hour cost (GPUs × $/GPU-hour).
+2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest cost for the cheapest allowed buying option. An owned-only tier is therefore compared on ownership cost (servers, energy, facility), not on rental price.
 
 The user can force a profile in Setup.
 
@@ -237,21 +263,9 @@ All rates are **requests per person with access per day**, averaged over every d
 
 {{HARDWARE}}
 
-Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW. The production derating (0.6) is applied on top.
+Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW or taken from the vendor's system rating. Measured figures are used as they are; the production derating (0.6) applies only to derived figures (Section 8).
 
-Evidence per profile:
-
-{{HARDWARE_EVIDENCE}}
-
-### Vendor claims versus independent benchmarks
-
-NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
-
-Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
-
-The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
-
-For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
+Evidence for each figure, and the comparison of vendor claims with independent benchmarks: Annex B.
 
 ## 11. Layer 5: 10-year cost (present value)
 
@@ -288,6 +302,8 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 **Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
 
+**The results page** is organised around three client questions (see the summary at the top): the 10-year cost under three adoption scenarios, the capacity to build or buy per destination, and the cost per application. Detailed tables (every option Low – Base – High, tiers and hardware, rent or own per tier, demand) are collapsed below. The raw CSV export is unrounded, for analysts.
+
 **Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
 
 **Rounding.** Results are rounded to two significant figures and shown as "about X" with a Low – High range (e.g. "about $1.6M, range $1.4–2.1M"). The tool does not have more precision than that.
@@ -298,11 +314,18 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 | Condition | Step |
 |---|---|
+The step is worded after the buying option the tool actually chose, so the two never contradict each other.
+
+| Condition | Step |
+|---|---|
 | Only tiny non-LLM workloads (below 0.25 GPU) | **Below GPU threshold:** run on existing servers (CPU or a shared GPU). |
-| Tier T1 or T2 | **Step 0:** use cloud or API now, under residency terms where required. |
-| Tier T3 or T4, facility power below 1 MW | **Step 1:** small sovereign inference node in an existing facility. |
-| Tier T3 or T4, 1 to 10 MW | **Step 2:** colocation in an existing commercial data centre, run by a private operator. |
-| Tier T3 or T4, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
+| Cheapest option is API | **Step 0:** buy as an API service (with data residency for internal data). |
+| Cheapest option is GPU rental | **Step 0:** rent cloud GPUs (public or internal data), or **Step 1:** rent GPUs from an in-country provider (confidential data). |
+| Owned, facility power below 1 MW | **Step 1:** own N servers in an existing secure server room. |
+| Owned, 1 to 10 MW | **Step 2:** own N servers in a colocation data centre run by a private operator. |
+| Owned, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
+
+Cloud and API tiers show no GPUs, racks or power in the results: nothing is built for them.
 
 A PPP or IFC transaction for a facility of one or two megawatts is not realistic: transaction costs and minimum ticket sizes call for roughly 10 MW or more (assumption, adjustable). Between 1 and 10 MW, hosting in an existing colocation site is the practical route.
 
@@ -340,6 +363,32 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 - **Deliberately not modelled** (planning grade): hourly load curves, per-model-copy and GPU memory checks, Monte Carlo simulation, AIConfigurator lookup tables, spillover between tiers.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
+
+## Annex A. Facility values by country and site calibration
+
+{{FACILITY}}
+
+**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
+1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
+2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
+
+
+## Annex B. Hardware evidence and vendor claims
+
+Evidence per profile:
+
+{{HARDWARE_EVIDENCE}}
+
+### Vendor claims versus independent benchmarks
+
+NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
+
+Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
+
+The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
+
+For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
+
 
 ## 17. Sources
 

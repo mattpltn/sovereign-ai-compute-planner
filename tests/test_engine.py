@@ -29,6 +29,7 @@ for sc in ("low", "base", "high"):
 def v01_profile():
     p = default_profile("XEX")
     p.apps = deepcopy(V01)
+    p.shared_sovereign_site = False     # v0.1 had separate tiers
     return p
 
 
@@ -249,9 +250,11 @@ def test_below_gpu_threshold():
 def test_steps_thresholds():
     from engine.model import step_for
     sz = dict(below_threshold=False, gpus=10, facility_mw=5)
-    assert step_for("T3", sz, D).startswith("Step 2: colocation")
-    assert step_for("T3", dict(sz, facility_mw=12), D).startswith("Step 3")
-    assert step_for("T4", dict(sz, facility_mw=0.5), D).startswith("Step 1")
+    assert step_for("T3", sz, D, "Owned", {"facility_kw": 5000, "servers": 3}).startswith("Step 2: own 3 servers in a colocation")
+    assert step_for("T3", sz, D, "Owned", {"facility_kw": 12000, "servers": 90}).startswith("Step 3")
+    assert step_for("T4", sz, D, "Owned", {"facility_kw": 500, "servers": 1}).startswith("Step 1: own 1 server")
+    assert step_for("T3", sz, D, "GPU-as-a-service").startswith("Step 1: rent GPUs from an in-country provider")
+    assert step_for("T2", sz, D, "API / managed").startswith("Step 0: buy as an API service")
 
 
 def test_unknown_grid_never_ok():
@@ -306,3 +309,27 @@ def test_throughput_uncertainty_widens_gpu_range():
     r = one([COP, DOC])
     g = r["totals"]["gpus_range"]
     assert g["low"] <= g["base"] <= g["high"] and g["low"] < g["high"]
+
+
+# ---------------------------------------------------------------- v0.5: servers, shared site, local provider
+def test_owned_capacity_in_whole_servers():
+    r = one([dict(uid="t", name="tax", type="process_agent", volume=2000, data_class=4)])
+    cap = r["tiers"]["T4"]["capacity"]
+    assert cap["kind"] == "build" and cap["gpus"] % 8 == 0 and cap["servers"] == cap["gpus"] // 8
+
+
+def test_api_tiers_build_nothing():
+    r = one([dict(uid="c", name="cit", type="citizen_assistant", volume=5_000_000, data_class=2)])
+    t2 = r["tiers"]["T2"]
+    if t2["cheapest_mode"] == "API / managed":
+        assert t2["capacity"]["kind"] == "service" and t2["capacity"]["gpus"] is None
+
+
+def test_no_local_provider_forces_owned_t3_and_shared_site():
+    apps = [COP, dict(uid="t", name="tax", type="process_agent", volume=2000, data_class=4)]
+    r = one(apps, local_gpu_provider=False)
+    assert r["tiers"]["T3"]["merged_into"] == "T4"
+    assert r["tiers"]["T3"]["sizing"]["gpus"] == 0 and r["tiers"]["T4"]["shared_site"]
+    sep = one(apps, local_gpu_provider=False, shared_sovereign_site=False)
+    assert "GPU-as-a-service" not in sep["tiers"]["T3"]["tco"]["base"]
+    assert r["totals"]["cost"] < sep["totals"]["cost"]          # one team, pooled servers

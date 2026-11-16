@@ -5,6 +5,24 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-16
+### Added
+- Results page rebuilt around the client's three questions: a two-line answer banner; "How much will it cost?" with the three adoption scenarios stacked by data class and a price-range whisker; "What needs to be built or bought?" with one card per destination (servers, GPUs, power, upfront capex, annual running cost, rent alternative); "Where does the cost come from?" by application. Detailed tables collapsed below.
+- Setup: "Is there an in-country GPU cloud provider?" (default no / not sure) and "Confidential and Restricted data share one secure site" (default on).
+- Methodology: one-page summary for presenters; facility tables and site calibration moved to Annex A, hardware evidence and vendor claims to Annex B.
+### Changed
+- Owned capacity is rounded to whole servers (8 GPUs per HGX server, 72 per NVL72 rack); power and cost follow.
+- Confidential work moves into the Restricted site when both would be owned: one facility, one team, pooled servers.
+- The recommended step is worded after the buying option chosen (e.g. "rent GPUs from an in-country provider", "own 2 servers in an existing secure server room"); cloud and API tiers show no GPUs or racks.
+- Hardware is chosen by the cost of the cheapest allowed option, so owned-only tiers compare ownership cost, not rental price.
+- B200 power 1.7 → 2.0 kW per GPU (DGX B200 14.3 kW per 8 GPUs, S60); H200 large-model points taken from the same InferenceX comparison as B200 (625 / 819 / 1,591).
+- Tutor rate 0.27 → 0.19 (Khanmigo weekday figure x 5/7); speech-to-text 6 → 12 GPU-seconds per audio hour (Baseten figure read per 8-GPU node).
+- Agriculture advisory now uses per-farmer rates anchored on Kisan e-Mitra; the Farmer.Chat "61% meaningful users" is an impact measure, not usage (S61).
+- Unverified examples removed from the evidence (Peru teacher pilot, emergency line); the voice agent example is now a government service line, with a note that 24/7 lines need a flatter peak.
+### Fixed
+- Changelog 0.3.0 had two "Changed" headings: the second block is now version 0.2.2.
+- Methodology: Section 2 diagram lists the current steps; Section 10 no longer says derating applies to measured figures; worked example is rounded; CSV export labelled as raw.
+
 ## [0.4.0] - 2026-11-16
 ### Added
 - Facility model by country and cooling: PUE by World Bank region (Uptime Institute) with a site PUE override; liquid cooling cuts non-IT power by 18% (NVIDIA/Vertiv); construction cost per watt from the Turner & Townsend index for 13 markets, regional proxies otherwise; liquid-cooled facility multiplier 0.90 / 1.085 / 1.10. Instructions to calibrate a site with the Schneider Electric TradeOff Tools.
@@ -32,6 +50,8 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 - Results show the number of applications and the pooling factor per tier.
 ### Fixed
 - Missing or pre-2020 outage data now shows the grid as "Unknown" (air-cooled assumed), never "OK".
+
+## [0.2.2] - 2026-11-16
 ### Changed
 - Hardware throughput recalibrated to independent benchmarks (SemiAnalysis InferenceX [S44], MLPerf v5.1 [S45]) at a fixed interactivity (~90-95 tok/s per user for large reasoning models, ~75 for 70B). Liquid (GB300 NVL72) vs air (H200) gap on the large model: 65x (NVIDIA claim) → 7.3x per GPU. P1 H200: L 90 → 779, M 800 → 1,930 tok/s per GPU; kW per GPU 1.7 → 1.4. P2 rental price scaled to the ownership cost ratio ($4.92/GPU-hour).
 - Automatic hardware choice: among allowed profiles (air-cooled only on weak grids or below 1 MW), picks the lowest GPU-hour cost for each tier.

@@ -25,25 +25,26 @@
       base: 1930
       high: 2978
     L:
-      low: 611
-      base: 779
-      high: 1302
+      low: 625
+      base: 819
+      high: 1591
   sources:
   - S44
   - S10
   - S11
   evidence:
-    L: 'DeepSeek R1: 611 / 779 / 1,302 tok/s per GPU at 130 / 94 / 57 tok/s per user (SemiAnalysis InferenceX) (S44).'
+    L: 'DeepSeek R1: 625 / 819 / 1,591 tok/s per GPU at 128 / 89 / 50 tok/s per user, from the same InferenceX comparison as the B200 profile, so the two are measured at identical points (S44).'
     M: 'Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
     S: 'Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.'
     power: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
     price: 'GPU rental $2.60/hour, market rental (S11). NVIDIA''s $1.41 (S02) and SemiAnalysis''s $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU:
       placeholder, replace with vendor quote.'
+  gpus_per_server: 8
 - id: P3
   name: HGX B200 8-GPU, air-cooled
   cooling: Air
   rack_kw: 60
-  kw_per_gpu: 1.7
+  kw_per_gpu: 2.0
   gpu_hour_usd: 3.69
   capex_per_gpu_usd: 50000
   software_per_gpu_year_usd: 4500
@@ -67,11 +68,13 @@
   sources:
   - S44
   evidence:
-    L: 'DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44).'
+    L: 'DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44). Same comparison as P1: B200 gains more than H200 at relaxed speeds (3.0x H200 at 50 tok/s per user, 1.8x at 89) because larger
+      batches fit in its memory.'
     M: 'Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
     S: 'Derived: about 3x the 70B figure. Low confidence: derated.'
-    power: 1.7 kW per GPU all-in, implied by InferenceX tokens per MW for B200 (S44).
+    power: '2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage.'
     price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.'
+  gpus_per_server: 8
 - id: P2
   name: GB300 NVL72, liquid-cooled rack
   cooling: Liquid
@@ -108,3 +111,4 @@
     S: 'MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).'
     power: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
     price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.'
+  gpus_per_server: 72

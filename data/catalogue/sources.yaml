@@ -353,3 +353,15 @@
   url: https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input
   used_for: 'Khanmigo reach: nearly 1 million students'
   type: Press
+- id: S60
+  title: NVIDIA DGX B200 datasheet (system power ~14.3 kW max, 8x B200)
+  publisher: NVIDIA
+  url: https://www.nvidia.com/en-us/data-center/dgx-b200/
+  used_for: B200 power per GPU
+  type: Vendor spec
+- id: S61
+  title: Digital Green Farmer.Chat Study, Kenya (Lean Data, 450 farmers, July-August 2025)
+  publisher: 60 Decibels
+  url: https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf
+  used_for: 61% meaningful users (impact metric, not usage frequency)
+  type: Independent evaluation
