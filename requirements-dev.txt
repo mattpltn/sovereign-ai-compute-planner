@@ -1,5 +1,5 @@
 -r requirements.txt
 requests>=2.31
 pytest>=8.0
-shinylive>=0.10
+shinylive>=0.8
 openpyxl>=3.1
