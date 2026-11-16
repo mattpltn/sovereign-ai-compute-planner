@@ -6,271 +6,382 @@ Posit Connect: rsconnect deploy shiny . --entrypoint app:app
 from __future__ import annotations
 
 import json
+import uuid
 from copy import deepcopy
 
 import pandas as pd
 from shiny import App, reactive, render, ui
 
-from engine import (Profile, TIERS, load_api_prices, load_catalogue, load_countries,
-                    load_defaults, run)
+from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
+from engine.archetypes import EXAMPLE_PORTFOLIO, build_profile, is_llm, load_archetypes
 
 CAT = load_catalogue()
 D = load_defaults()
+ARCH = load_archetypes()
 COUNTRIES = load_countries()
 API_PRICES, API_PROV = load_api_prices(D)
-HW_IDS = {"auto": "Auto (from grid and size)", **{h["id"]: f'{h["id"]}: {h["name"]}' for h in CAT["hardware"]}}
 SRC = {s["id"]: s for s in CAT["sources"]}
 
-# Fallbacks when the synced snapshot lacks a value. Always shown to the user.
-FALLBACK = {
-    "internet_share": (0.5, "fallback: 50%"),
-    "civil_servants": (None, "fallback: 2% of population"),
-    "outages_per_month": (0, "fallback: 0 (unknown, grid treated as reliable)"),
-    "egdi": (None, "missing: no EGDI adjustment"),
-}
+CLASS_LABELS = {1: "1 · Public", 2: "2 · Internal", 3: "3 · Confidential", 4: "4 · Restricted"}
+SCEN = {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}
 
+type_choices = {}
+for a in ARCH.values():
+    type_choices.setdefault(a["group"], {})[a["id"]] = a["label"]
+iso_choices = {k: v.get("name", k) for k, v in sorted(COUNTRIES.items(), key=lambda kv: kv[1].get("name", ""))}
 
-def country_record(iso: str, overrides: dict) -> tuple[dict, list[str]]:
-    c = dict(COUNTRIES[iso])
-    notes = []
-    for k, (v, msg) in FALLBACK.items():
-        if c.get(k) is None:
-            if k == "civil_servants":
-                c[k] = 0.02 * c.get("population", 0)
-            elif v is not None:
-                c[k] = v
-            notes.append(f"{k}: {msg}")
-    for k, v in overrides.items():
-        if v is not None:
-            c[k] = v
-            c.setdefault("_sources", {})[k] = "user override"
-    return c, notes
+CSS = """
+:root { --accent:#1f3864; --muted:#6b7280; --line:#e5e7eb; }
+body { font-family: 'Inter', 'Segoe UI', Arial, sans-serif; background:#f7f8fa; }
+.navbar { background: var(--accent) !important; }
+.navbar .navbar-brand, .navbar .nav-link { color:#fff !important; }
+.navbar .nav-link.active { border-bottom: 2px solid #fff; }
+.card { border:1px solid var(--line); border-radius:10px; box-shadow:none; }
+.card-header { background:#fff; font-weight:600; border-bottom:1px solid var(--line); }
+.hint { color: var(--muted); font-size: .88rem; }
+.applist { width:100%; border-collapse:collapse; font-size:.92rem; }
+.applist th { text-align:left; color:var(--muted); font-weight:500; border-bottom:1px solid var(--line); padding:6px 8px; }
+.applist td { border-bottom:1px solid var(--line); padding:8px; vertical-align:middle; }
+.badge-c { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.78rem; background:#eef2ff; color:#1f3864; }
+.badge-1 { background:#ecfdf5; color:#065f46; } .badge-2 { background:#eff6ff; color:#1e40af; }
+.badge-3 { background:#fffbeb; color:#92400e; } .badge-4 { background:#fef2f2; color:#991b1b; }
+.conf-High { color:#065f46; } .conf-Medium { color:#92400e; } .conf-Low { color:#991b1b; }
+.btn-x { border:none; background:none; color:#991b1b; font-size:1.1rem; cursor:pointer; }
+.kpi { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; }
+.kpi .v { font-size:1.7rem; font-weight:600; color: var(--accent); }
+.kpi .l { color: var(--muted); font-size:.85rem; }
+.kpi .s { color: var(--muted); font-size:.8rem; }
+.shiny-html-output table, table.dataframe { font-size:.9rem; width:100%; }
+.shiny-html-output table th, table.dataframe th { text-align:left !important; color:var(--muted); font-weight:500; }
+.shiny-html-output table td { text-align:left; }
+.shiny-input-container:not(.shiny-input-container-inline) { width:100%; }
+.empty { padding:28px; text-align:center; color:var(--muted); }
+.warn { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 14px; font-size:.88rem; margin-bottom:12px; }
+"""
 
 
 def fmt(x, d=0):
     return "-" if x is None else f"{x:,.{d}f}"
 
 
-def usd(x):
-    return "-" if x is None else f"${x:,.0f}"
-
-
-APP_COLS = ["id", "name", "include", "stage", "data_class", "model_class", "users_override", "traffic_split"]
-NT_COLS = ["id", "name", "include", "mode", "units_per_day", "unit", "data_class"]
-
-
-def apps_df():
-    rows = []
-    for a in CAT["use_cases"]:
-        rows.append({**{k: a.get(k) for k in APP_COLS}, "users_override": "", "traffic_split": ""})
-    return pd.DataFrame(rows, columns=APP_COLS)
-
-
-def nt_df():
-    return pd.DataFrame([{k: w.get(k) for k in NT_COLS} for w in CAT["nontoken"]], columns=NT_COLS)
-
-
-def parse_split(s: str) -> dict | None:
-    s = (s or "").strip()
-    if not s:
-        return None
-    out = {}
-    for part in s.split(","):
-        k, v = part.split(":")
-        out[int(k)] = float(v)
-    return out
+def money(x):
+    if x is None:
+        return "-"
+    if abs(x) >= 1e6:
+        return f"${x / 1e6:,.1f}M"
+    if abs(x) >= 1e3:
+        return f"${x / 1e3:,.0f}k"
+    return f"${x:,.0f}"
 
 
 def num(x):
     try:
-        if x is None or (isinstance(x, str) and not x.strip()):
-            return None
-        return float(x)
+        return None if x in (None, "") else float(x)
     except (TypeError, ValueError):
         return None
 
 
-iso_choices = {k: v.get("name", k) for k, v in sorted(COUNTRIES.items(), key=lambda kv: kv[1].get("name", ""))}
+def kpi(label, value, sub=""):
+    return ui.div(ui.div(label, class_="l"), ui.div(value, class_="v"), ui.div(sub, class_="s"), class_="kpi")
 
-app_ui = ui.page_sidebar(
-    ui.sidebar(
-        ui.input_select("iso", "Country", iso_choices, selected="XEX"),
-        ui.input_radio_buttons("ambition", "Ambition (adoption scenario)",
-                               {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}, selected="Base"),
-        ui.input_select("hw", "Hardware profile", HW_IDS, selected="auto"),
-        ui.hr(),
-        ui.download_button("dl_scenario", "Save scenario (JSON)"),
-        ui.input_file("ul_scenario", "Load scenario", accept=[".json"]),
-        ui.download_button("dl_results", "Export results (CSV)"),
-        width=300,
+
+# ------------------------------------------------------------------ UI
+setup_panel = ui.nav_panel(
+    "1 · Setup",
+    ui.layout_columns(
+        ui.card(
+            ui.card_header("Country"),
+            ui.input_selectize("iso", None, iso_choices, selected="XEX"),
+            ui.output_ui("country_facts"),
+            ui.input_radio_buttons("grid", "Grid reliability",
+                                   {"auto": "From data", "reliable": "Reliable", "weak": "Weak (frequent outages)"},
+                                   selected="auto", inline=True),
+            ui.input_numeric("kwh", "Electricity tariff for data centres ($/kWh)", value=None, step=0.01),
+            ui.p("Leave empty to use the country value, or the default range if none.", class_="hint"),
+        ),
+        ui.card(
+            ui.card_header("Adoption scenario"),
+            ui.input_radio_buttons("ambition", None, SCEN, selected="Base", inline=True),
+            ui.p("Changes how often people use each application (Low / Base / High rates in the Evidence tab). "
+                 "Volumes you enter are never changed.", class_="hint"),
+            ui.card_header("Hardware"),
+            ui.input_select("hw", None, {"auto": "Automatic (air-cooled on weak grids and small sites)",
+                                         **{h["id"]: f'{h["id"]} · {h["name"]}' for h in CAT["hardware"]}}),
+        ),
+        col_widths=[6, 6],
     ),
-    ui.navset_tab(
-        ui.nav_panel(
-            "1. Applications",
-            ui.markdown(
-                "Tick the applications in scope and set **stage** (Pilot / Production) and **data class** (1 public, "
-                "2 internal, 3 confidential, 4 restricted). Placement follows the highest data class of each application. "
-                "Optional **traffic_split** routes part of an application's traffic to another class, e.g. `1:0.9,3:0.1`. "
-                "Optional **users_override** replaces the estimated user count. Token shapes and adoption curves are "
-                "catalogue defaults (analyst assumptions, see Sources)."),
-            ui.output_data_frame("apps"),
-            ui.h5("Non-token GPU workloads (biometrics, OCR, speech, vision, fine-tuning)"),
-            ui.output_data_frame("nts"),
+    ui.accordion(
+        ui.accordion_panel(
+            "Placement rules: data class → where it may run",
+            ui.p("Set once per country from its data protection law. Each application runs in the tier of its data class. "
+                 "Default follows the World Bank data classification approach [S14].", class_="hint"),
+            ui.layout_columns(*[ui.input_select(f"map{c}", CLASS_LABELS[c],
+                                                {t: f'{t} · {D["tiers"][t]["name"]}' for t in TIERS},
+                                                selected=D["class_to_tier"][c]) for c in (1, 2, 3, 4)],
+                              col_widths=[3, 3, 3, 3]),
         ),
-        ui.nav_panel(
-            "2. Data class → tier",
-            ui.markdown("Set once per country from its data protection and classification rules. "
-                        "Default follows the World Bank data classification approach [S14]."),
-            *[ui.input_select(f"map{c}", f"Data class {c}",
-                              {t: f'{t}: {D["tiers"][t]["name"]}' for t in TIERS}, selected=D["class_to_tier"][c])
-              for c in (1, 2, 3, 4)],
-            ui.output_table("tier_rules"),
-        ),
-        ui.nav_panel(
-            "3. Client quotes (optional)",
-            ui.markdown("Leave blank to use the default cost **range**. A quoted value replaces the range and is "
-                        "labelled *client quote* in the results."),
+        ui.accordion_panel(
+            "Client quotes (optional)",
+            ui.p("Leave empty to use the default cost range. A quote replaces the range.", class_="hint"),
             ui.layout_columns(
-                ui.input_text("q_gpu_hour", "GPU-as-a-service ($/GPU-hour)"),
-                ui.input_text("q_gpu_capex", "GPU capex, server share ($/GPU)"),
-                ui.input_text("q_fac", "Facility capex ($ per MW IT)"),
-                ui.input_text("q_kwh", "Electricity tariff ($/kWh)"),
-                col_widths=[3, 3, 3, 3]),
-            ui.layout_columns(
-                *[ui.input_text(f"q_api_{c}_{io}", f"API {c} {io} ($/M tokens)")
-                  for c in "SML" for io in ("input", "output")],
-                col_widths=[2] * 6),
+                ui.input_numeric("q_gpu_hour", "GPU rental ($/GPU-hour)", None),
+                ui.input_numeric("q_gpu_capex", "GPU server cost ($/GPU)", None),
+                ui.input_numeric("q_fac", "Data centre build ($/MW IT)", None),
+                col_widths=[4, 4, 4]),
         ),
-        ui.nav_panel(
-            "Results",
-            ui.output_ui("warnings"),
-            ui.output_ui("headline"),
-            ui.h5("Compute ladder"),
-            ui.output_table("ladder"),
-            ui.h5("10-year cost range of the cheapest eligible mode (undiscounted, USD)"),
-            ui.output_table("tco"),
-            ui.h5("Demand by application"),
-            ui.output_table("demand"),
-        ),
-        ui.nav_panel(
-            "Sources & assumptions",
-            ui.h5("Country inputs and provenance"),
-            ui.output_table("country_tbl"),
-            ui.h5("Global defaults"),
-            ui.output_table("defaults_tbl"),
-            ui.p(f"API prices: {API_PROV}"),
-            ui.h5("Sources"),
-            ui.output_ui("sources"),
-        ),
+        open=False,
     ),
-    title="Sovereign AI Compute Planner (v0.1, draft)",
+)
+
+apps_panel = ui.nav_panel(
+    "2 · Applications",
+    ui.layout_columns(
+        ui.card(
+            ui.card_header("Add an application"),
+            ui.input_select("a_type", "Type", type_choices, selected="staff_copilot"),
+            ui.input_text("a_name", "Name", placeholder="e.g. Ministry of Finance copilot"),
+            ui.input_numeric("a_volume", ARCH["staff_copilot"]["unit_label"], value=None, min=0),
+            ui.input_select("a_class", "Data class", {str(k): v for k, v in CLASS_LABELS.items()}, selected="3"),
+            ui.accordion(ui.accordion_panel(
+                "Advanced",
+                ui.input_numeric("a_rate", "Requests per person per day (leave empty for type default)", value=None, min=0),
+                ui.input_select("a_model", "Model size", {"": "Type default", "S": "Small (~8B)",
+                                                           "M": "Medium (~70B)", "L": "Large reasoning (~600B MoE)"}),
+                ui.input_text("a_split", "Split traffic by data class (optional)", placeholder="e.g. 2:0.9, 3:0.1"),
+                ui.p("Use a split when sensitive requests are routed separately. Default: everything goes to the "
+                     "application's data class.", class_="hint"),
+            ), open=False),
+            ui.output_ui("a_type_hint"),
+            ui.input_action_button("add", "Add application", class_="btn-primary w-100"),
+        ),
+        ui.card(
+            ui.card_header(ui.div(ui.span("Application portfolio"),
+                                  ui.span(ui.input_action_link("example", "Load example"), ui.span(" · "),
+                                          ui.input_action_link("clear", "Clear all"), style="font-weight:400"),
+                                  style="display:flex;justify-content:space-between;align-items:center")),
+            ui.output_ui("app_list"),
+        ),
+        col_widths=[4, 8],
+    ),
+)
+
+results_panel = ui.nav_panel(
+    "3 · Results",
+    ui.output_ui("warnings"),
+    ui.output_ui("kpis"),
+    ui.card(ui.card_header("Where the compute should run"), ui.output_table("ladder")),
+    ui.card(ui.card_header("10-year cost of the cheapest eligible option (undiscounted, USD)"), ui.output_table("tco")),
+    ui.card(ui.card_header("Demand by application"), ui.output_table("demand")),
+    ui.layout_columns(ui.download_button("dl_results", "Export results (CSV)"),
+                      ui.download_button("dl_scenario", "Save scenario"),
+                      ui.input_file("ul_scenario", None, accept=[".json"], button_label="Load scenario",
+                                    placeholder="scenario.json"),
+                      col_widths=[3, 3, 6]),
+)
+
+evidence_panel = ui.nav_panel(
+    "Evidence",
+    ui.card(ui.card_header("Application types: default values and their sources"), ui.output_ui("evidence")),
+    ui.card(ui.card_header("Country inputs"), ui.output_table("country_tbl")),
+    ui.card(ui.card_header("Global defaults"), ui.output_table("defaults_tbl")),
+    ui.card(ui.card_header("Sources"), ui.output_ui("sources")),
+)
+
+app_ui = ui.page_navbar(
+    setup_panel, apps_panel, results_panel, evidence_panel,
+    title="Sovereign AI Compute Planner",
+    header=ui.tags.style(CSS),
+    footer=ui.div("v0.2 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+                  class_="hint", style="text-align:center;padding:16px"),
+    fillable=False,
 )
 
 
+# ------------------------------------------------------------------ server
 def server(input, output, session):
-    loaded = reactive.value(None)
+    apps = reactive.value([])
 
-    @render.data_frame
-    def apps():
-        df = apps_df()
-        sc = loaded.get()
-        if sc:
-            df = pd.DataFrame(sc["apps"], columns=APP_COLS)
-        return render.DataGrid(df, editable=True, height="420px")
+    # ---- add / remove
 
-    @render.data_frame
-    def nts():
-        df = nt_df()
-        sc = loaded.get()
-        if sc:
-            df = pd.DataFrame(sc["nontoken"], columns=NT_COLS)
-        return render.DataGrid(df, editable=True)
+    @render.ui
+    def a_type_hint():
+        t = ARCH[input.a_type()]
+        ev = t["evidence"].get("rate") or t["evidence"].get("gpu", "")
+        return ui.p(ev, class_="hint", style="margin-top:8px")
+
+    @reactive.effect
+    @reactive.event(input.a_type)
+    def _default_class():
+        t = ARCH[input.a_type()]
+        ui.update_select("a_class", selected=str(t["data_class"]))
+        ui.update_numeric("a_volume", label=t["unit_label"])
+        if is_llm(t) and t["unit"] == "users":
+            ui.update_numeric("a_rate", label=f'Requests per person per day (default {t["rate"]["base"]:g} in Base)')
+        else:
+            ui.update_numeric("a_rate", label="Requests per person per day (not used for this type)", value=None)
+
+    @reactive.effect
+    @reactive.event(input.add)
+    def _add():
+        t = ARCH[input.a_type()]
+        vol = num(input.a_volume())
+        if not vol:
+            ui.notification_show(f'Enter {t["unit_label"].lower()} first.', type="warning")
+            return
+        split = None
+        s = (input.a_split() or "").strip()
+        if s:
+            try:
+                split = {int(k): float(v) for k, v in (p.split(":") for p in s.split(","))}
+            except ValueError:
+                ui.notification_show("Traffic split not understood, ignored. Format: 2:0.9, 3:0.1", type="warning")
+        rate = num(input.a_rate()) if is_llm(t) and t["unit"] == "users" else None
+        new = dict(uid=uuid.uuid4().hex[:8], name=input.a_name().strip() or t["label"], type=t["id"], volume=vol,
+                   data_class=int(input.a_class()), rate_override=rate, model_class=input.a_model() or None,
+                   traffic_split=split)
+        apps.set(apps.get() + [new])
+        ui.update_text("a_name", value="")
+        ui.update_numeric("a_volume", value=None)
+        ui.update_text("a_split", value="")
+
+    @reactive.effect
+    @reactive.event(input.remove_app)
+    def _remove():
+        apps.set([a for a in apps.get() if a["uid"] != input.remove_app()])
+
+    @reactive.effect
+    @reactive.event(input.example)
+    def _example():
+        apps.set([dict(a, uid=uuid.uuid4().hex[:8]) for a in EXAMPLE_PORTFOLIO])
+
+    @reactive.effect
+    @reactive.event(input.clear)
+    def _clear():
+        apps.set([])
+
+    @render.ui
+    def app_list():
+        lst = apps.get()
+        if not lst:
+            return ui.div("No applications yet. Add one on the left, or load the example portfolio.", class_="empty")
+        res = {x["id"]: x for x in result()["demand"]} if lst else {}
+        ntr = {x["id"]: x for x in result()["nontoken"]}
+        rows = []
+        for a in lst:
+            t = ARCH[a["type"]]
+            if a["uid"] in res:
+                d = res[a["uid"]]
+                load = f'{fmt(d["sessions"])} requests/day'
+            elif a["uid"] in ntr:
+                load = f'{fmt(ntr[a["uid"]]["gpu_hours_day"], 1)} GPU-h/day'
+            else:
+                load = "-"
+            tier = input[f"map{a['data_class']}"]()
+            rows.append(ui.tags.tr(
+                ui.tags.td(ui.tags.b(a["name"]), ui.br(), ui.span(t["label"], class_="hint")),
+                ui.tags.td(f'{fmt(a["volume"])}', ui.br(), ui.span(t["unit_label"], class_="hint")),
+                ui.tags.td(ui.span(CLASS_LABELS[a["data_class"]], class_=f'badge-c badge-{a["data_class"]}'),
+                           " → ", tier),
+                ui.tags.td(load),
+                ui.tags.td(ui.span("●", class_=f'conf-{t["confidence"]["volume"]}', title=f'Usage rate evidence: {t["confidence"]["volume"]}'),
+                           ui.span("●", class_=f'conf-{t["confidence"]["tokens"]}', title=f'Size evidence: {t["confidence"]["tokens"]}'),
+                           style="white-space:nowrap;font-size:1.1rem"),
+                ui.tags.td(ui.tags.button("✕", class_="btn-x", title="Remove",
+                                          onclick=f"Shiny.setInputValue('remove_app','{a['uid']}',{{priority:'event'}})")),
+            ))
+        return ui.tags.table(
+            ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Application", "Volume", "Data class → tier",
+                                                                "Estimated load", "Evidence", "")])),
+            ui.tags.tbody(*rows), class_="applist")
+
+    # ---- country and profile
+    @reactive.calc
+    def country():
+        c = dict(COUNTRIES[input.iso()])
+        notes = []
+        g = input.grid()
+        if g == "reliable":
+            c["outages_per_month"] = 0
+        elif g == "weak":
+            c["outages_per_month"] = 10
+        elif c.get("outages_per_month") is None:
+            c["outages_per_month"] = 0
+            notes.append("No outage data for this country: grid treated as reliable. Set it in Setup if not.")
+        k = num(input.kwh())
+        if k:
+            c["electricity_usd_kwh"] = k
+        return c, notes
+
+    @render.ui
+    def country_facts():
+        c, _ = country()
+        bits = []
+        if c.get("population"):
+            bits.append(f'Population {c["population"] / 1e6:,.1f}M')
+        if c.get("internet_share"):
+            bits.append(f'internet use {c["internet_share"]:.0%}')
+        if c.get("electricity_usd_kwh"):
+            bits.append(f'tariff ${c["electricity_usd_kwh"]:.2f}/kWh')
+        o = COUNTRIES[input.iso()].get("outages_per_month")
+        bits.append(f"outages {o:g}/month" if o is not None else "outages: no data")
+        return ui.p(" · ".join(bits), class_="hint")
 
     def quotes():
         q = {}
         for key, inp in [("gpu_hour_usd", "q_gpu_hour"), ("gpu_capex_usd", "q_gpu_capex"),
-                         ("facility_capex_usd_per_mw_it", "q_fac"), ("electricity_usd_kwh", "q_kwh")]:
+                         ("facility_capex_usd_per_mw_it", "q_fac")]:
             v = num(input[inp]())
             if v:
                 q[key] = v
-        api = {c: {io: num(input[f"q_api_{c}_{io}"]()) for io in ("input", "output")} for c in "SML"}
-        if all(api[c][io] for c in "SML" for io in ("input", "output")):
-            q["api_prices"] = api
         return q
 
     @reactive.calc
-    def profile():
-        country, notes = country_record(input.iso(), {})
-        edited = apps.data_view()
-        apps_list = []
-        by_id = {a["id"]: a for a in CAT["use_cases"]}
-        for _, r in edited.iterrows():
-            a = deepcopy(by_id[r["id"]])
-            a["include"] = int(num(r["include"]) or 0)
-            a["stage"] = "Pilot" if str(r["stage"]).strip().lower().startswith("p") and \
-                str(r["stage"]).strip().lower() != "production" else "Production"
-            a["data_class"] = int(num(r["data_class"]) or a["data_class"])
-            a["model_class"] = str(r["model_class"]).strip().upper() or a["model_class"]
-            a["users_override"] = num(r["users_override"])
-            try:
-                a["traffic_split"] = parse_split(str(r["traffic_split"]))
-            except ValueError:
-                notes.append(f'{a["id"]}: traffic_split not understood, ignored')
-            apps_list.append(a)
-        nt_by = {w["id"]: w for w in CAT["nontoken"]}
-        nt_list = []
-        for _, r in nts.data_view().iterrows():
-            w = deepcopy(nt_by[r["id"]])
-            w["include"] = int(num(r["include"]) or 0)
-            w["mode"] = "Batch" if str(r["mode"]).strip().lower().startswith("b") else "Interactive"
-            w["units_per_day"] = num(r["units_per_day"]) or 0
-            w["data_class"] = int(num(r["data_class"]) or w["data_class"])
-            nt_list.append(w)
-        p = Profile(country=country, ambition=input.ambition(), apps=apps_list, nontoken=nt_list,
-                    class_to_tier={c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
-                    quotes=quotes(), hardware_choice=input.hw())
-        return p, notes
-
-    @reactive.calc
     def result():
-        p, _ = profile()
+        c, _ = country()
+        p = build_profile(c, input.ambition(), apps.get(), ARCH,
+                          {cl: input[f"map{cl}"]() for cl in (1, 2, 3, 4)}, quotes(), input.hw())
         return run(p, CAT, D, API_PRICES)
 
+    # ---- results
     @render.ui
     def warnings():
-        p, notes = profile()
-        r = result()
+        _, notes = country()
         msgs = list(notes)
-        if p.country.get("_sources", {}).get("all", "").startswith("fictional"):
-            msgs.append("Example country (fictional). Pick a real country after the first data sync.")
-        if API_PROV.startswith("fallback"):
-            msgs.append("API prices are fallback placeholders until the OpenRouter sync runs.")
-        for x in r["demand"]:
-            if x["above_ceiling"] and x["share"] == 1:
-                msgs.append(f'{x["id"]}: tokens per user per day above the human ceiling [S24]. Fine for agents; check otherwise.')
-        if p.quotes:
-            msgs.append("Client quotes in use: " + ", ".join(p.quotes))
-        if not msgs:
-            return None
-        return ui.div(ui.tags.ul(*[ui.tags.li(m) for m in msgs]), class_="alert alert-warning")
+        if not apps.get():
+            msgs.append("Add applications in step 2 to see results.")
+        if input.iso() == "XEX":
+            msgs.append("Example country (fictional) selected in Setup.")
+        if "fallback" in API_PROV:
+            msgs.append(f"API prices: {API_PROV}.")
+        lows = sorted({ARCH[a["type"]]["label"] for a in apps.get() if ARCH[a["type"]]["confidence"]["volume"] == "Low"
+                       and not a.get("rate_override") and ARCH[a["type"]]["unit"] == "users"})
+        if lows:
+            msgs.append("Usage rate is a weak assumption for: " + "; ".join(lows) +
+                        ". Set requests per person per day under Advanced if the client knows it.")
+        if quotes():
+            msgs.append("Client quotes in use: " + ", ".join(quotes()))
+        return ui.div(ui.tags.ul(*[ui.tags.li(m) for m in msgs], style="margin:0"), class_="warn") if msgs else None
 
     @render.ui
-    def headline():
-        t = result()["totals"]
+    def kpis():
+        r = result()
+        t = r["totals"]
+        lo = sum((v["cost_range"]["low"] or 0) for v in r["tiers"].values())
+        hi = sum((v["cost_range"]["high"] or 0) for v in r["tiers"].values())
+        local = sum(v["sizing"]["facility_mw"] for k, v in r["tiers"].items() if k in ("T3", "T4"))
         return ui.layout_columns(
-            ui.value_box("Total GPUs", fmt(t["gpus"])),
-            ui.value_box("Facility power", f'{t["facility_mw"]:.2f} MW'),
-            ui.value_box("10-year cost, cheapest eligible", usd(t["cost"])),
-        )
+            kpi("GPUs (all tiers)", fmt(t["gpus"]), f'{SCEN[input.ambition()]} scenario'),
+            kpi("Facility power", f'{t["facility_mw"]:.2f} MW', f"of which in-country sovereign: {local:.2f} MW"),
+            kpi("10-year cost", money(t["cost"]), f"range {money(lo)} – {money(hi)}"),
+            col_widths=[4, 4, 4])
 
     @render.table
     def ladder():
         r = result()
         return pd.DataFrame([{
-            "Tier": t, "Description": D["tiers"][t]["name"], "Hardware": v["hardware"],
-            "GPUs": fmt(v["sizing"]["gpus"]), "IT load (kW)": fmt(v["sizing"]["it_kw"], 1),
+            "Tier": f'{t} · {D["tiers"][t]["name"]}', "GPUs": fmt(v["sizing"]["gpus"]),
             "Facility (MW)": f'{v["sizing"]["facility_mw"]:.2f}', "Utilisation": f'{v["sizing"]["utilisation"]:.0%}',
-            "Cheapest eligible mode": v["cheapest_mode"], "Grid check": v["grid"], "Recommended step": v["step"],
+            "Cheapest option": v["cheapest_mode"], "Grid": v["grid"], "Recommended step": v["step"],
         } for t, v in r["tiers"].items()])
 
     @render.table
@@ -278,63 +389,42 @@ def server(input, output, session):
         r = result()
         rows = []
         for t, v in r["tiers"].items():
-            row = {"Tier": t, "Cheapest mode": v["cheapest_mode"],
-                   "Low": usd(v["cost_range"]["low"]), "Base": usd(v["cost_range"]["base"]),
-                   "High": usd(v["cost_range"]["high"]),
-                   "$ per M eq. tokens (base)": "-" if v["usd_per_m_eq_tokens"] is None else f'${v["usd_per_m_eq_tokens"]:.2f}'}
+            row = {"Tier": t, "Cheapest": v["cheapest_mode"], "Low": money(v["cost_range"]["low"]),
+                   "Base": money(v["cost_range"]["base"]), "High": money(v["cost_range"]["high"]),
+                   "$ per M tokens": "-" if v["usd_per_m_eq_tokens"] is None else f'${v["usd_per_m_eq_tokens"]:.2f}'}
             for m in ("API / managed", "GPU-as-a-service", "Owned"):
-                row[f"{m} (base)"] = usd(v["tco"]["base"].get(m)) if m in v["tco"]["base"] else "Not eligible"
+                row[m] = ("-" if v["sizing"]["gpus"] == 0 else money(v["tco"]["base"][m])) if m in v["tco"]["base"] else "not allowed"
             rows.append(row)
         return pd.DataFrame(rows)
 
     @render.table
     def demand():
         r = result()
-        return pd.DataFrame([{
-            "ID": x["id"], "Application": x["name"], "Class": x["data_class"], "Tier": x["tier"],
-            "Share": f'{x["share"]:.0%}', "Users": fmt(x["users"]), "Model": x["model_class"],
-            "Daily tokens (in+out)": fmt(x["daily_input"] + x["daily_output"]),
-            "Peak eq. tok/s": fmt(x["peak_eq_tps"], 1),
-        } for x in r["demand"] if x["users"] > 0])
+        names = {a["uid"]: a["name"] for a in apps.get()}
+        rows = [{"Application": names.get(x["id"], x["id"]), "Tier": x["tier"], "Share": f'{x["share"]:.0%}',
+                 "Requests/day": fmt(x["sessions"]), "Tokens/day (in+out)": fmt(x["daily_input"] + x["daily_output"]),
+                 "Peak tokens/s": fmt(x["peak_eq_tps"], 0), "Model": x["model_class"]} for x in r["demand"]]
+        rows += [{"Application": names.get(x["id"], x["id"]), "Tier": x["tier"], "Share": "100%",
+                  "Requests/day": "-", "Tokens/day (in+out)": f'{fmt(x["gpu_hours_day"], 1)} GPU-h/day',
+                  "Peak tokens/s": f'{x["peak_gpus"]:.2f} GPUs at peak' if x["mode"] == "Interactive" else "batch",
+                  "Model": "non-LLM"} for x in r["nontoken"]]
+        return pd.DataFrame(rows) if rows else None
 
-    @render.table
-    def tier_rules():
-        return pd.DataFrame([{"Tier": t, "Description": v["name"], "API": "yes" if v["api"] else "no",
-                              "GPU-as-a-service": "yes" if v["gpuaas"] else "no", "Owned": "yes" if v["owned"] else "no"}
-                             for t, v in D["tiers"].items()])
-
-    @render.table
-    def country_tbl():
-        p, _ = profile()
-        c = p.country
-        src = c.get("_sources", {})
-        keys = ["population", "internet_share", "civil_servants", "egdi", "outages_per_month", "electricity_usd_kwh"]
-        return pd.DataFrame([{"Input": k, "Value": c.get(k), "Source": src.get(k, src.get("all", "fallback / default"))}
-                             for k in keys])
-
-    @render.table
-    def defaults_tbl():
-        rows = []
-        for k, v in D.items():
-            if isinstance(v, dict) and "value" in v:
-                rows.append({"Parameter": k, "Value": v["value"], "Source": v.get("source"), "Note": v.get("note", "")})
-        for k, v in D["costs"].items():
-            rows.append({"Parameter": k, "Value": f'{v["low"]} / {v["base"]} / {v["high"]}', "Source": v.get("source"),
-                         "Note": "low / base / high. " + v.get("note", "")})
-        return pd.DataFrame(rows)
-
-    @render.ui
-    def sources():
-        return ui.tags.ol(*[ui.tags.li(ui.tags.b(s["id"]), f' {s["title"]}, {s["publisher"]}. ',
-                                       ui.tags.a(s["url"], href=s["url"], target="_blank"), f' Used for: {s["used_for"]}')
-                            for s in CAT["sources"]])
+    @render.download(filename="sovereign_ai_compute_results.csv")
+    def dl_results():
+        r = result()
+        df = pd.DataFrame([{"tier": t, "step": v["step"], "mode": v["cheapest_mode"], "grid": v["grid"],
+                            "hardware": v["hardware"],
+                            **{k: v["sizing"][k] for k in ("gpus", "it_kw", "facility_mw", "racks", "energy_mwh", "utilisation")},
+                            **{f"cost_{s}": v["cost_range"][s] for s in ("low", "base", "high")}}
+                           for t, v in r["tiers"].items()])
+        yield df.to_csv(index=False)
 
     @render.download(filename="scenario.json")
     def dl_scenario():
-        sc = {"iso": input.iso(), "ambition": input.ambition(), "hw": input.hw(),
-              "apps": apps.data_view().to_dict("records"), "nontoken": nts.data_view().to_dict("records"),
-              "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)}, "quotes": quotes()}
-        yield json.dumps(sc, indent=1, default=str)
+        yield json.dumps({"iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
+                          "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
+                          "quotes": quotes(), "apps": apps.get()}, indent=1)
 
     @reactive.effect
     @reactive.event(input.ul_scenario)
@@ -343,21 +433,57 @@ def server(input, output, session):
         if not f:
             return
         sc = json.loads(open(f[0]["datapath"]).read())
-        ui.update_select("iso", selected=sc.get("iso", "XEX"))
+        ui.update_selectize("iso", selected=sc.get("iso", "XEX"))
         ui.update_radio_buttons("ambition", selected=sc.get("ambition", "Base"))
+        ui.update_radio_buttons("grid", selected=sc.get("grid", "auto"))
         ui.update_select("hw", selected=sc.get("hw", "auto"))
         for c, t in sc.get("class_to_tier", {}).items():
             ui.update_select(f"map{c}", selected=t)
-        loaded.set(sc)
+        apps.set(sc.get("apps", []))
 
-    @render.download(filename="sovereign_ai_compute_results.csv")
-    def dl_results():
-        r = result()
-        df = pd.DataFrame([{**{"tier": t, "step": v["step"], "mode": v["cheapest_mode"], "grid": v["grid"],
-                               "hardware": v["hardware"]},
-                            **{k: v["sizing"][k] for k in ("gpus", "it_kw", "facility_mw", "racks", "energy_mwh", "utilisation")},
-                            **{f"cost_{s}": v["cost_range"][s] for s in ("low", "base", "high")}}
-                           for t, v in r["tiers"].items()])
-        yield df.to_csv(index=False)
+    # ---- evidence
+    @render.ui
+    def evidence():
+        blocks = []
+        for t in ARCH.values():
+            if is_llm(t):
+                facts = (f'{t["unit_label"]} × {t["rate"]["low"]:g} / {t["rate"]["base"]:g} / {t["rate"]["high"]:g} requests per day '
+                         f'(Low / Base / High) · per call {t["isl"]:,} in + {t["system_prompt_tokens"]:,} system, '
+                         f'{t["osl"]:,} out, {t["reasoning_tokens"]:,} reasoning · {t["agent_steps"]} call(s) per task · '
+                         f'model {t["model_class"]}')
+            else:
+                facts = f'{t["gpu_seconds_per_unit"]:g} GPU-seconds per unit · {t["mode"]}'
+            blocks.append(ui.div(
+                ui.tags.b(t["label"]), " ",
+                ui.span(f'volume {t["confidence"]["volume"]}', class_=f'hint conf-{t["confidence"]["volume"]}'), " · ",
+                ui.span(f'size {t["confidence"]["tokens"]}', class_=f'hint conf-{t["confidence"]["tokens"]}'),
+                ui.p(facts, class_="hint", style="margin:2px 0"),
+                ui.tags.ul(*[ui.tags.li(ui.tags.i(k), ": ", v) for k, v in t["evidence"].items()], class_="hint"),
+                style="padding:8px 0;border-bottom:1px solid #e5e7eb"))
+        return ui.div(*blocks)
+
+    @render.table
+    def country_tbl():
+        c, _ = country()
+        src = c.get("_sources", {})
+        keys = ["population", "internet_share", "outages_per_month", "electricity_usd_kwh"]
+        return pd.DataFrame([{"Input": k, "Value": c.get(k), "Source": src.get(k, src.get("all", "default / user"))}
+                             for k in keys])
+
+    @render.table
+    def defaults_tbl():
+        rows = [{"Parameter": k, "Value": v["value"], "Source": v.get("source"), "Note": v.get("note", "")}
+                for k, v in D.items() if isinstance(v, dict) and "value" in v]
+        rows += [{"Parameter": k, "Value": f'{v["low"]} / {v["base"]} / {v["high"]}', "Source": v.get("source"),
+                  "Note": "low / base / high. " + v.get("note", "")} for k, v in D["costs"].items()]
+        rows.append({"Parameter": "API prices", "Value": "", "Source": API_PROV, "Note": ""})
+        return pd.DataFrame(rows)
+
+    @render.ui
+    def sources():
+        return ui.tags.ol(*[ui.tags.li(ui.tags.b(s["id"]), f' {s["title"]}, {s["publisher"]}. ',
+                                       ui.tags.a(s["url"], href=s["url"], target="_blank"), f' · {s["used_for"]}',
+                                       class_="hint") for s in CAT["sources"]])
+
 
 app = App(app_ui, server)

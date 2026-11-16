@@ -1,0 +1,353 @@
+# Application types. The user adds applications one by one: pick a type, enter the volume a client can give
+# (staff with access, documents per day...), set the data class. Everything else comes from the type below.
+#
+# rate: requests per unit per day, for the Low / Base / High scenario.
+#   For "users" units it is requests per person with access per day (most people with access are not active every day).
+#   For "items" units it is 1: each item is one request.
+# Token fields are per call. A task = steps x retry calls.
+# confidence: how strong the evidence is for the volume rate and for the token sizes.
+
+- id: staff_copilot
+  label: Staff copilot (drafting, summarising, Q&A)
+  group: Generative AI
+  unit: users
+  unit_label: Staff with access
+  rate: {low: 0.85, base: 1.8, high: 3.6}
+  isl: 2000
+  system_prompt_tokens: 1000
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1.1
+  data_class: 3
+  confidence: {volume: High, tokens: Medium}
+  evidence:
+    rate: "UK cross-government trial, 20,000 civil servants: 39% used it several times a day, 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.8 per person with access. Low 0.85: Australian trial, 1 in 3 daily, 46% a few times a week (S37). High 3.6: ChatGPT, ~2.5B messages/day for ~700M weekly users (S39)."
+    tokens: "Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two."
+    cache: "System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34)."
+    burst: "Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption."
+
+- id: citizen_assistant
+  label: Citizen assistant (chat or voice)
+  group: Generative AI
+  unit: users
+  unit_label: People who can use it (target population)
+  rate: {low: 0.0002, base: 0.0005, high: 0.002}
+  isl: 1500
+  system_prompt_tokens: 800
+  osl: 300
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1.3
+  data_class: 2
+  confidence: {volume: Medium, tokens: Medium}
+  evidence:
+    rate: "Queries per person in the target population per day. Low = India's Kisan e-Mitra: 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, about 0.0001-0.0002 (S40). Base 2.5x and High 10x that, for assistants covering several services."
+    tokens: "Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32)."
+    seasonal: "1.3 for deadline or benefit-payment peaks: assumption."
+
+- id: tutor
+  label: Learning tutor (students)
+  group: Generative AI
+  unit: users
+  unit_label: Students with access
+  rate: {low: 0.18, base: 0.54, high: 1.08}
+  isl: 1500
+  system_prompt_tokens: 800
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.7
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1.3
+  data_class: 2
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "5% / 15% / 30% of students active, times 3.6 messages per active user per day (ChatGPT, S39; users under 26 send nearly half of ChatGPT messages). Active share is an assumption."
+    tokens: "As citizen assistant (S31, S32)."
+
+- id: frontline_health
+  label: Clinical decision support (frontline health workers)
+  group: Generative AI
+  unit: users
+  unit_label: Health workers with access
+  rate: {low: 3, base: 10, high: 20}
+  isl: 2000
+  system_prompt_tokens: 1000
+  osl: 400
+  reasoning_tokens: 1000
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.5
+  data_class: 4
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "One request per consultation, 3-20 consultations per worker per day: assumption, replace with programme data."
+    tokens: "Chat shape (S31, S32) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question (S43)."
+    seasonal: "1.5 for epidemic peaks: assumption."
+
+- id: coding_assistant
+  label: Developer coding assistant
+  group: Generative AI
+  unit: users
+  unit_label: Developers with access
+  rate: {low: 10, base: 30, high: 60}
+  isl: 1500
+  system_prompt_tokens: 500
+  osl: 100
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.6
+  model_class: M
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1
+  data_class: 3
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "Requests per developer per day: assumption."
+    tokens: "Azure production coding median 1,500 in / 13 out for completions (S31); chat answers are longer, so 100. Agentic coding is far heavier (inputs ~294x outputs, mostly cached) (S42): model it as a process agent if planned."
+
+- id: document_extraction
+  label: Document intake and extraction
+  group: Generative AI
+  unit: items
+  unit_label: Documents per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 4000
+  system_prompt_tokens: 500
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  cache_hit: 0.8
+  model_class: S
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.2
+  data_class: 3
+  confidence: {volume: High, tokens: Medium}
+  evidence:
+    rate: "One request per document. Volume comes from the client (registry, permit office)."
+    tokens: "Input 4,000 (3-4 page form) + system 500, output 400. OpenRouter API traffic averages >6,000 in / ~400 out (S32); Anthropic API data shows output grows much slower than input (S41). Assumes text is already digitised: add OCR for scans."
+
+- id: translation
+  label: Translation
+  group: Generative AI
+  unit: items
+  unit_label: Texts translated per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 500
+  system_prompt_tokens: 200
+  osl: 500
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  cache_hit: 0.5
+  model_class: S
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1
+  data_class: 2
+  confidence: {volume: High, tokens: Medium}
+  evidence:
+    rate: "One request per text. Volume comes from the client."
+    tokens: "Output ≈ input for translation (~500 tokens ≈ 375 words): structural."
+
+- id: transcript_summary
+  label: Call, meeting or hearing summaries
+  group: Generative AI
+  unit: items
+  unit_label: Calls or hearings per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 3000
+  system_prompt_tokens: 500
+  osl: 400
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.05
+  cache_hit: 0.5
+  model_class: S
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1
+  data_class: 3
+  confidence: {volume: High, tokens: High}
+  evidence:
+    rate: "One summary per call. Volume comes from the client."
+    tokens: "Input 3,000 ≈ a 15-minute call (~150 spoken words per minute, ~1.3 tokens per word). Speech-to-text itself: add a Speech-to-text application."
+
+- id: process_agent
+  label: Process agent (single agent, e.g. tax or customs risk check)
+  group: Generative AI
+  unit: items
+  unit_label: Cases per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 2500
+  system_prompt_tokens: 1500
+  osl: 500
+  reasoning_tokens: 1000
+  agent_steps: 3
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: L
+  peak_share: 0.8
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.3
+  data_class: 4
+  confidence: {volume: High, tokens: Medium}
+  evidence:
+    rate: "One task per case. Volume comes from the client."
+    tokens: "About 5x a copilot request (≈18k tokens per case). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43)."
+
+- id: research_agent
+  label: Research agent (multi-agent, e.g. legal or policy analysis)
+  group: Generative AI
+  unit: users
+  unit_label: Analysts with access
+  rate: {low: 1, base: 2, high: 4}
+  isl: 8000
+  system_prompt_tokens: 1500
+  osl: 1000
+  reasoning_tokens: 2000
+  agent_steps: 4
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: L
+  peak_share: 0.8
+  peak_window_h: 8
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1
+  data_class: 3
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "Research tasks per analyst per day: assumption."
+    tokens: "About 16x a copilot request (≈55k tokens per task). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
+
+# ---------------------------------------------------------------- non-token deep learning
+- id: speech_to_text
+  label: Speech-to-text
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Audio hours per day
+  gpu_seconds_per_unit: 60
+  mode: Interactive
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 3
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER ~60 GPU-seconds per audio hour (~60x real time). Calibrate with the MLPerf Inference Whisper result for your GPU (S08)."
+
+- id: ocr
+  label: OCR and layout extraction
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Pages per day
+  gpu_seconds_per_unit: 0.3
+  mode: Batch
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 3
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER 0.3 GPU-seconds per page. Calibrate with a vendor OCR benchmark (S08)."
+
+- id: face_verification
+  label: Face verification (1:1 authentication)
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Verifications per day
+  gpu_seconds_per_unit: 0.02
+  mode: Interactive
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  data_class: 4
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER. Many deployments run 1:1 matching on CPU; check with the vendor."
+
+- id: biometric_dedup
+  label: Biometric deduplication (1:N at enrolment)
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Enrolments per day
+  gpu_seconds_per_unit: 2
+  mode: Batch
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 1.5
+  data_class: 4
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark."
+
+- id: image_analysis
+  label: Satellite or image analysis
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Images or tiles per day
+  gpu_seconds_per_unit: 0.1
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 1
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER. Calibrate with MLPerf vision results (S08)."
+
+- id: fine_tuning
+  label: Model fine-tuning and evaluation
+  group: Other AI (non-LLM)
+  unit: gpu_hours_year
+  unit_label: GPU-hours per year
+  gpu_seconds_per_unit: 3600
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 3
+  confidence: {volume: Medium, tokens: Medium}
+  evidence:
+    gpu: "Enter the training budget directly in GPU-hours per year; it runs in idle GPU time first (S03)."

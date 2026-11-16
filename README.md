@@ -1,4 +1,4 @@
-# Sovereign AI Compute Planner (v0.1, draft)
+# Sovereign AI Compute Planner (v0.2, draft)
 
 Planning tool for governments: from AI use cases to tokens, GPUs, megawatts, placement by data class, and a 10-year cost range. Planning-grade, not engineering design.
 
@@ -15,7 +15,11 @@ Planning tool for governments: from AI use cases to tokens, GPUs, megawatts, pla
 
 ## What the user provides
 
-Country, ambition (adoption scenario), applications in scope with stage and data class, the class → tier mapping, and optionally client quotes. Nothing else.
+1. **Setup:** country (grid and tariff), adoption scenario, placement rules (data class → tier), optional client quotes.
+2. **Applications, one by one:** pick a type (staff copilot, citizen assistant, document extraction, process agent, research agent, speech-to-text, OCR, biometrics...), enter the volume the client knows (staff with access, documents per day, audio hours per day...) and the data class.
+3. **Results:** GPUs, MW and 10-year cost by tier, with the recommended step.
+
+Usage rates, token sizes, peaks and GPU-seconds come from the type (`data/catalogue/archetypes.yaml`), each with its evidence and a confidence level, shown in the Evidence tab. Any of them can be overridden per application under Advanced.
 
 ## What the tool gets itself
 

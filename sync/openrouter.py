@@ -28,11 +28,10 @@ def main() -> int:
     out = {"_meta": {"synced_at": dt.date.today().isoformat(), "source": "S21 OpenRouter /api/v1/models", "models": {}}}
     for cls, ids in refs.items():
         ins, outs = [], []
-        for mid in ids:
-            m = models.get(mid)
-            if not m:
-                print(f"{cls}: {mid} not listed, skipped")
-                continue
+        matched = [m for pref in ids for k, m in models.items()
+                   if k == pref or (k.startswith(pref) and ":free" not in k)]
+        for m in {x["id"]: x for x in matched}.values():
+            mid = m["id"]
             pi, po = float(m["pricing"]["prompt"]) * 1e6, float(m["pricing"]["completion"]) * 1e6
             if pi > 0 and po > 0:
                 ins.append(pi)
