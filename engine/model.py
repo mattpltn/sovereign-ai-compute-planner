@@ -213,13 +213,27 @@ def size_tier(tier: str, dem: list, nt: list, hw: dict, d: dict, speed: str = "b
     )
 
 
+def grid_weak(country: dict, d: dict):
+    """True / False, or None when unknown.
+
+    Outages per month (Enterprise Surveys) decide when available. Otherwise the share of firms that
+    experienced outages is used as a fallback signal.
+    """
+    o = country.get("outages_per_month")
+    if o is not None:
+        return o > d["weak_grid_outages_threshold"]["value"]
+    s = country.get("firms_with_outages_share")
+    if s is not None:
+        return s >= d["weak_grid_firm_share_threshold"]["value"]
+    return None
+
+
 def candidate_hardware(p: Profile, hardware: list, it_mw_if_air: float, d: dict) -> list:
     """Profiles allowed for a tier. Weak grid or small load: air-cooled only."""
     if p.hardware_choice != "auto":
         return [h for h in hardware if h["id"] == p.hardware_choice]
-    o = p.country.get("outages_per_month")
-    weak_or_unknown = o is None or o > d["weak_grid_outages_threshold"]["value"]
-    if weak_or_unknown or it_mw_if_air < d["dense_profile_min_it_mw"]["value"]:
+    weak = grid_weak(p.country, d)
+    if weak is not False or it_mw_if_air < d["dense_profile_min_it_mw"]["value"]:
         return [h for h in hardware if h["weak_grid_ok"]]
     return list(hardware)
 
@@ -351,10 +365,9 @@ def grid_status(p: Profile, hw: dict, sz: dict, tier: str, d: dict) -> str:
         return "-"
     if tier == "T1":
         return "Offshore: not applicable"
-    o = p.country.get("outages_per_month")
-    if o is None:
+    weak = grid_weak(p.country, d)
+    if weak is None:
         return "Unknown: check grid reliability (air-cooled assumed)"
-    weak = o > d["weak_grid_outages_threshold"]["value"]
     if weak and not hw["weak_grid_ok"]:
         return "WARNING: profile unsuitable for weak grid"
     if weak:

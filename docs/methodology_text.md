@@ -78,7 +78,7 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
 
-**Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
+**Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]: employed labour force × public sector share of employment. This counts all public sector employees, including teachers and health workers, so it is an upper bound for office staff; it is shown on the Setup country line; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
 
 ### 3.2 What the tool provides
 
@@ -235,12 +235,14 @@ Country and regional values, and how to calibrate a specific site with the Schne
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
-1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup), **unknown**, or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
+1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19]; where outages per month are not published, at least 50% of firms reporting outages, a Low-confidence assumption; or set by the user in Setup), **unknown**, or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
 2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest cost for the cheapest allowed buying option. An owned-only tier is therefore compared on ownership cost (servers, energy, facility), not on rental price.
 
 The user can force a profile in Setup.
 
-**Unknown grid.** If the country has no outage data, or the data is older than 2020, the grid is shown as "Unknown: check grid reliability" and air-cooled hardware is assumed. It is never shown as OK without data.
+**Two outage measures, never mixed.** Enterprise Surveys publish the number of outages in a typical month and, separately, the percentage of firms that experienced outages. The tool uses the first when available and the second only as a fallback, each with its own threshold. The country line in Setup shows which one is used and its year.
+
+**Unknown grid.** If the country has neither measure, or the data is older than 2020, the grid is shown as "Unknown: check grid reliability" and air-cooled hardware is assumed. It is never shown as OK without data.
 
 **What the grid setting changes, and what it does not.** It changes which hardware is allowed and the grid warning in the results. It does not yet add the cost of backup power (UPS, generators, batteries) or diesel, which on a weak grid is material. This is a known gap (Section 16).
 
@@ -366,7 +368,7 @@ Triggers to move up a step: a confidential or restricted application reaches pro
 |---|---|---|
 | Population, internet use, labour force, unemployment | World Bank API (WDI) [S29, S15] | Weekly, GitHub Actions (`sync/worldbank.py`) |
 | Public employment share | World Bank Worldwide Bureaucracy Indicators [S18] | Weekly (API source 64) |
-| Electrical outages per month | World Bank Enterprise Surveys [S19] | Weekly; indicator moved in 2026, fallbacks tried |
+| Electrical outages per month; share of firms with outages (fallback) | World Bank Enterprise Surveys [S19] | Weekly; the per-month indicator moved in 2026 and is found by name |
 | API prices per model size | OpenRouter model list [S21] | Weekly (`sync/openrouter.py`), median of reference models |
 | EGDI | UN E-Government Survey [S17] | Curated `data/egdi.csv`, every two years |
 | Electricity tariff | Utility tariff sheets, GlobalPetrolPrices [S20] | Curated `data/electricity.csv` |

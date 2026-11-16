@@ -407,15 +407,19 @@ def server(input, output, session):
         elif g == "weak":
             c["outages_per_month"] = 10
         else:
-            src = c.get("_sources", {}).get("outages_per_month", "")
-            yr = re.findall(r"(19|20)(\d\d)", src)
-            year = int("".join(yr[-1])) if yr else None
-            if c.get("outages_per_month") is None:
-                c["outages_per_month"] = None
+            def year_of(field):
+                yr = re.findall(r"(19|20)(\d\d)", c.get("_sources", {}).get(field, ""))
+                return int("".join(yr[-1])) if yr else None
+            for field in ("outages_per_month", "firms_with_outages_share"):
+                y = year_of(field)
+                if c.get(field) is not None and y and y < 2020:
+                    c[field] = None
+                    notes.append(f"Outage data ({field.replace('_', ' ')}) is from {y}: not used. Set grid reliability in Setup.")
+            if c.get("outages_per_month") is None and c.get("firms_with_outages_share") is None:
                 notes.append("No outage data for this country: grid shown as unknown and air-cooled hardware assumed. Set it in Setup.")
-            elif year and year < 2020:
-                c["outages_per_month"] = None
-                notes.append(f"Outage data is from {year}: treated as unknown. Set grid reliability in Setup.")
+            elif c.get("outages_per_month") is None:
+                notes.append(f'Outages per month not available: grid judged from the share of firms with outages '
+                             f'({c["firms_with_outages_share"]:.0%}). Set grid reliability in Setup if you know better.')
         k = num(input.kwh())
         if k:
             c["electricity_usd_kwh"] = k
@@ -431,8 +435,18 @@ def server(input, output, session):
             bits.append(f'internet use {c["internet_share"]:.0%}')
         if c.get("electricity_usd_kwh"):
             bits.append(f'tariff ${c["electricity_usd_kwh"]:.2f}/kWh')
-        o = COUNTRIES[input.iso()].get("outages_per_month")
-        bits.append(f"outages {o:g}/month" if o is not None else "outages: no data")
+        cs = c.get("civil_servants")
+        if cs:
+            yr = c.get("_sources", {}).get("public_employment_share", "")[-4:]
+            bits.append(f"civil servants ~{sig2(cs):,.0f} (all public sector employees, {c['public_employment_share']:.0%} of jobs, {yr})")
+        cc = COUNTRIES[input.iso()]
+        o, s = cc.get("outages_per_month"), cc.get("firms_with_outages_share")
+        if o is not None:
+            bits.append(f"outages {o:.1f} per month ({cc['_sources'].get('outages_per_month', '')[-4:]})")
+        if s is not None:
+            bits.append(f"{s:.0%} of firms had outages ({cc['_sources'].get('firms_with_outages_share', '')[-4:]})")
+        if o is None and s is None:
+            bits.append("outages: no data")
         return ui.p(" · ".join(bits), class_="hint")
 
     def quotes():

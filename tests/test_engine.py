@@ -376,3 +376,25 @@ def test_agent_token_totals_include_retry():
     tok = lambda t: (t["isl"] + t["system_prompt_tokens"] + t["osl"] + t["reasoning_tokens"]) * t["agent_steps"] * t["retry"]
     assert tok(ARCH["staff_copilot"]) == pytest.approx(3740)     # 3,400 before the x1.1 retry
     assert tok(ARCH["research_agent"]) == pytest.approx(55000)   # 50,000 before the x1.1 retry
+
+
+def test_grid_from_outages_then_firm_share():
+    from engine.model import grid_weak
+    assert grid_weak({"outages_per_month": 5}, D) is True
+    assert grid_weak({"outages_per_month": 0.5, "firms_with_outages_share": 0.9}, D) is False   # per-month figure wins
+    assert grid_weak({"firms_with_outages_share": 0.74}, D) is True    # e.g. Ghana, 74% of firms
+    assert grid_weak({"firms_with_outages_share": 0.15}, D) is False
+    assert grid_weak({}, D) is None
+    r = one([COP], country={"outages_per_month": None, "firms_with_outages_share": 0.74})
+    assert all(t["hardware"] in {h["id"] for h in CAT["hardware"] if h["weak_grid_ok"]} for t in r["tiers"].values() if t.get("hardware"))
+
+
+def test_snapshot_units_are_sane():
+    import json
+    snap = json.loads((Path(__file__).resolve().parent.parent / "data/snapshots/countries.json").read_text())
+    for iso, c in snap.items():
+        if iso == "_meta":
+            continue
+        assert "IC.ELC.OUTG.ZS" not in c.get("_sources", {}).get("outages_per_month", ""), iso
+        s = c.get("public_employment_share")
+        assert s is None or 0.005 < s < 0.6, (iso, s)

@@ -26,17 +26,21 @@ INDICATORS = {
     "internet_share": ("IT.NET.USER.ZS", None, lambda v: v / 100),
     # Enterprise Surveys outages: archived from WDI in 2026; candidates tried in order (see CANDIDATES).
     "outages_per_month": ("IC.ELC.OUTG", None, lambda v: v),
+    # Share of firms experiencing outages (% of firms). Fallback signal only: a different unit from outages per month.
+    "firms_with_outages_share": ("IC.ELC.OUTG.ZS", None, lambda v: v / 100),
     "labour_force": ("SL.TLF.TOTL.IN", None, lambda v: v),
     "unemployment_share": ("SL.UEM.TOTL.ZS", None, lambda v: v / 100),
     # Worldwide Bureaucracy Indicators: public sector employment as share of total employment.
     # VERIFY the code on first run (WWBI is API source 64).
-    "public_employment_share": ("BI.EMP.TOTL.PB.ZS", 64, lambda v: v / 100),
+    # WWBI publishes shares as fractions (0-1), not percentages: no division by 100.
+    "public_employment_share": ("BI.EMP.TOTL.PB.ZS", 64, lambda v: v),
 }
 
 
 # Alternative (indicator, source) pairs tried when the first one fails.
 CANDIDATES = {
-    "outages_per_month": [("IC.ELC.OUTG", 13), ("IC.ELC.OUTG", 1), ("IC.ELC.OUTG.ZS", None)],
+    # IC.ELC.OUTG.ZS is NOT a candidate: it is % of firms, kept separately as firms_with_outages_share.
+    "outages_per_month": [("IC.ELC.OUTG", 13), ("IC.ELC.OUTG", 1)],
 }
 
 
@@ -116,7 +120,7 @@ def main() -> int:
         cands = [(code, src)] + CANDIDATES.get(field, [])
         if field == "outages_per_month":
             try:
-                cands += discover(r"outages in a typical month")
+                cands += [x for x in discover(r"outages in a typical month") if not x[0].endswith(".ZS")]
                 log.append(f"outages: discovered {cands[len(CANDIDATES.get(field, [])) + 1:]}")
             except Exception as e:  # noqa: BLE001
                 log.append(f"outages: discovery FAILED {str(e)[:120]}")

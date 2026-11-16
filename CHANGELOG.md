@@ -5,6 +5,14 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-16
+### Fixed
+- Outage data: the sync had stored the share of firms experiencing outages (% of firms, IC.ELC.OUTG.ZS) as outages per month, so Ghana showed 74 "outages per month". The two measures are now separate fields. Outages per month decide when available; otherwise the grid is weak if at least 50% of firms report outages (assumption, Low confidence).
+- Public employment share (WWBI) was divided by 100 twice, so civil servant reference sizes were 100x too small (Ghana ~8,000 instead of ~815,000). Current snapshot corrected; the sync no longer divides.
+- The site now redeploys after each data sync (bot commits did not trigger the Pages workflow).
+### Changed
+- Setup country line shows which outage measure is used and its year, and the estimated number of civil servants.
+
 ## [0.6.0] - 2026-11-16
 ### Changed
 - Usage rates are now per **active day** (working day 250, school day 190, clinic day 300, calendar day 365 for always-on services). Peak sizing uses the active-day rate; annual tokens and API cost use active days per year instead of 365. Office tools and per-item office workloads now cost about 30% less per year in API mode; GPU sizing is unchanged.
