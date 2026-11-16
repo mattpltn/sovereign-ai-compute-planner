@@ -14,6 +14,70 @@
    "qwen/qwen-2.5-72b-instruct": {
     "input": 0.36,
     "output": 0.39999999999999997
+   },
+   "qwen/qwen3-32b": {
+    "input": 0.08,
+    "output": 0.28
+   },
+   "deepseek/deepseek-r1-0528": {
+    "input": 0.5,
+    "output": 2.1500000000000004
+   },
+   "deepseek/deepseek-v3.2": {
+    "input": 0.26,
+    "output": 0.38
+   },
+   "deepseek/deepseek-v3.2-exp": {
+    "input": 0.27,
+    "output": 0.41
+   },
+   "deepseek/deepseek-v3.1-terminus": {
+    "input": 0.27,
+    "output": 1.0
+   },
+   "deepseek/deepseek-chat-v3.1": {
+    "input": 0.25,
+    "output": 0.95
+   },
+   "deepseek/deepseek-chat-v3-0324": {
+    "input": 0.29,
+    "output": 1.1400000000000001
+   },
+   "deepseek/deepseek-chat": {
+    "input": 0.2574,
+    "output": 1.0287
+   },
+   "qwen/qwen3-235b-a22b-thinking-2507": {
+    "input": 0.44999999999999996,
+    "output": 3.5
+   },
+   "qwen/qwen3-235b-a22b-2507": {
+    "input": 0.14,
+    "output": 0.7999999999999999
+   },
+   "moonshotai/kimi-k2.7-code": {
+    "input": 0.6,
+    "output": 3.5
+   },
+   "moonshotai/kimi-k2.6": {
+    "input": 0.65,
+    "output": 3.41
+   },
+   "moonshotai/kimi-k2.5": {
+    "input": 0.5,
+    "output": 2.5
+   },
+   "moonshotai/kimi-k2-thinking": {
+    "input": 0.6,
+    "output": 2.5
+   },
+   "moonshotai/kimi-k2-0905": {
+    "input": 0.6,
+    "output": 2.5
+   },
+   "moonshotai/kimi-k2": {
+    "input": 0.5700000000000001,
+    "output": 2.3
    }
   }
  },
@@ -22,7 +86,11 @@
   "output": 0.04
  },
  "M": {
-  "input": 0.5349999999999999,
-  "output": 0.5549999999999999
+  "input": 0.36,
+  "output": 0.39999999999999997
+ },
+ "L": {
+  "input": 0.44999999999999996,
+  "output": 2.1500000000000004
  }
 }

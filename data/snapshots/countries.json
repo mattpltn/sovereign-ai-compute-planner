@@ -4,10 +4,14 @@
   "log": [
    "population (SP.POP.TOTL): 262 countries",
    "internet_share (IT.NET.USER.ZS): 242 countries",
-   "outages_per_month (IC.ELC.OUTG): FAILED no data for country/all/indicator/IC.ELC.OUTG: [{'message': [{'id': '175', 'key': 'Invalid format', 'value': 'The indicator was not found. It may have been deleted or archived.'}]}]",
+   "outages: discovered [('IC.FRM.INFRA.IN2', 13)]",
+   "outages_per_month (IC.ELC.OUTG, source None): FAILED no data for country/all/indicator/IC.ELC.OUTG: [{'message': [{'id': '175', 'key': 'Invalid format', 'value': 'The indicator was not found. It may have been dele",
+   "outages_per_month (IC.ELC.OUTG, source 13): FAILED no data for country/all/indicator/IC.ELC.OUTG: [{'message': [{'id': '120', 'key': 'Invalid value', 'value': 'The provided parameter value is not valid'}]}]",
+   "outages_per_month (IC.ELC.OUTG, source 1): FAILED no data for country/all/indicator/IC.ELC.OUTG: [{'message': [{'id': '120', 'key': 'Invalid value', 'value': 'The provided parameter value is not valid'}]}]",
+   "outages_per_month (IC.ELC.OUTG.ZS): 224 countries",
    "labour_force (SL.TLF.TOTL.IN): 232 countries",
    "unemployment_share (SL.UEM.TOTL.ZS): 232 countries",
-   "public_employment_share (BI.EMP.TOTL.PB.ZS): FAILED HTTPSConnectionPool(host='api.worldbank.org', port=443): Read timed out. (read timeout=60)"
+   "public_employment_share (BI.EMP.TOTL.PB.ZS): 136 countries"
   ]
  },
  "ABW": {
@@ -28,13 +32,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 43844111,
   "internet_share": 0.1609499931,
+  "outages_per_month": 41.83390808,
   "labour_force": 9433041,
-  "unemployment_share": 0.13351000000000002
+  "unemployment_share": 0.13351000000000002,
+  "public_employment_share": 0.0008744049817323681,
+  "civil_servants": 7147.067771526608
  },
  "AGO": {
   "name": "Angola",
@@ -43,13 +53,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 39040039,
   "internet_share": 0.4070479965,
+  "outages_per_month": 61.41448212,
   "labour_force": 16321277,
-  "unemployment_share": 0.14108
+  "unemployment_share": 0.14108,
+  "public_employment_share": 0.0010951866209506999,
+  "civil_servants": 15353.061186474315
  },
  "ALB": {
   "name": "Albania",
@@ -58,13 +74,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2012",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2349580,
   "internet_share": 0.8586389923,
+  "outages_per_month": 33.15901184,
   "labour_force": 1259172,
-  "unemployment_share": 0.10926
+  "unemployment_share": 0.10926,
+  "public_employment_share": 0.00199576258659363,
+  "civil_servants": 2238.437073432872
  },
  "AND": {
   "name": "Andorra",
@@ -99,13 +121,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2017",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 45851378,
   "internet_share": 0.8966715228,
+  "outages_per_month": 65.10769653,
   "labour_force": 22422031,
-  "unemployment_share": 0.07145
+  "unemployment_share": 0.07145,
+  "public_employment_share": 0.00188769713044167,
+  "civil_servants": 39301.81062177078
  },
  "ARM": {
   "name": "Armenia",
@@ -114,13 +142,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3086700,
   "internet_share": 0.8133930206,
+  "outages_per_month": 56.13683701,
   "labour_force": 1485063,
-  "unemployment_share": 0.12871
+  "unemployment_share": 0.12871,
+  "public_employment_share": 0.00220443710684776,
+  "civil_servants": 2852.3664544881262
  },
  "ASM": {
   "name": "American Samoa",
@@ -139,10 +173,12 @@
   "income": "High income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025"
   },
   "population": 94209,
-  "internet_share": 0.7273040009
+  "internet_share": 0.7273040009,
+  "outages_per_month": 91.90149689
  },
  "AUS": {
   "name": "Australia",
@@ -151,13 +187,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 27614411,
   "internet_share": 0.9613140106,
+  "outages_per_month": 56.60778809,
   "labour_force": 15125385,
-  "unemployment_share": 0.0409
+  "unemployment_share": 0.0409,
+  "public_employment_share": 0.00200052678585052,
+  "civil_servants": 29021.155461194678
  },
  "AUT": {
   "name": "Austria",
@@ -166,13 +208,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 9208163,
   "internet_share": 0.9192573373,
+  "outages_per_month": 9.52804184,
   "labour_force": 4753079,
-  "unemployment_share": 0.05582
+  "unemployment_share": 0.05582,
+  "public_employment_share": 0.00256160497665405,
+  "civil_servants": 11495.873806811132
  },
  "AZE": {
   "name": "Azerbaijan",
@@ -181,13 +229,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10246996,
   "internet_share": 0.9080000181,
+  "outages_per_month": 10.25782299,
   "labour_force": 5110243,
-  "unemployment_share": 0.05457
+  "unemployment_share": 0.05457,
+  "public_employment_share": 0.0011980915814638101,
+  "civil_servants": 5788.432157890516
  },
  "BDI": {
   "name": "Burundi",
@@ -196,13 +250,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 14390003,
   "internet_share": 0.08595999718,
+  "outages_per_month": 93.88008881,
   "labour_force": 6308213,
-  "unemployment_share": 0.00922
+  "unemployment_share": 0.00922,
+  "public_employment_share": 0.00028715053573250796,
+  "civil_servants": 1794.705572299246
  },
  "BEL": {
   "name": "Belgium",
@@ -211,13 +271,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 11941781,
   "internet_share": 0.9577579144,
+  "outages_per_month": 27.29482841,
   "labour_force": 5463472,
-  "unemployment_share": 0.059059999999999994
+  "unemployment_share": 0.059059999999999994,
+  "public_employment_share": 0.00357845157384872,
+  "civil_servants": 18396.101502232163
  },
  "BEN": {
   "name": "Benin",
@@ -226,13 +292,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 14814460,
   "internet_share": 0.3398379898,
+  "outages_per_month": 86.14924622,
   "labour_force": 6644562,
-  "unemployment_share": 0.01589
+  "unemployment_share": 0.01589,
+  "public_employment_share": 0.00026402285322547003,
+  "civil_servants": 1726.4401329747034
  },
  "BFA": {
   "name": "Burkina Faso",
@@ -241,13 +313,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 24074580,
   "internet_share": 0.2825270081,
+  "outages_per_month": 92.48812103,
   "labour_force": 9914873,
-  "unemployment_share": 0.034769999999999995
+  "unemployment_share": 0.034769999999999995,
+  "public_employment_share": 0.00028308175504207603,
+  "civil_servants": 2709.130007633686
  },
  "BGD": {
   "name": "Bangladesh",
@@ -256,13 +334,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2022",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 175686899,
   "internet_share": 0.5342171316000001,
+  "outages_per_month": 71.35041046,
   "labour_force": 74739682,
-  "unemployment_share": 0.03778
+  "unemployment_share": 0.03778,
+  "public_employment_share": 0.000419934950768948,
+  "civil_servants": 30200.04898030272
  },
  "BGR": {
   "name": "Bulgaria",
@@ -271,13 +355,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 6433302,
   "internet_share": 0.82438955,
+  "outages_per_month": 20.19131088,
   "labour_force": 3090210,
-  "unemployment_share": 0.03536
+  "unemployment_share": 0.03536,
+  "public_employment_share": 0.00177469372749329,
+  "civil_servants": 5290.255829540433
  },
  "BHR": {
   "name": "Bahrain",
@@ -286,11 +376,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 1600366,
   "internet_share": 1.0,
+  "outages_per_month": 15.21687126,
   "labour_force": 919501,
   "unemployment_share": 0.01102
  },
@@ -301,11 +393,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2010",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 403033,
   "internet_share": 0.9247270203,
+  "outages_per_month": 74.99667358,
   "labour_force": 245159,
   "unemployment_share": 0.09207000000000001
  },
@@ -316,13 +410,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3140095,
   "internet_share": 0.8610091103,
+  "outages_per_month": 14.62914848,
   "labour_force": 1340707,
-  "unemployment_share": 0.11037000000000001
+  "unemployment_share": 0.11037000000000001,
+  "public_employment_share": 0.0027379694581031798,
+  "civil_servants": 3265.6669867732166
  },
  "BLR": {
   "name": "Belarus",
@@ -331,11 +431,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2018",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 9085991,
   "internet_share": 0.9426182128,
+  "outages_per_month": 24.81485176,
   "labour_force": 4795335,
   "unemployment_share": 0.0338
  },
@@ -346,11 +448,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 422924,
   "internet_share": 0.8000582262,
+  "outages_per_month": 79.92089081,
   "labour_force": 184286,
   "unemployment_share": 0.08856
  },
@@ -372,13 +476,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 12581843,
   "internet_share": 0.7970469666,
+  "outages_per_month": 32.42686081,
   "labour_force": 6980187,
-  "unemployment_share": 0.029670000000000002
+  "unemployment_share": 0.029670000000000002,
+  "public_employment_share": 0.000888031870126724,
+  "civil_servants": 6014.7152073910165
  },
  "BRA": {
   "name": "Brazil",
@@ -387,13 +497,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 212812405,
   "internet_share": 0.8446347227,
+  "outages_per_month": 59.63993073,
   "labour_force": 108318282,
-  "unemployment_share": 0.059699999999999996
+  "unemployment_share": 0.059699999999999996,
+  "public_employment_share": 0.0012514400482177702,
+  "civil_servants": 127461.27203682395
  },
  "BRB": {
   "name": "Barbados",
@@ -402,11 +518,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 282623,
   "internet_share": 0.7036470032,
+  "outages_per_month": 63.02742386,
   "labour_force": 151620,
   "unemployment_share": 0.06524
  },
@@ -417,11 +535,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 466330,
   "internet_share": 0.9629828800999999,
+  "outages_per_month": 44.42594528,
   "labour_force": 237763,
   "unemployment_share": 0.052770000000000004
  },
@@ -432,13 +552,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2007",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 796682,
   "internet_share": 0.9127739716000001,
+  "outages_per_month": 18.56921005,
   "labour_force": 411263,
-  "unemployment_share": 0.03227
+  "unemployment_share": 0.03227,
+  "public_employment_share": 0.00129949420690536,
+  "civil_servants": 517.1877045128306
  },
  "BWA": {
   "name": "Botswana",
@@ -447,13 +573,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2562122,
   "internet_share": 0.5745950036,
+  "outages_per_month": 64.15776825,
   "labour_force": 1199393,
-  "unemployment_share": 0.24477000000000002
+  "unemployment_share": 0.24477000000000002,
+  "public_employment_share": 0.00272492647171021,
+  "civil_servants": 2468.2862897205696
  },
  "CAF": {
   "name": "Central African Republic",
@@ -462,13 +594,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2008",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5513282,
   "internet_share": 0.1378250027,
+  "outages_per_month": 89.27954865,
   "labour_force": 2076374,
-  "unemployment_share": 0.06251000000000001
+  "unemployment_share": 0.06251000000000001,
+  "public_employment_share": 0.000423533134162426,
+  "civil_servants": 824.4410695369081
  },
  "CAN": {
   "name": "Canada",
@@ -477,13 +615,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2010",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 41651653,
   "internet_share": 0.94353302,
+  "outages_per_month": 31.43341064,
   "labour_force": 22846475,
-  "unemployment_share": 0.06907
+  "unemployment_share": 0.06907,
+  "public_employment_share": 0.0021026,
+  "civil_servants": 44719.08286000156
  },
  "CHE": {
   "name": "Switzerland",
@@ -492,13 +636,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 9092436,
   "internet_share": 0.9732103854999999,
+  "outages_per_month": 10.29571915,
   "labour_force": 5165662,
-  "unemployment_share": 0.04873
+  "unemployment_share": 0.04873,
+  "public_employment_share": 0.00275111883878708,
+  "civil_servants": 13518.830955410836
  },
  "CHI": {
   "name": "Channel Islands",
@@ -520,13 +670,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 19859921,
   "internet_share": 0.95590243,
+  "outages_per_month": 52.83522034,
   "labour_force": 10326077,
-  "unemployment_share": 0.08974
+  "unemployment_share": 0.08974,
+  "public_employment_share": 0.00152755126357079,
+  "civil_servants": 14358.088030974097
  },
  "CHN": {
   "name": "China",
@@ -535,13 +691,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1406585000,
   "internet_share": 0.9159999999999999,
+  "outages_per_month": 3.657439232,
   "labour_force": 768071923,
-  "unemployment_share": 0.046150000000000004
+  "unemployment_share": 0.046150000000000004,
+  "public_employment_share": 0.0014974510669708298,
+  "civil_servants": 1097070.6925406884
  },
  "CIV": {
   "name": "Cote d'Ivoire",
@@ -550,11 +712,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 32711547,
   "internet_share": 0.4143219902,
+  "outages_per_month": 80.34918213,
   "labour_force": 13067763,
   "unemployment_share": 0.02323
  },
@@ -565,13 +729,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2022",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 29879337,
   "internet_share": 0.4625880051,
+  "outages_per_month": 93.30515289,
   "labour_force": 11466010,
-  "unemployment_share": 0.036019999999999996
+  "unemployment_share": 0.036019999999999996,
+  "public_employment_share": 0.000766641870141029,
+  "civil_servants": 8473.695902408344
  },
  "COD": {
   "name": "Congo, Dem. Rep.",
@@ -580,11 +750,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 112832473,
   "internet_share": 0.1967350006,
+  "outages_per_month": 77.36276245,
   "labour_force": 39217778,
   "unemployment_share": 0.044340000000000004
  },
@@ -595,13 +767,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2011",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 6484437,
   "internet_share": 0.4725159836,
+  "outages_per_month": 77.10931396,
   "labour_force": 2641346,
-  "unemployment_share": 0.19876000000000002
+  "unemployment_share": 0.19876000000000002,
+  "public_employment_share": 0.00110439211130142,
+  "civil_servants": 2337.282529784214
  },
  "COL": {
   "name": "Colombia",
@@ -610,13 +788,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 53425635,
   "internet_share": 0.7934543299000001,
+  "outages_per_month": 30.55766869,
   "labour_force": 27099025,
-  "unemployment_share": 0.08289999999999999
+  "unemployment_share": 0.08289999999999999,
+  "public_employment_share": 0.000417422503232956,
+  "civil_servants": 10373.99936835171
  },
  "COM": {
   "name": "Comoros",
@@ -625,13 +809,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 882847,
   "internet_share": 0.3251750183,
+  "outages_per_month": 91.69716644,
   "labour_force": 310841,
-  "unemployment_share": 0.03819
+  "unemployment_share": 0.03819,
+  "public_employment_share": 0.0017486946284770999,
+  "civil_servants": 522.8072019665212
  },
  "CPV": {
   "name": "Cabo Verde",
@@ -640,13 +830,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2007",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 527326,
   "internet_share": 0.7473519896999999,
+  "outages_per_month": 39.56323624,
   "labour_force": 226448,
-  "unemployment_share": 0.11939
+  "unemployment_share": 0.11939,
+  "public_employment_share": 0.0021092450618743898,
+  "civil_servants": 420.6095636174925
  },
  "CRI": {
   "name": "Costa Rica",
@@ -655,13 +851,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5152950,
   "internet_share": 0.8717019653,
+  "outages_per_month": 51.41728973,
   "labour_force": 2427166,
-  "unemployment_share": 0.06843
+  "unemployment_share": 0.06843,
+  "public_employment_share": 0.00129837796092033,
+  "civil_servants": 2935.729987744268
  },
  "CUB": {
   "name": "Cuba",
@@ -707,13 +909,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1370754,
   "internet_share": 0.8960099246,
+  "outages_per_month": 13.50728035,
   "labour_force": 770268,
-  "unemployment_share": 0.049240000000000006
+  "unemployment_share": 0.049240000000000006,
+  "public_employment_share": 0.00203557193279266,
+  "civil_servants": 1490.7307567522814
  },
  "CZE": {
   "name": "Czechia",
@@ -722,13 +930,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10886878,
   "internet_share": 0.8768776013999999,
+  "outages_per_month": 38.29997635,
   "labour_force": 5578235,
-  "unemployment_share": 0.02825
+  "unemployment_share": 0.02825,
+  "public_employment_share": 0.00205561071634293,
+  "civil_servants": 11142.745944328317
  },
  "DEU": {
   "name": "Germany",
@@ -737,13 +951,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 83491249,
   "internet_share": 0.9349999579,
+  "outages_per_month": 5.840508938,
   "labour_force": 43549178,
-  "unemployment_share": 0.03711
+  "unemployment_share": 0.03711,
+  "public_employment_share": 0.0022424,
+  "civil_servants": 94030.7116931114
  },
  "DJI": {
   "name": "Djibouti",
@@ -752,13 +972,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2017",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1184076,
   "internet_share": 0.6529889679,
+  "outages_per_month": 56.58783722,
   "labour_force": 267610,
-  "unemployment_share": 0.26015
+  "unemployment_share": 0.26015,
+  "public_employment_share": 0.00428298532962799,
+  "civil_servants": 847.9936555500831
  },
  "DMA": {
   "name": "Dominica",
@@ -766,10 +992,12 @@
   "income": "Upper middle income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2010"
   },
   "population": 65871,
-  "internet_share": 0.8204689788999999
+  "internet_share": 0.8204689788999999,
+  "outages_per_month": 100
  },
  "DNK": {
   "name": "Denmark",
@@ -778,13 +1006,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 6009169,
   "internet_share": 0.9976915157,
+  "outages_per_month": 31.3266716,
   "labour_force": 3294817,
-  "unemployment_share": 0.05529
+  "unemployment_share": 0.05529,
+  "public_employment_share": 0.0032521805167198196,
+  "civil_servants": 10122.888524112066
  },
  "DOM": {
   "name": "Dominican Republic",
@@ -793,13 +1027,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 11520487,
   "internet_share": 0.9100224459999999,
+  "outages_per_month": 40.14577103,
   "labour_force": 5512758,
-  "unemployment_share": 0.05091999999999999
+  "unemployment_share": 0.05091999999999999,
+  "public_employment_share": 0.00165445283055305,
+  "civil_servants": 8656.177223160199
  },
  "DZA": {
   "name": "Algeria",
@@ -823,13 +1063,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 18289896,
   "internet_share": 0.7717273115000001,
+  "outages_per_month": 74.81625366,
   "labour_force": 8977208,
-  "unemployment_share": 0.03308
+  "unemployment_share": 0.03308,
+  "public_employment_share": 0.0007056095451116561,
+  "civil_servants": 6124.86158040312
  },
  "EGY": {
   "name": "Egypt, Arab Rep.",
@@ -838,13 +1084,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 118365995,
   "internet_share": 0.7464839935,
+  "outages_per_month": 35.62733841,
   "labour_force": 36106369,
-  "unemployment_share": 0.06781
+  "unemployment_share": 0.06781,
+  "public_employment_share": 0.00217682063579559,
+  "civil_servants": 73267.42050942972
  },
  "ERI": {
   "name": "Eritrea",
@@ -853,11 +1105,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2020",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2009",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 3607003,
   "internet_share": 0.1434939957,
+  "outages_per_month": 20.54837227,
   "labour_force": 1763700,
   "unemployment_share": 0.05978
  },
@@ -868,13 +1122,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 49355143,
   "internet_share": 0.957574516,
+  "outages_per_month": 18.79100037,
   "labour_force": 24759183,
-  "unemployment_share": 0.10375999999999999
+  "unemployment_share": 0.10375999999999999,
+  "public_employment_share": 0.00248055040836334,
+  "civil_servants": 55043.835681608165
  },
  "EST": {
   "name": "Estonia",
@@ -883,13 +1143,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1366475,
   "internet_share": 0.9223796204,
+  "outages_per_month": 26.16258049,
   "labour_force": 754206,
-  "unemployment_share": 0.08313000000000001
+  "unemployment_share": 0.08313000000000001,
+  "public_employment_share": 0.00219120994210243,
+  "civil_servants": 1515.2410786099338
  },
  "ETH": {
   "name": "Ethiopia",
@@ -898,13 +1164,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 135472051,
   "internet_share": 0.2194129944,
+  "outages_per_month": 85.86965942,
   "labour_force": 56779061,
-  "unemployment_share": 0.03323
+  "unemployment_share": 0.03323,
+  "public_employment_share": 0.0007016152143478389,
+  "civil_servants": 38513.26778100013
  },
  "FIN": {
   "name": "Finland",
@@ -913,13 +1185,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5646436,
   "internet_share": 0.9372405196,
+  "outages_per_month": 37.96795654,
   "labour_force": 2886946,
-  "unemployment_share": 0.09461
+  "unemployment_share": 0.09461,
+  "public_employment_share": 0.00278223812580109,
+  "civil_servants": 7272.247508416751
  },
  "FJI": {
   "name": "Fiji",
@@ -928,11 +1206,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 933154,
   "internet_share": 0.7470520019999999,
+  "outages_per_month": 84.88577271,
   "labour_force": 390290,
   "unemployment_share": 0.053470000000000004
  },
@@ -943,13 +1223,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 68720337,
   "internet_share": 0.8865381638,
+  "outages_per_month": 30.09887505,
   "labour_force": 31862995,
-  "unemployment_share": 0.07542
+  "unemployment_share": 0.07542,
+  "public_employment_share": 0.00289384722709656,
+  "civil_servants": 85252.41495947528
  },
  "FRO": {
   "name": "Faroe Islands",
@@ -968,10 +1254,14 @@
   "income": "Upper middle income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2009",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2005"
   },
   "population": 113683,
-  "internet_share": 0.3952360153
+  "internet_share": 0.3952360153,
+  "outages_per_month": 85.15315247,
+  "public_employment_share": 0.0038216307759285
  },
  "GAB": {
   "name": "Gabon",
@@ -980,13 +1270,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2017",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2593130,
   "internet_share": 0.6872090149000001,
+  "outages_per_month": 87.09931183,
   "labour_force": 844145,
-  "unemployment_share": 0.20154
+  "unemployment_share": 0.20154,
+  "public_employment_share": 0.00226285994052887,
+  "civil_servants": 1525.2038434652677
  },
  "GBR": {
   "name": "United Kingdom",
@@ -995,13 +1291,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 69487000,
   "internet_share": 0.954720993,
+  "outages_per_month": 14.28833008,
   "labour_force": 35409108,
-  "unemployment_share": 0.04746
+  "unemployment_share": 0.04746,
+  "public_employment_share": 0.00288666516542435,
+  "civil_servants": 97363.1508382812
  },
  "GEO": {
   "name": "Georgia",
@@ -1010,13 +1312,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3935766,
   "internet_share": 0.8379855689,
+  "outages_per_month": 42.39107132,
   "labour_force": 2012582,
-  "unemployment_share": 0.12097
+  "unemployment_share": 0.12097,
+  "public_employment_share": 0.00142238914966583,
+  "civil_servants": 2516.3770291036003
  },
  "GHA": {
   "name": "Ghana",
@@ -1025,13 +1333,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 35064272,
   "internet_share": 0.7217569733000001,
+  "outages_per_month": 73.76318359,
   "labour_force": 13250486,
-  "unemployment_share": 0.02979
+  "unemployment_share": 0.02979,
+  "public_employment_share": 0.0006337163597345349,
+  "civil_servants": 8146.901640502469
  },
  "GIB": {
   "name": "Gibraltar",
@@ -1051,13 +1365,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2012",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 15099727,
   "internet_share": 0.3330469894,
+  "outages_per_month": 91.10287476,
   "labour_force": 4722818,
-  "unemployment_share": 0.05163
+  "unemployment_share": 0.05163,
+  "public_employment_share": 0.000389977321028709,
+  "civil_servants": 1746.7001949633627
  },
  "GMB": {
   "name": "Gambia, The",
@@ -1066,13 +1386,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2822093,
   "internet_share": 0.4949430084,
+  "outages_per_month": 86.94114685,
   "labour_force": 807275,
-  "unemployment_share": 0.06521
+  "unemployment_share": 0.06521,
+  "public_employment_share": 0.000264979973435402,
+  "civil_servants": 199.9625255727934
  },
  "GNB": {
   "name": "Guinea-Bissau",
@@ -1081,13 +1407,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2249515,
   "internet_share": 0.2977739906,
+  "outages_per_month": 72.17525482,
   "labour_force": 899220,
-  "unemployment_share": 0.02673
+  "unemployment_share": 0.02673,
+  "public_employment_share": 0.000535028912127018,
+  "civil_servants": 468.24866285561797
  },
  "GNQ": {
   "name": "Equatorial Guinea",
@@ -1096,11 +1428,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 1938431,
   "internet_share": 0.6329930115,
+  "outages_per_month": 33.32280731,
   "labour_force": 737977,
   "unemployment_share": 0.08337
  },
@@ -1111,13 +1445,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10413962,
   "internet_share": 0.8626968886,
+  "outages_per_month": 21.25569153,
   "labour_force": 4715509,
-  "unemployment_share": 0.08539999999999999
+  "unemployment_share": 0.08539999999999999,
+  "public_employment_share": 0.0023433539271354702,
+  "civil_servants": 10106.42743562384
  },
  "GRD": {
   "name": "Grenada",
@@ -1125,10 +1465,12 @@
   "income": "Upper middle income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025"
   },
   "population": 117303,
-  "internet_share": 0.7016159821
+  "internet_share": 0.7016159821,
+  "outages_per_month": 59.69668579
  },
  "GRL": {
   "name": "Greenland",
@@ -1148,13 +1490,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 18687881,
   "internet_share": 0.6022140121,
+  "outages_per_month": 70.73220062,
   "labour_force": 7684762,
-  "unemployment_share": 0.02604
+  "unemployment_share": 0.02604,
+  "public_employment_share": 0.000656275302171707,
+  "civil_servants": 4911.9914637921465
  },
  "GUM": {
   "name": "Guam",
@@ -1178,11 +1526,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2010",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 835986,
   "internet_share": 0.8300080109,
+  "outages_per_month": 81.80511475,
   "labour_force": 326682,
   "unemployment_share": 0.11962
  },
@@ -1193,11 +1543,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 7498900,
   "internet_share": 0.9575536970999999,
+  "outages_per_month": 3.939208746,
   "labour_force": 3790314,
   "unemployment_share": 0.02799
  },
@@ -1208,13 +1560,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2016",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 11005850,
   "internet_share": 0.5862269974000001,
+  "outages_per_month": 69.82650757,
   "labour_force": 4340779,
-  "unemployment_share": 0.0492
+  "unemployment_share": 0.0492,
+  "public_employment_share": 0.000657971724867821,
+  "civil_servants": 2715.5892414817345
  },
  "HRV": {
   "name": "Croatia",
@@ -1223,13 +1581,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3876200,
   "internet_share": 0.8363240029000001,
+  "outages_per_month": 17.65062904,
   "labour_force": 1744218,
-  "unemployment_share": 0.050019999999999995
+  "unemployment_share": 0.050019999999999995,
+  "public_employment_share": 0.00205678373575211,
+  "civil_servants": 3408.03350372149
  },
  "HTI": {
   "name": "Haiti",
@@ -1239,12 +1603,16 @@
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2001",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 11906095,
   "internet_share": 0.47861400600000004,
   "labour_force": 5268189,
-  "unemployment_share": 0.14944000000000002
+  "unemployment_share": 0.14944000000000002,
+  "public_employment_share": 0.00028756272047758097,
+  "civil_servants": 1288.5429101716215
  },
  "HUN": {
   "name": "Hungary",
@@ -1253,13 +1621,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 9514251,
   "internet_share": 0.9377898628,
+  "outages_per_month": 27.53034592,
   "labour_force": 4936333,
-  "unemployment_share": 0.04521
+  "unemployment_share": 0.04521,
+  "public_employment_share": 0.00246803000569344,
+  "civil_servants": 11632.223720028413
  },
  "IDN": {
   "name": "Indonesia",
@@ -1268,13 +1642,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 285721236,
   "internet_share": 0.7278075543999999,
+  "outages_per_month": 12.69912815,
   "labour_force": 147104597,
-  "unemployment_share": 0.03237
+  "unemployment_share": 0.03237,
+  "public_employment_share": 0.000972290113568306,
+  "civil_servants": 138398.51778542658
  },
  "IMN": {
   "name": "Isle of Man",
@@ -1292,13 +1672,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1463865525,
   "internet_share": 0.7,
+  "outages_per_month": 15.37491417,
   "labour_force": 617625336,
-  "unemployment_share": 0.042190000000000005
+  "unemployment_share": 0.042190000000000005,
+  "public_employment_share": 0.000777380242943764,
+  "civil_servants": 459873.0602810798
  },
  "IRL": {
   "name": "Ireland",
@@ -1307,13 +1693,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5484367,
   "internet_share": 0.9718769836,
+  "outages_per_month": 30.21655464,
   "labour_force": 2912741,
-  "unemployment_share": 0.04632
+  "unemployment_share": 0.04632,
+  "public_employment_share": 0.0029331523180007903,
+  "civil_servants": 8147.7774929901025
  },
  "IRN": {
   "name": "Iran, Islamic Rep.",
@@ -1323,12 +1715,16 @@
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 92417681,
   "internet_share": 0.8534040070000001,
   "labour_force": 29521716,
-  "unemployment_share": 0.08301
+  "unemployment_share": 0.08301,
+  "public_employment_share": 0.0013208554685115801,
+  "civil_servants": 35757.034717714625
  },
  "IRQ": {
   "name": "Iraq",
@@ -1337,11 +1733,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2022",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 47020774,
   "internet_share": 0.8147450256000001,
+  "outages_per_month": 41.34790039,
   "labour_force": 12493376,
   "unemployment_share": 0.15485
  },
@@ -1352,13 +1750,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 392404,
   "internet_share": 0.98209198,
+  "outages_per_month": 18.37255669,
   "labour_force": 242507,
-  "unemployment_share": 0.03625
+  "unemployment_share": 0.03625,
+  "public_employment_share": 0.0029911839962005597,
+  "civil_servants": 699.0879215370695
  },
  "ISR": {
   "name": "Israel",
@@ -1367,11 +1771,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 10122800,
   "internet_share": 0.8818242225,
+  "outages_per_month": 8.329169273,
   "labour_force": 4828536,
   "unemployment_share": 0.03489
  },
@@ -1382,13 +1788,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 58915656,
   "internet_share": 0.892207202,
+  "outages_per_month": 9.594126701,
   "labour_force": 25660587,
-  "unemployment_share": 0.06391
+  "unemployment_share": 0.06391,
+  "public_employment_share": 0.00195364162325859,
+  "civil_servants": 46927.68086983522
  },
  "JAM": {
   "name": "Jamaica",
@@ -1397,13 +1809,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2002",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2837077,
   "internet_share": 0.9010870361000001,
+  "outages_per_month": 87.58823395,
   "labour_force": 1612761,
-  "unemployment_share": 0.03286
+  "unemployment_share": 0.03286,
+  "public_employment_share": 0.00121266216039658,
+  "civil_servants": 1891.468811387443
  },
  "JOR": {
   "name": "Jordan",
@@ -1412,13 +1830,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2016",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 11520684,
   "internet_share": 0.9562244984999999,
+  "outages_per_month": 14.22720337,
   "labour_force": 3220931,
-  "unemployment_share": 0.16535
+  "unemployment_share": 0.16535,
+  "public_employment_share": 0.00231858640909195,
+  "civil_servants": 6233.17191002673
  },
  "JPN": {
   "name": "Japan",
@@ -1427,11 +1851,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 123366734,
   "internet_share": 0.8554153081,
+  "outages_per_month": 10.48539829,
   "labour_force": 69477012,
   "unemployment_share": 0.02451
  },
@@ -1442,13 +1868,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2010",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 20843754,
   "internet_share": 0.9339167254,
+  "outages_per_month": 32.45364761,
   "labour_force": 10009918,
-  "unemployment_share": 0.04771
+  "unemployment_share": 0.04771,
+  "public_employment_share": 0.00371687531471252,
+  "civil_servants": 35430.53712386847
  },
  "KEN": {
   "name": "Kenya",
@@ -1457,13 +1889,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 57532493,
   "internet_share": 0.34976225130000005,
+  "outages_per_month": 74.61010742,
   "labour_force": 24711751,
-  "unemployment_share": 0.05449
+  "unemployment_share": 0.05449,
+  "public_employment_share": 0.000751814618706703,
+  "civil_servants": 17566.304708964162
  },
  "KGZ": {
   "name": "Kyrgyz Republic",
@@ -1472,11 +1910,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 7343064,
   "internet_share": 0.920286026,
+  "outages_per_month": 45.38615036,
   "labour_force": 2868314,
   "unemployment_share": 0.03526
  },
@@ -1487,13 +1927,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2012",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 17847982,
   "internet_share": 0.6847530365,
+  "outages_per_month": 42.82474136,
   "labour_force": 10367640,
-  "unemployment_share": 0.00263
+  "unemployment_share": 0.00263,
+  "public_employment_share": 0.0007645753771066669,
+  "civil_servants": 7905.994667555246
  },
  "KIR": {
   "name": "Kiribati",
@@ -1501,10 +1947,12 @@
   "income": "Lower middle income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025"
   },
   "population": 136488,
-  "internet_share": 0.8944029999
+  "internet_share": 0.8944029999,
+  "outages_per_month": 87.99652863
  },
  "KNA": {
   "name": "St. Kitts and Nevis",
@@ -1512,10 +1960,12 @@
   "income": "High income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2010"
   },
   "population": 46922,
-  "internet_share": 0.7688400269
+  "internet_share": 0.7688400269,
+  "outages_per_month": 94.0308075
  },
  "KOR": {
   "name": "Korea, Rep.",
@@ -1524,11 +1974,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 51684564,
   "internet_share": 0.9789563776999999,
+  "outages_per_month": 4.673435688,
   "labour_force": 29865575,
   "unemployment_share": 0.02683
  },
@@ -1539,11 +1991,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 4865298,
   "internet_share": 1.0,
+  "outages_per_month": 3.472869635,
   "labour_force": 2927890,
   "unemployment_share": 0.02181
  },
@@ -1554,11 +2008,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 7873046,
   "internet_share": 0.6559269714,
+  "outages_per_month": 41.46328354,
   "labour_force": 3650484,
   "unemployment_share": 0.01187
  },
@@ -1569,13 +2025,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2019",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2023",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2023"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2023",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5849421,
   "internet_share": 0.8063400269000001,
+  "outages_per_month": 4.412186146,
   "labour_force": 1837294,
-  "unemployment_share": 0.10984999999999999
+  "unemployment_share": 0.10984999999999999,
+  "public_employment_share": 0.00150130495429039,
+  "civil_servants": 2455.33509116003
  },
  "LBR": {
   "name": "Liberia",
@@ -1584,13 +2046,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5731206,
   "internet_share": 0.32233600619999997,
+  "outages_per_month": 64.48472595,
   "labour_force": 2673807,
-  "unemployment_share": 0.028839999999999998
+  "unemployment_share": 0.028839999999999998,
+  "public_employment_share": 0.00074000671505928,
+  "civil_servants": 1921.571297485669
  },
  "LBY": {
   "name": "Libya",
@@ -1614,11 +2082,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 180149,
   "internet_share": 0.6820500183,
+  "outages_per_month": 50.21802521,
   "labour_force": 101771,
   "unemployment_share": 0.09451999999999999
  },
@@ -1640,13 +2110,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2016",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 21756000,
   "internet_share": 0.5459,
+  "outages_per_month": 38.12524033,
   "labour_force": 8264760,
-  "unemployment_share": 0.04005
+  "unemployment_share": 0.04005,
+  "public_employment_share": 0.00118910789489746,
+  "civil_servants": 9434.09232624715
  },
  "LSO": {
   "name": "Lesotho",
@@ -1655,13 +2131,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2363325,
   "internet_share": 0.5179660034,
+  "outages_per_month": 64.55149841,
   "labour_force": 889530,
-  "unemployment_share": 0.16315000000000002
+  "unemployment_share": 0.16315000000000002,
+  "public_employment_share": 0.0013636739552020999,
+  "civil_servants": 1015.1232294174577
  },
  "LTU": {
   "name": "Lithuania",
@@ -1670,13 +2152,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2888774,
   "internet_share": 0.8916116293,
+  "outages_per_month": 27.27332497,
   "labour_force": 1553918,
-  "unemployment_share": 0.06731
+  "unemployment_share": 0.06731,
+  "public_employment_share": 0.00244258299469948,
+  "civil_servants": 3540.0936174248723
  },
  "LUX": {
   "name": "Luxembourg",
@@ -1685,13 +2173,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2020",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 686970,
   "internet_share": 0.9912902211,
+  "outages_per_month": 22.79146767,
   "labour_force": 355974,
-  "unemployment_share": 0.06343
+  "unemployment_share": 0.06343,
+  "public_employment_share": 0.00315422981977463,
+  "civil_servants": 1051.6030918584718
  },
  "LVA": {
   "name": "Latvia",
@@ -1700,13 +2194,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1847785,
   "internet_share": 0.9270757011,
+  "outages_per_month": 19.9266243,
   "labour_force": 948428,
-  "unemployment_share": 0.06568
+  "unemployment_share": 0.06568,
+  "public_employment_share": 0.0023586928844451897,
+  "civil_servants": 2090.120906378019
  },
  "MAC": {
   "name": "Macao SAR, China",
@@ -1739,13 +2239,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2009",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 38430770,
   "internet_share": 0.912,
+  "outages_per_month": 10.88711357,
   "labour_force": 12631464,
-  "unemployment_share": 0.09
+  "unemployment_share": 0.09,
+  "public_employment_share": 0.0008584616333246229,
+  "civil_servants": 9867.700767216269
  },
  "MCO": {
   "name": "Monaco",
@@ -1765,13 +2271,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2360527,
   "internet_share": 0.7736879729999999,
+  "outages_per_month": 50.93729401,
   "labour_force": 1373086,
-  "unemployment_share": 0.01505
+  "unemployment_share": 0.01505,
+  "public_employment_share": 0.00302894622087479,
+  "civil_servants": 4096.410645694009
  },
  "MDG": {
   "name": "Madagascar",
@@ -1780,13 +2292,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2022",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2012",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 32740678,
   "internet_share": 0.18677900309999998,
+  "outages_per_month": 52.38755417,
   "labour_force": 17092352,
-  "unemployment_share": 0.03041
+  "unemployment_share": 0.03041,
+  "public_employment_share": 0.000254942160099745,
+  "civil_servants": 4225.047705795814
  },
  "MDV": {
   "name": "Maldives",
@@ -1795,13 +2313,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 529676,
   "internet_share": 0.8523999786,
+  "outages_per_month": 71.49152374,
   "labour_force": 272320,
-  "unemployment_share": 0.04514
+  "unemployment_share": 0.04514,
+  "public_employment_share": 0.00470980435609818,
+  "civil_servants": 1224.6785354021715
  },
  "MEX": {
   "name": "Mexico",
@@ -1810,13 +2334,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 131946900,
   "internet_share": 0.8312233799000001,
+  "outages_per_month": 28.44305992,
   "labour_force": 61707262,
-  "unemployment_share": 0.02673
+  "unemployment_share": 0.02673,
+  "public_employment_share": 0.00136659145355225,
+  "civil_servants": 82074.51294233941
  },
  "MHL": {
   "name": "Marshall Islands",
@@ -1836,11 +2366,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 1820909,
   "internet_share": 0.9309999999999999,
+  "outages_per_month": 18.66334343,
   "labour_force": 789369,
   "unemployment_share": 0.12256
  },
@@ -1851,13 +2383,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 25198821,
   "internet_share": 0.3680149841,
+  "outages_per_month": 87.10353088,
   "labour_force": 9156646,
-  "unemployment_share": 0.02831
+  "unemployment_share": 0.02831,
+  "public_employment_share": 0.000472510866820812,
+  "civil_servants": 4204.128275380669
  },
  "MLT": {
   "name": "Malta",
@@ -1866,13 +2404,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 579704,
   "internet_share": 0.9386029816,
+  "outages_per_month": 55.05377197,
   "labour_force": 323052,
-  "unemployment_share": 0.02896
+  "unemployment_share": 0.02896,
+  "public_employment_share": 0.00285989791154861,
+  "civil_servants": 897.13971948768
  },
  "MMR": {
   "name": "Myanmar",
@@ -1881,13 +2425,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2020",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2016",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2017",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 54850648,
   "internet_share": 0.45447700500000004,
+  "outages_per_month": 94.91378021,
   "labour_force": 22940495,
-  "unemployment_share": 0.03047
+  "unemployment_share": 0.03047,
+  "public_employment_share": 0.00042723774909973105,
+  "civil_servants": 9502.40759226252
  },
  "MNE": {
   "name": "Montenegro",
@@ -1896,13 +2446,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2011",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 623129,
   "internet_share": 0.8888258428,
+  "outages_per_month": 55.39978027,
   "labour_force": 296618,
-  "unemployment_share": 0.13571999999999998
+  "unemployment_share": 0.13571999999999998,
+  "public_employment_share": 0.00117557674646378,
+  "civil_servants": 301.3720362251079
  },
  "MNG": {
   "name": "Mongolia",
@@ -1911,13 +2467,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3568978,
   "internet_share": 0.8512349700999999,
+  "outages_per_month": 27.17803383,
   "labour_force": 1457964,
-  "unemployment_share": 0.052329999999999995
+  "unemployment_share": 0.052329999999999995,
+  "public_employment_share": 0.00270879685878754,
+  "civil_servants": 3742.6599533070703
  },
  "MNP": {
   "name": "Northern Mariana Islands",
@@ -1937,13 +2499,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 35631653,
   "internet_share": 0.20527299880000002,
+  "outages_per_month": 58.78262329,
   "labour_force": 15658114,
-  "unemployment_share": 0.06628
+  "unemployment_share": 0.06628,
+  "public_employment_share": 0.000388136319816113,
+  "civil_servants": 5674.667187000458
  },
  "MRT": {
   "name": "Mauritania",
@@ -1952,13 +2520,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5315065,
   "internet_share": 0.4577939987,
+  "outages_per_month": 84.26553345,
   "labour_force": 1248560,
-  "unemployment_share": 0.10319
+  "unemployment_share": 0.10319,
+  "public_employment_share": 0.00116559356451035,
+  "civil_servants": 1305.1397007466514
  },
  "MUS": {
   "name": "Mauritius",
@@ -1967,13 +2541,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2017",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1243741,
   "internet_share": 0.7330793533000001,
+  "outages_per_month": 40.38035202,
   "labour_force": 622328,
-  "unemployment_share": 0.05635
+  "unemployment_share": 0.05635,
+  "public_employment_share": 0.00182853937149048,
+  "civil_servants": 1073.8276970445022
  },
  "MWI": {
   "name": "Malawi",
@@ -1982,13 +2562,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 22216120,
   "internet_share": 0.1896159935,
+  "outages_per_month": 89.11867523,
   "labour_force": 8323726,
-  "unemployment_share": 0.05072
+  "unemployment_share": 0.05072,
+  "public_employment_share": 0.00023957783356308898,
+  "civil_servants": 1893.0354203656966
  },
  "MYS": {
   "name": "Malaysia",
@@ -1997,11 +2583,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 35977838,
   "internet_share": 0.980206059,
+  "outages_per_month": 22.31538391,
   "labour_force": 18719406,
   "unemployment_share": 0.03764
  },
@@ -2012,13 +2600,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3092816,
   "internet_share": 0.6487460327,
+  "outages_per_month": 53.67754364,
   "labour_force": 1152801,
-  "unemployment_share": 0.19291
+  "unemployment_share": 0.19291,
+  "public_employment_share": 0.00202058166265488,
+  "civil_servants": 1879.9777885317144
  },
  "NCL": {
   "name": "New Caledonia",
@@ -2042,13 +2636,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 27917831,
   "internet_share": 0.1555760002,
+  "outages_per_month": 75.11286926,
   "labour_force": 11971064,
-  "unemployment_share": 0.00394
+  "unemployment_share": 0.00394,
+  "public_employment_share": 0.000197499077767134,
+  "civil_servants": 2354.958859937766
  },
  "NGA": {
   "name": "Nigeria",
@@ -2057,13 +2657,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2010",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 237527782,
   "internet_share": 0.4121139908,
+  "outages_per_month": 82.49201202,
   "labour_force": 116581818,
-  "unemployment_share": 0.03064
+  "unemployment_share": 0.03064,
+  "public_employment_share": 0.0008014781773090359,
+  "civil_servants": 90574.84932695462
  },
  "NIC": {
   "name": "Nicaragua",
@@ -2072,13 +2678,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2016",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2012",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 7007502,
   "internet_share": 0.6139550018,
+  "outages_per_month": 49.94366074,
   "labour_force": 3319222,
-  "unemployment_share": 0.0504
+  "unemployment_share": 0.0504,
+  "public_employment_share": 0.0006977220624685291,
+  "civil_servants": 2199.1733408815176
  },
  "NLD": {
   "name": "Netherlands",
@@ -2087,11 +2699,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 18087633,
   "internet_share": 0.9700679778999999,
+  "outages_per_month": 20.17000389,
   "labour_force": 10347056,
   "unemployment_share": 0.038740000000000004
  },
@@ -2102,13 +2716,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5610870,
   "internet_share": 0.99,
+  "outages_per_month": 35.50731277,
   "labour_force": 3094897,
-  "unemployment_share": 0.046369999999999995
+  "unemployment_share": 0.046369999999999995,
+  "public_employment_share": 0.00328327566385269,
+  "civil_servants": 9690.215884127261
  },
  "NPL": {
   "name": "Nepal",
@@ -2117,13 +2737,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 29618118,
   "internet_share": 0.4632189941,
+  "outages_per_month": 75.83725739,
   "labour_force": 8362760,
-  "unemployment_share": 0.10464999999999999
+  "unemployment_share": 0.10464999999999999,
+  "public_employment_share": 0.000437135584652424,
+  "civil_servants": 3273.095164801243
  },
  "NRU": {
   "name": "Naoero",
@@ -2143,11 +2769,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 5324700,
   "internet_share": 0.9351930237,
+  "outages_per_month": 36.02309799,
   "labour_force": 3076335,
   "unemployment_share": 0.05076
  },
@@ -2173,13 +2801,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2022",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 255219554,
   "internet_share": 0.57253,
+  "outages_per_month": 50.6760025,
   "labour_force": 85158214,
-  "unemployment_share": 0.0542
+  "unemployment_share": 0.0542,
+  "public_employment_share": 0.000806050151586533,
+  "civil_servants": 64921.406214886636
  },
  "PAN": {
   "name": "Panama",
@@ -2188,13 +2822,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 4571189,
   "internet_share": 0.7277149962999999,
+  "outages_per_month": 22.7487812,
   "labour_force": 2287522,
-  "unemployment_share": 0.0836
+  "unemployment_share": 0.0836,
+  "public_employment_share": 0.00179754287004471,
+  "civil_servants": 3768.162444376568
  },
  "PER": {
   "name": "Peru",
@@ -2203,13 +2843,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 34576665,
   "internet_share": 0.8195705992000001,
+  "outages_per_month": 33.51228333,
   "labour_force": 19242514,
-  "unemployment_share": 0.05117
+  "unemployment_share": 0.05117,
+  "public_employment_share": 0.000758814141154289,
+  "civil_servants": 13854.333402501978
  },
  "PHL": {
   "name": "Philippines",
@@ -2218,13 +2864,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 116786962,
   "internet_share": 0.6726300914,
+  "outages_per_month": 43.93493652,
   "labour_force": 52204133,
-  "unemployment_share": 0.02235
+  "unemployment_share": 0.02235,
+  "public_employment_share": 0.000912804156541824,
+  "civil_servants": 46587.12404770197
  },
  "PLW": {
   "name": "Palau",
@@ -2244,13 +2896,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2009",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10762817,
   "internet_share": 0.1881159973,
+  "outages_per_month": 47.22895432,
   "labour_force": 3746653,
-  "unemployment_share": 0.02571
+  "unemployment_share": 0.02571,
+  "public_employment_share": 0.00030687071382999397,
+  "civil_servants": 1120.178314531492
  },
  "POL": {
   "name": "Poland",
@@ -2259,13 +2917,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 36435861,
   "internet_share": 0.8858496366999999,
+  "outages_per_month": 4.957059383,
   "labour_force": 18174157,
-  "unemployment_share": 0.029759999999999998
+  "unemployment_share": 0.029759999999999998,
+  "public_employment_share": 0.00205032587051392,
+  "civil_servants": 36153.99905035046
  },
  "PRI": {
   "name": "Puerto Rico (US)",
@@ -2304,13 +2968,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10804871,
   "internet_share": 0.8848704454,
+  "outages_per_month": 9.837311745,
   "labour_force": 5485246,
-  "unemployment_share": 0.06164
+  "unemployment_share": 0.06164,
+  "public_employment_share": 0.00269189208745956,
+  "civil_servants": 13855.533154758572
  },
  "PRY": {
   "name": "Paraguay",
@@ -2319,13 +2989,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 7013078,
   "internet_share": 0.8157806793,
+  "outages_per_month": 75.65008545,
   "labour_force": 3528777,
-  "unemployment_share": 0.048029999999999996
+  "unemployment_share": 0.048029999999999996,
+  "public_employment_share": 0.000961594879627228,
+  "civil_servants": 3230.2759099912705
  },
  "PSE": {
   "name": "West Bank and Gaza",
@@ -2334,11 +3010,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2023",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2022",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2022"
   },
   "population": 5413596,
   "internet_share": 0.8663765334,
+  "outages_per_month": 42.21687698,
   "labour_force": 1391230,
   "unemployment_share": 0.24420000000000003
  },
@@ -2364,11 +3042,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 2972215,
   "internet_share": 0.9808540344,
+  "outages_per_month": 0,
   "labour_force": 2198274,
   "unemployment_share": 0.0013
  },
@@ -2379,13 +3059,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 19020271,
   "internet_share": 0.9129048551,
+  "outages_per_month": 29.99352455,
   "labour_force": 8244587,
-  "unemployment_share": 0.05992
+  "unemployment_share": 0.05992,
+  "public_employment_share": 0.00126613512635231,
+  "civil_servants": 9813.270631685793
  },
  "RUS": {
   "name": "Russian Federation",
@@ -2394,13 +3080,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2019",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2016",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 143513328,
   "internet_share": 0.9436495368,
+  "outages_per_month": 15.14780903,
   "labour_force": 72771294,
-  "unemployment_share": 0.021330000000000002
+  "unemployment_share": 0.021330000000000002,
+  "public_employment_share": 0.00449333757162094,
+  "civil_servants": 320011.37831037067
  },
  "RWA": {
   "name": "Rwanda",
@@ -2409,13 +3101,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 14569341,
   "internet_share": 0.3170330048,
+  "outages_per_month": 60.58708954,
   "labour_force": 5843274,
-  "unemployment_share": 0.11363
+  "unemployment_share": 0.11363,
+  "public_employment_share": 0.0006311317533254621,
+  "civil_servants": 3268.822441629011
  },
  "SAU": {
   "name": "Saudi Arabia",
@@ -2424,13 +3122,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 36973555,
   "internet_share": 1.0,
+  "outages_per_month": 0.6670945883,
   "labour_force": 18383677,
-  "unemployment_share": 0.030379999999999997
+  "unemployment_share": 0.030379999999999997,
+  "public_employment_share": 0.00322080940008163,
+  "civil_servants": 57411.510177492455
  },
  "SDN": {
   "name": "Sudan",
@@ -2439,11 +3143,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2014",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2022",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2022"
   },
   "population": 51662147,
   "internet_share": 0.1860000038,
+  "outages_per_month": 93.71907043,
   "labour_force": 10949089,
   "unemployment_share": 0.0753
  },
@@ -2454,13 +3160,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2011",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 18931966,
   "internet_share": 0.6011780167,
+  "outages_per_month": 55.03804779,
   "labour_force": 6131225,
-  "unemployment_share": 0.02735
+  "unemployment_share": 0.02735,
+  "public_employment_share": 0.000371158681809902,
+  "civil_servants": 2213.418159294051
  },
  "SGP": {
   "name": "Singapore",
@@ -2469,11 +3181,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 6111175,
   "internet_share": 0.9437757177999999,
+  "outages_per_month": 0.1183119342,
   "labour_force": 3760133,
   "unemployment_share": 0.02818
  },
@@ -2484,13 +3198,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 838645,
   "internet_share": 0.2904070091,
+  "outages_per_month": 81.34392548,
   "labour_force": 448502,
-  "unemployment_share": 0.01431
+  "unemployment_share": 0.01431,
+  "public_employment_share": 0.000167219769209623,
+  "civil_servants": 73.92517381274526
  },
  "SLE": {
   "name": "Sierra Leone",
@@ -2499,13 +3219,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 8819794,
   "internet_share": 0.2510499954,
+  "outages_per_month": 66.22390747,
   "labour_force": 2934968,
-  "unemployment_share": 0.0315
+  "unemployment_share": 0.0315,
+  "public_employment_share": 0.000595988593995571,
+  "civil_servants": 1694.1074170121203
  },
  "SLV": {
   "name": "El Salvador",
@@ -2514,13 +3240,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 6365503,
   "internet_share": 0.6647769927999999,
+  "outages_per_month": 36.23701477,
   "labour_force": 2989409,
-  "unemployment_share": 0.03303
+  "unemployment_share": 0.03303,
+  "public_employment_share": 0.000847016796469688,
+  "civil_servants": 2448.445044189535
  },
  "SMR": {
   "name": "San Marino",
@@ -2540,13 +3272,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 19654739,
   "internet_share": 0.2794020081,
+  "outages_per_month": 52.56361389,
   "labour_force": 3555419,
-  "unemployment_share": 0.18948
+  "unemployment_share": 0.18948,
+  "public_employment_share": 0.0030954349040985102,
+  "civil_servants": 8920.233033146042
  },
  "SRB": {
   "name": "Serbia",
@@ -2555,11 +3293,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 6549143,
   "internet_share": 0.8769071293999999,
+  "outages_per_month": 32.59859085,
   "labour_force": 3321043,
   "unemployment_share": 0.07123
  },
@@ -2570,11 +3310,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2019",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2023",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2023"
   },
   "population": 12188788,
   "internet_share": 0.06671000004,
+  "outages_per_month": 68.36896515,
   "labour_force": 5070344,
   "unemployment_share": 0.12374
  },
@@ -2585,13 +3327,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2010",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 240254,
   "internet_share": 0.5911759949000001,
+  "outages_per_month": 75.70522308,
   "labour_force": 35075,
-  "unemployment_share": 0.09132
+  "unemployment_share": 0.09132,
+  "public_employment_share": 0.00173418939113617,
+  "civil_servants": 55.271999299011846
  },
  "SUR": {
   "name": "Suriname",
@@ -2600,11 +3348,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2023",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 639850,
   "internet_share": 0.8740000000000001,
+  "outages_per_month": 61.68092728,
   "labour_force": 257128,
   "unemployment_share": 0.07833999999999999
  },
@@ -2615,13 +3365,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 5413813,
   "internet_share": 0.8982507032,
+  "outages_per_month": 14.65464878,
   "labour_force": 2761816,
-  "unemployment_share": 0.05359
+  "unemployment_share": 0.05359,
+  "public_employment_share": 0.00234942153096199,
+  "civil_servants": 6140.942150997464
  },
  "SVN": {
   "name": "Slovenia",
@@ -2630,13 +3386,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 2130986,
   "internet_share": 0.9076355487,
+  "outages_per_month": 18.3944931,
   "labour_force": 1049047,
-  "unemployment_share": 0.03175
+  "unemployment_share": 0.03175,
+  "public_employment_share": 0.00226984158158302,
+  "civil_servants": 2305.5683382080138
  },
  "SWE": {
   "name": "Sweden",
@@ -2645,13 +3407,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10596620,
   "internet_share": 0.9576629783,
+  "outages_per_month": 32.74107361,
   "labour_force": 5701347,
-  "unemployment_share": 0.08694
+  "unemployment_share": 0.08694,
+  "public_employment_share": 0.00307188034057617,
+  "civil_servants": 15991.201143971815
  },
  "SWZ": {
   "name": "Eswatini",
@@ -2660,13 +3428,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2016",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 1256174,
   "internet_share": 0.6340309906,
+  "outages_per_month": 58.49438095,
   "labour_force": 430869,
-  "unemployment_share": 0.34202
+  "unemployment_share": 0.34202,
+  "public_employment_share": 0.00176597222685814,
+  "civil_servants": 500.6587502647558
  },
  "SXM": {
   "name": "Sint Maarten (Dutch part)",
@@ -2683,10 +3457,12 @@
   "income": "High income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023"
   },
   "population": 122730,
-  "internet_share": 0.8781800079
+  "internet_share": 0.8781800079,
+  "outages_per_month": 38.2654686
  },
  "SYR": {
   "name": "Syrian Arab Republic",
@@ -2721,13 +3497,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 21003705,
   "internet_share": 0.1262689972,
+  "outages_per_month": 96.17499542,
   "labour_force": 6746477,
-  "unemployment_share": 0.01057
+  "unemployment_share": 0.01057,
+  "public_employment_share": 0.000240564197301865,
+  "civil_servants": 1605.8061282095407
  },
  "TGO": {
   "name": "Togo",
@@ -2736,13 +3518,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2011",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 8591626,
   "internet_share": 0.3948320007,
+  "outages_per_month": 86.13388824,
   "labour_force": 2960760,
-  "unemployment_share": 0.019950000000000002
+  "unemployment_share": 0.019950000000000002,
+  "public_employment_share": 0.000417151898145676,
+  "civil_servants": 1210.4466752074136
  },
  "THA": {
   "name": "Thailand",
@@ -2751,13 +3539,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2021",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 71619863,
   "internet_share": 0.9086718789,
+  "outages_per_month": 13.19123936,
   "labour_force": 40871242,
-  "unemployment_share": 0.00781
+  "unemployment_share": 0.00781,
+  "public_employment_share": 0.0009199031442403791,
+  "civil_servants": 37303.94689357568
  },
  "TJK": {
   "name": "Tajikistan",
@@ -2766,13 +3560,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 10786734,
   "internet_share": 0.5579339981,
+  "outages_per_month": 25.23687744,
   "labour_force": 2647875,
-  "unemployment_share": 0.06931
+  "unemployment_share": 0.06931,
+  "public_employment_share": 0.00294565498828888,
+  "civil_servants": 7259.127179046798
  },
  "TKM": {
   "name": "Turkmenistan",
@@ -2781,11 +3581,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2016",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 7618847,
   "internet_share": 0.1799029922,
+  "outages_per_month": 18.79751015,
   "labour_force": 2202574,
   "unemployment_share": 0.04267000000000001
  },
@@ -2796,11 +3598,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2021",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2021",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 1418517,
   "internet_share": 0.3504199982,
+  "outages_per_month": 33.48143005,
   "labour_force": 635489,
   "unemployment_share": 0.01592
  },
@@ -2811,11 +3615,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 103742,
   "internet_share": 0.674417038,
+  "outages_per_month": 86.53012085,
   "labour_force": 33628,
   "unemployment_share": 0.02008
  },
@@ -2826,11 +3632,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 1367764,
   "internet_share": 0.8215989684999999,
+  "outages_per_month": 48.88788223,
   "labour_force": 651715,
   "unemployment_share": 0.03329
  },
@@ -2841,13 +3649,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 12348573,
   "internet_share": 0.765,
+  "outages_per_month": 35.46521759,
   "labour_force": 4268286,
-  "unemployment_share": 0.15108
+  "unemployment_share": 0.15108,
+  "public_employment_share": 0.00228086113929749,
+  "civil_servants": 8264.548321404087
  },
  "TUR": {
   "name": "Turkiye",
@@ -2856,13 +3670,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 85878556,
   "internet_share": 0.8977024002999999,
+  "outages_per_month": 32.76435852,
   "labour_force": 36882225,
-  "unemployment_share": 0.0852
+  "unemployment_share": 0.0852,
+  "public_employment_share": 0.0016034123301506,
+  "civil_servants": 54098.90662761
  },
  "TUV": {
   "name": "Tuvalu",
@@ -2882,13 +3702,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 70545865,
   "internet_share": 0.3116209984,
+  "outages_per_month": 34.12546539,
   "labour_force": 34052654,
-  "unemployment_share": 0.01572
+  "unemployment_share": 0.01572,
+  "public_employment_share": 0.000329929776489735,
+  "civil_servants": 11058.370566399113
  },
  "UGA": {
   "name": "Uganda",
@@ -2897,13 +3723,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2016",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 51384894,
   "internet_share": 0.08949831060999999,
+  "outages_per_month": 79.93642426,
   "labour_force": 23393999,
-  "unemployment_share": 0.02746
+  "unemployment_share": 0.02746,
+  "public_employment_share": 0.000337243154644966,
+  "civil_servants": 7672.821285542747
  },
  "UKR": {
   "name": "Ukraine",
@@ -2912,13 +3744,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2019",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2021",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2021"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2021",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2013",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 38980376,
   "internet_share": 0.8247489928999999,
+  "outages_per_month": 30.14723206,
   "labour_force": 20538715,
-  "unemployment_share": 0.09834
+  "unemployment_share": 0.09834,
+  "public_employment_share": 0.0038665735721588102,
+  "civil_servants": 71604.83535394922
  },
  "URY": {
   "name": "Uruguay",
@@ -2927,13 +3765,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 3384688,
   "internet_share": 0.9199109007,
+  "outages_per_month": 40.21897125,
   "labour_force": 1806025,
-  "unemployment_share": 0.07516
+  "unemployment_share": 0.07516,
+  "public_employment_share": 0.0016986826062202502,
+  "civil_servants": 2837.282651735884
  },
  "USA": {
   "name": "United States",
@@ -2942,13 +3786,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2018",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 341784857,
   "internet_share": 0.9469380188,
+  "outages_per_month": 22.63454056,
   "labour_force": 174833917,
-  "unemployment_share": 0.04198
+  "unemployment_share": 0.04198,
+  "public_employment_share": 0.0012879376113414801,
+  "civil_servants": 215722.32349342032
  },
  "UZB": {
   "name": "Uzbekistan",
@@ -2957,13 +3807,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2024",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2003",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 37053428,
   "internet_share": 0.8950550079,
+  "outages_per_month": 14.70072174,
   "labour_force": 14638807,
-  "unemployment_share": 0.04622
+  "unemployment_share": 0.04622,
+  "public_employment_share": 0.00280378013849258,
+  "civil_servants": 39146.94280801622
  },
  "VCT": {
   "name": "St. Vincent and the Grenadines",
@@ -2972,11 +3828,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 99924,
   "internet_share": 0.7619010162,
+  "outages_per_month": 72.091362,
   "labour_force": 53688,
   "unemployment_share": 0.18003
  },
@@ -2987,13 +3845,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2010",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2006",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 28516896,
   "internet_share": 0.7667890167,
+  "outages_per_month": 64.6446991,
   "labour_force": 11118416,
-  "unemployment_share": 0.053070000000000006
+  "unemployment_share": 0.053070000000000006,
+  "public_employment_share": 0.00167740270495415,
+  "civil_servants": 17660.302332050487
  },
  "VGB": {
   "name": "British Virgin Islands",
@@ -3028,13 +3892,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2019",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 101598527,
   "internet_share": 0.8415,
+  "outages_per_month": 43.01397705,
   "labour_force": 57041323,
-  "unemployment_share": 0.015229999999999999
+  "unemployment_share": 0.015229999999999999,
+  "public_employment_share": 0.00158133074641228,
+  "civil_servants": 88827.43363228349
  },
  "VUT": {
   "name": "Vanuatu",
@@ -3043,11 +3913,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2015",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 335169,
   "internet_share": 0.2235140038,
+  "outages_per_month": 77.27687836,
   "labour_force": 120833,
   "unemployment_share": 0.050730000000000004
  },
@@ -3058,11 +3930,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2014",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2023",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 219306,
   "internet_share": 0.2120000076,
+  "outages_per_month": 66.30813599,
   "labour_force": 57776,
   "unemployment_share": 0.049960000000000004
  },
@@ -3084,10 +3958,14 @@
   "income": "Upper middle income",
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
-   "internet_share": "World Bank API IT.NET.USER.ZS, 2018"
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2018",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2014"
   },
   "population": 1576876,
-  "internet_share": 0.8944303197348791
+  "internet_share": 0.8944303197348791,
+  "outages_per_month": 49.69766617,
+  "public_employment_share": 0.00307432919740677
  },
  "YEM": {
   "name": "Yemen, Rep.",
@@ -3096,11 +3974,13 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2019",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2013",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
    "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
   },
   "population": 41773878,
   "internet_share": 0.1749099922,
+  "outages_per_month": 93.81377411,
   "labour_force": 8155939,
   "unemployment_share": 0.17321999999999999
  },
@@ -3111,13 +3991,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2020",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2020",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 64747319,
   "internet_share": 0.7835759735000001,
+  "outages_per_month": 92.02373505,
   "labour_force": 26731522,
-  "unemployment_share": 0.32391
+  "unemployment_share": 0.32391,
+  "public_employment_share": 0.00194585576653481,
+  "civil_servants": 35167.28530456052
  },
  "ZMB": {
   "name": "Zambia",
@@ -3126,13 +4012,19 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2015",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 21913874,
   "internet_share": 0.1710099983,
+  "outages_per_month": 89.64607239,
   "labour_force": 8011366,
-  "unemployment_share": 0.05918
+  "unemployment_share": 0.05918,
+  "public_employment_share": 0.000878193899989128,
+  "civil_servants": 6619.169923529943
  },
  "ZWE": {
   "name": "Zimbabwe",
@@ -3141,12 +4033,18 @@
   "_sources": {
    "population": "World Bank API SP.POP.TOTL, 2025",
    "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "outages_per_month": "World Bank API IC.ELC.OUTG.ZS, 2025",
    "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
-   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025",
+   "public_employment_share": "World Bank API BI.EMP.TOTL.PB.ZS, 2017",
+   "civil_servants": "derived: labour force x (1 - unemployment) x WWBI public employment share"
   },
   "population": 16950795,
   "internet_share": 0.4164279938,
+  "outages_per_month": 52.53521347,
   "labour_force": 6854692,
-  "unemployment_share": 0.09293
+  "unemployment_share": 0.09293,
+  "public_employment_share": 0.000619551129639149,
+  "civil_servants": 3852.174058191128
  }
 }
