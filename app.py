@@ -6,6 +6,7 @@ Posit Connect: rsconnect deploy shiny . --entrypoint app:app
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from copy import deepcopy
 
@@ -13,7 +14,8 @@ import pandas as pd
 from shiny import App, reactive, render, ui
 
 from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
-from engine.archetypes import EXAMPLE_PORTFOLIO, build_profile, is_llm, load_archetypes
+from engine.archetypes import (EXAMPLE_PORTFOLIO, build_profile, is_llm, load_archetypes, reference_sizes,
+                               volume_warning)
 
 CAT = load_catalogue()
 D = load_defaults()
@@ -105,10 +107,24 @@ setup_panel = ui.nav_panel(
             ui.p("Changes how often people use each application (Low / Base / High rates in the Evidence tab). "
                  "Volumes you enter are never changed.", class_="hint"),
             ui.card_header("Hardware"),
-            ui.input_select("hw", None, {"auto": "Automatic (cheapest allowed; air-cooled only on weak grids and sites under 1 MW)",
+            ui.input_select("hw", None, {"auto": "Automatic (cheapest allowed; air-cooled only on weak or unknown grids and sites under 1 MW)",
                                          **{h["id"]: f'{h["id"]} · {h["name"]}' for h in CAT["hardware"]}}),
+            ui.input_radio_buttons("speed", "Response speed per user",
+                                   {"low": "Fast (~130 tok/s)", "base": "Standard (~95 tok/s)", "high": "Relaxed (~55 tok/s)"},
+                                   selected="base", inline=True),
+            ui.p("Faster responses mean fewer users per GPU. Figures from SemiAnalysis InferenceX [S44].", class_="hint"),
         ),
         col_widths=[6, 6],
+    ),
+    ui.card(
+        ui.card_header("Finance"),
+        ui.layout_columns(
+            ui.input_numeric("disc", "Discount rate (%/year)", value=round(D["discount_rate"]["value"] * 100, 1), min=0, max=20, step=0.5),
+            ui.input_numeric("growth", "Demand growth (%/year)", value=round(D["demand_growth"]["value"] * 100, 1), min=-50, max=200, step=5),
+            ui.input_numeric("decline", "Market price decline (%/year)", value=round(D["price_decline"]["value"] * 100, 1), min=0, max=80, step=5),
+            col_widths=[4, 4, 4]),
+        ui.p("Costs are shown as present value over 10 years. Price decline applies to API tokens, GPU rental and GPU purchases at refresh.",
+             class_="hint"),
     ),
     ui.accordion(
         ui.accordion_panel(
@@ -170,7 +186,8 @@ results_panel = ui.nav_panel(
     ui.output_ui("warnings"),
     ui.output_ui("kpis"),
     ui.card(ui.card_header("Where the compute should run"), ui.output_table("ladder")),
-    ui.card(ui.card_header("10-year cost of the cheapest eligible option (undiscounted, USD)"), ui.output_table("tco")),
+    ui.card(ui.card_header("10-year cost by buying option: present value, Low – Base – High (USD)"), ui.output_ui("tco_flag"),
+            ui.output_table("tco")),
     ui.card(ui.card_header("Demand by application"), ui.output_table("demand")),
     ui.layout_columns(ui.download_button("dl_results", "Export results (CSV)"),
                       ui.download_button("dl_scenario", "Save scenario"),
@@ -191,7 +208,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel,
     title="Sovereign AI Compute Planner",
     header=ui.tags.style(CSS),
-    footer=ui.div("v0.2 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.3 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -207,7 +224,14 @@ def server(input, output, session):
     def a_type_hint():
         t = ARCH[input.a_type()]
         ev = t["evidence"].get("rate") or t["evidence"].get("gpu", "")
-        return ui.p(ev, class_="hint", style="margin-top:8px")
+        ref = reference_sizes(country()[0])
+        bits = []
+        if ref["population"]:
+            bits.append(f'population {ref["population"]:,.0f}')
+        if ref["civil_servants"]:
+            bits.append(f'civil servants {ref["civil_servants"]:,.0f}' + (" (rough estimate)" if ref["civil_servants_estimated"] else ""))
+        return ui.div(ui.p(ev, class_="hint", style="margin-top:8px"),
+                      ui.p("Country reference: " + " · ".join(bits), class_="hint") if bits else None)
 
     @reactive.effect
     @reactive.event(input.a_type)
@@ -239,6 +263,9 @@ def server(input, output, session):
         new = dict(uid=uuid.uuid4().hex[:8], name=input.a_name().strip() or t["label"], type=t["id"], volume=vol,
                    data_class=int(input.a_class()), rate_override=rate, model_class=input.a_model() or None,
                    traffic_split=split)
+        w = volume_warning(new, country()[0], ARCH)
+        if w:
+            ui.notification_show(w, type="warning", duration=10)
         apps.set(apps.get() + [new])
         ui.update_text("a_name", value="")
         ui.update_numeric("a_volume", value=None)
@@ -278,7 +305,9 @@ def server(input, output, session):
                 load = "-"
             tier = input[f"map{a['data_class']}"]()
             rows.append(ui.tags.tr(
-                ui.tags.td(ui.tags.b(a["name"]), ui.br(), ui.span(t["label"], class_="hint")),
+                ui.tags.td(ui.tags.b(a["name"]), ui.br(), ui.span(t["label"], class_="hint"),
+                           *([ui.br(), ui.span("⚠ " + w, style="color:#92400e;font-size:.82rem")]
+                             if (w := volume_warning(a, country()[0], ARCH)) else [])),
                 ui.tags.td(f'{fmt(a["volume"])}', ui.br(), ui.span(t["unit_label"], class_="hint")),
                 ui.tags.td(ui.span(CLASS_LABELS[a["data_class"]], class_=f'badge-c badge-{a["data_class"]}'),
                            " → ", tier),
@@ -304,9 +333,16 @@ def server(input, output, session):
             c["outages_per_month"] = 0
         elif g == "weak":
             c["outages_per_month"] = 10
-        elif c.get("outages_per_month") is None:
-            c["outages_per_month"] = 0
-            notes.append("No outage data for this country: grid treated as reliable. Set it in Setup if not.")
+        else:
+            src = c.get("_sources", {}).get("outages_per_month", "")
+            yr = re.findall(r"(19|20)(\d\d)", src)
+            year = int("".join(yr[-1])) if yr else None
+            if c.get("outages_per_month") is None:
+                c["outages_per_month"] = None
+                notes.append("No outage data for this country: grid shown as unknown and air-cooled hardware assumed. Set it in Setup.")
+            elif year and year < 2020:
+                c["outages_per_month"] = None
+                notes.append(f"Outage data is from {year}: treated as unknown. Set grid reliability in Setup.")
         k = num(input.kwh())
         if k:
             c["electricity_usd_kwh"] = k
@@ -340,6 +376,10 @@ def server(input, output, session):
         c, _ = country()
         p = build_profile(c, input.ambition(), apps.get(), ARCH,
                           {cl: input[f"map{cl}"]() for cl in (1, 2, 3, 4)}, quotes(), input.hw())
+        p.speed = input.speed()
+        pct = lambda v: (num(v) or 0) / 100
+        p.finance = {"discount_rate": pct(input.disc()), "demand_growth": pct(input.growth()),
+                     "price_decline": pct(input.decline())}
         return run(p, CAT, D, API_PRICES)
 
     # ---- results
@@ -372,7 +412,7 @@ def server(input, output, session):
         return ui.layout_columns(
             kpi("GPUs (all tiers)", fmt(t["gpus"]), f'{SCEN[input.ambition()]} scenario'),
             kpi("Facility power", f'{t["facility_mw"]:.2f} MW', f"of which in-country sovereign: {local:.2f} MW"),
-            kpi("10-year cost", money(t["cost"]), f"range {money(lo)} – {money(hi)}"),
+            kpi("10-year cost (present value)", money(t["cost"]), f"range {money(lo)} – {money(hi)} · discount {num(input.disc()) or 0:g}%"),
             col_widths=[4, 4, 4])
 
     @render.table
@@ -381,19 +421,36 @@ def server(input, output, session):
         return pd.DataFrame([{
             "Tier": f'{t} · {D["tiers"][t]["name"]}', "GPUs": fmt(v["sizing"]["gpus"]),
             "Facility (MW)": f'{v["sizing"]["facility_mw"]:.2f}', "Utilisation": f'{v["sizing"]["utilisation"]:.0%}',
+            "Apps / pooling": f'{v["sizing"]["n_apps"]} / D {v["sizing"]["diversity"]:.2f}' if v["sizing"]["n_apps"] else "-",
+            "Hardware": v["hardware"] if v["sizing"]["gpus"] else "-",
             "Cheapest option": v["cheapest_mode"], "Grid": v["grid"], "Recommended step": v["step"],
         } for t, v in r["tiers"].items()])
+
+    @render.ui
+    def tco_flag():
+        r = result()
+        flips = [f'{t}: cheapest is {v["winners"]["low"]} (Low), {v["winners"]["base"]} (Base), {v["winners"]["high"]} (High)'
+                 for t, v in r["tiers"].items() if v["winner_changes"]]
+        if not flips:
+            return ui.p("The cheapest option is the same across the Low – High range in every tier.", class_="hint")
+        return ui.div(ui.tags.b("The cheapest option changes within the range: "), "; ".join(flips),
+                      ". Get client quotes before choosing.", class_="warn")
 
     @render.table
     def tco():
         r = result()
         rows = []
         for t, v in r["tiers"].items():
-            row = {"Tier": t, "Cheapest": v["cheapest_mode"], "Low": money(v["cost_range"]["low"]),
-                   "Base": money(v["cost_range"]["base"]), "High": money(v["cost_range"]["high"]),
-                   "$ per M tokens": "-" if v["usd_per_m_eq_tokens"] is None else f'${v["usd_per_m_eq_tokens"]:.2f}'}
+            row = {"Tier": t}
             for m in ("API / managed", "GPU-as-a-service", "Owned"):
-                row[m] = ("-" if v["sizing"]["gpus"] == 0 else money(v["tco"]["base"][m])) if m in v["tco"]["base"] else "not allowed"
+                if m not in v["tco"]["base"]:
+                    row[m] = "not allowed"
+                elif v["sizing"]["gpus"] == 0:
+                    row[m] = "-"
+                else:
+                    cell = " – ".join(money(v["tco"][s][m]) for s in ("low", "base", "high"))
+                    row[m] = ("★ " if m == v["cheapest_mode"] else "") + cell
+            row["$ per M tokens (base)"] = "-" if v["usd_per_m_eq_tokens"] is None else f'${v["usd_per_m_eq_tokens"]:.2f}'
             rows.append(row)
         return pd.DataFrame(rows)
 
@@ -423,6 +480,8 @@ def server(input, output, session):
     @render.download(filename="scenario.json")
     def dl_scenario():
         yield json.dumps({"iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
+                          "speed": input.speed(), "finance": {"disc": input.disc(), "growth": input.growth(),
+                                                              "decline": input.decline()},
                           "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
                           "quotes": quotes(), "apps": apps.get()}, indent=1)
 
@@ -437,6 +496,11 @@ def server(input, output, session):
         ui.update_radio_buttons("ambition", selected=sc.get("ambition", "Base"))
         ui.update_radio_buttons("grid", selected=sc.get("grid", "auto"))
         ui.update_select("hw", selected=sc.get("hw", "auto"))
+        ui.update_radio_buttons("speed", selected=sc.get("speed", "base"))
+        f = sc.get("finance", {})
+        for k in ("disc", "growth", "decline"):
+            if f.get(k) is not None:
+                ui.update_numeric(k, value=f[k])
         for c, t in sc.get("class_to_tier", {}).items():
             ui.update_select(f"map{c}", selected=t)
         apps.set(sc.get("apps", []))

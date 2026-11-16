@@ -73,12 +73,16 @@ def gen_defaults(d) -> str:
 
 
 def gen_hardware(cat) -> str:
-    return table(["ID", "Profile", "Cooling", "Rack kW", "kW per GPU (all-in)", "Tokens/s per GPU S / M / L", "$/GPU-hour",
+    def tp(h, c):
+        v = h["tokens_per_s_per_gpu"][c]
+        txt = " / ".join(f"{v[k]:,}" for k in ("low", "base", "high")) if isinstance(v, dict) else f"{v:,}"
+        return txt + (" (measured)" if c in h.get("measured", []) else " (derived, derated)")
+    return table(["ID", "Profile", "Cooling", "Rack kW", "kW per GPU (all-in)",
+                  "Large model L tok/s per GPU (Fast / Standard / Relaxed)", "Medium M", "Small S", "$/GPU-hour",
                   "Capex per GPU", "Software $/GPU/yr", "Weak-grid suitable"],
-                 [[h["id"], h["name"], h["cooling"], h["rack_kw"], h["kw_per_gpu"],
-                   " / ".join(f'{h["tokens_per_s_per_gpu"][c]:,}' for c in "SML"), h["gpu_hour_usd"],
-                   f'{h["capex_per_gpu_usd"]:,}', h["software_per_gpu_year_usd"], "yes" if h["weak_grid_ok"] else "no"]
-                  for h in cat["hardware"]])
+                 [[h["id"], h["name"], h["cooling"], h["rack_kw"], h["kw_per_gpu"], tp(h, "L"), tp(h, "M"), tp(h, "S"),
+                   h["gpu_hour_usd"], f'{h["capex_per_gpu_usd"]:,}', h["software_per_gpu_year_usd"],
+                   "yes" if h["weak_grid_ok"] else "no"] for h in cat["hardware"]])
 
 
 def gen_hardware_evidence(cat) -> str:
@@ -117,10 +121,10 @@ def gen_example(cat, d, arch) -> str:
         f'| Output tokens per request | ({t["osl"]:,} + {t["reasoning_tokens"]:,}) x {k:g} | {(t["osl"] + t["reasoning_tokens"]) * k:,.0f} |',
         f'| Daily equivalent tokens | output + (input - cached) x {pre:g} | {x["daily_eq"]:,.0f} |',
         f'| Peak equivalent tokens/s | daily eq x {t["peak_share"]:g} / ({t["peak_window_h"]} x 3,600) x burst {t["burst"]:g} x SLA {t["sla_headroom"]:g} x seasonal {t["seasonal"]:g} | {x["peak_eq_tps"]:,.1f} |',
-        f'| Diversified peak in tier T3 | x D {d["diversity_factor"]["value"]:g} | {s["peak_eq_tps"]["M"]:,.1f} |',
-        f'| GPUs | roundup(peak / ({hw["tokens_per_s_per_gpu"]["M"]:,} tok/s x derating {d["production_derating"]["value"]:g})) | {s["gpus"]} |',
+        f'| Pooling in tier T3 | one application, so D = {s["diversity"]:g} | {s["peak_eq_tps"]["M"]:,.1f} |',
+        f'| GPUs | roundup(peak / {hw["tokens_per_s_per_gpu"]["M"]["base"]:,} tok/s per GPU, measured at Standard speed, no derating) | {s["gpus"]} |',
         f'| IT load / facility | GPUs x {hw["kw_per_gpu"]:g} kW; x PUE {d["pue"]["value"]:g} | {s["it_kw"]:.1f} kW / {s["facility_mw"] * 1000:.1f} kW |',
-        f'| Cheapest eligible option (T3) | min(GPU-as-a-service, Owned) over 10 years | {r["tiers"]["T3"]["cheapest_mode"]}, ${r["tiers"]["T3"]["cheapest_cost"]:,.0f} |',
+        f'| Cheapest allowed option (T3) | min(GPU-as-a-service, Owned), present value over 10 years at {d["discount_rate"]["value"]:.0%} | {r["tiers"]["T3"]["cheapest_mode"]}, ${r["tiers"]["T3"]["cheapest_cost"]:,.0f} |',
         "",
         f'Utilisation of that single GPU is {s["utilisation"]:.0%}: one copilot for 1,000 staff does not justify dedicated '
         "hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.",

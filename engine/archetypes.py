@@ -69,3 +69,41 @@ EXAMPLE_PORTFOLIO = [
     dict(name="Court transcription", type="speech_to_text", volume=500, data_class=3),
     dict(name="ID enrolment deduplication", type="biometric_dedup", volume=5000, data_class=4),
 ]
+
+
+# Plausibility limits for volumes, as a share of a country reference population.
+# (reference, max share, what the reference is called)
+VOLUME_LIMITS = {
+    "staff_copilot": ("civil_servants", 1.0, "civil servants"),
+    "coding_assistant": ("civil_servants", 0.02, "civil servants"),
+    "research_agent": ("civil_servants", 0.01, "civil servants"),
+    "frontline_health": ("population", 0.005, "population"),
+    "citizen_assistant": ("population", 1.0, "population"),
+    "tutor": ("population", 0.3, "population"),
+}
+
+
+def reference_sizes(country: dict) -> dict:
+    """Civil servants from data, else a rough fallback (2% of population), flagged."""
+    pop = country.get("population")
+    cs = country.get("civil_servants")
+    if not cs and country.get("labour_force") and country.get("public_employment_share"):
+        cs = country["labour_force"] * (1 - country.get("unemployment_share", 0)) * country["public_employment_share"]
+    return {"population": pop, "civil_servants": cs or (0.02 * pop if pop else None),
+            "civil_servants_estimated": not country.get("civil_servants")}
+
+
+def volume_warning(app: dict, country: dict, archetypes: dict) -> str | None:
+    lim = VOLUME_LIMITS.get(app["type"])
+    if not lim:
+        return None
+    ref_key, share, label = lim
+    ref = reference_sizes(country).get(ref_key)
+    if not ref:
+        return None
+    vol = float(app.get("volume") or 0)
+    if vol > share * ref:
+        unit = archetypes[app["type"]]["unit_label"].lower()
+        return (f'{vol:,.0f} {unit} is {vol / ref:.1%} of {label} ({ref:,.0f}); '
+                f'the plausible maximum for this type is about {share:.0%}. Check the number.')
+    return None

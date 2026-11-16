@@ -4,6 +4,22 @@ All notable changes to the Sovereign AI Compute Planner. Format: [Keep a Changel
 Every change to the model, defaults or sources must also update `docs/METHODOLOGY.md` (see `CLAUDE.md`).
 
 ## [Unreleased]
+
+## [0.3.0] - 2026-11-16
+### Changed
+- Pooling factor D now depends on the number of applications in the tier: 1 for a single application, D(n) = 0.6 + 0.4/√n otherwise (was a flat 0.7 everywhere).
+- Throughput per GPU is a Low / Base / High range tied to a response-speed target (Fast ~130, Standard ~95, Relaxed ~55 tok/s per user), from InferenceX [S44]. The 0.6 production derating no longer applies to measured figures; it remains for derived figures and non-LLM placeholders.
+- Costs are present values over 10 years, with discount rate (default 8%), demand growth and market price decline (default 0%) as Setup inputs. GPUs are re-bought at each refresh for the demand at the end of the cycle.
+- Owned staff sized to the deployment: 1 FTE + 1 per 100 GPUs (was a flat 4 FTE per tier).
+- Cached input tokens are priced at 10% / 25% / 50% of the input price (Low / Base / High) instead of free [S46, S47].
+- Ladder: Step 1 below 1 MW; new Step 2 colocation in an existing commercial data centre for 1-10 MW; PPP / IFC dedicated facility only from 10 MW (Step 3).
+### Added
+- Results show every allowed buying option across Low – Base – High, mark the cheapest, and flag tiers where the cheapest option changes within the range.
+- "Below GPU threshold" outcome for tiers with only tiny non-LLM workloads (< 0.25 GPU).
+- Volume check at entry against civil servants or population, with a warning in the portfolio list.
+- Results show the number of applications and the pooling factor per tier.
+### Fixed
+- Missing or pre-2020 outage data now shows the grid as "Unknown" (air-cooled assumed), never "OK".
 ### Changed
 - Hardware throughput recalibrated to independent benchmarks (SemiAnalysis InferenceX [S44], MLPerf v5.1 [S45]) at a fixed interactivity (~90-95 tok/s per user for large reasoning models, ~75 for 70B). Liquid (GB300 NVL72) vs air (H200) gap on the large model: 65x (NVIDIA claim) → 7.3x per GPU. P1 H200: L 90 → 779, M 800 → 1,930 tok/s per GPU; kW per GPU 1.7 → 1.4. P2 rental price scaled to the ownership cost ratio ($4.92/GPU-hour).
 - Automatic hardware choice: among allowed profiles (air-cooled only on weak grids or below 1 MW), picks the lowest GPU-hour cost for each tier.

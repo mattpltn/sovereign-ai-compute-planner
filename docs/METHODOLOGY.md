@@ -2,7 +2,7 @@
 
 # Sovereign AI Compute Planner: Methodology
 
-Version 0.2 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+Version 0.3 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
 
 ## 1. Purpose and scope
 
@@ -48,11 +48,15 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 |---|---|---|
 | Country | Setup | Sets grid reliability and electricity tariff (both can be overridden). |
 | Adoption scenario | Setup | Low / Base / High usage rate for each application type. |
+| Response speed | Setup | Fast / Standard / Relaxed tokens per second per user; selects the throughput point. |
+| Finance | Setup | Discount rate (default 8%), demand growth and market price decline (default 0%). |
 | Placement rules | Setup | Which tier each data class may use. Set once per country from its data protection law. |
 | Client quotes (optional) | Setup | GPU rental price, GPU server cost, data centre build cost. A quote replaces the default range. |
 | Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. |
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
+
+**Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
 
 ### 3.2 What the tool provides
 
@@ -129,23 +133,36 @@ Each application runs in the tier of its data class (the "high-water mark": the 
 
 Calculated separately for each tier.
 
-**Language-model GPUs.** Peaks of all applications in a tier are added per model size (S, M, L) and multiplied by the diversity factor D, because applications do not peak at the same moment:
+**Pooling (diversity factor D).** Applications sharing a tier rarely peak at the same moment, so the tier needs less than the sum of their individual peaks. The benefit grows with the number of applications n in the tier:
 
 ```
-diversified peak(size) = Σ peak tokens/s of applications of that size × D        (D = 0.7)
-LLM GPUs = roundup( Σ over sizes [ diversified peak(size) / tokens/s per GPU(size) ] / production derating )
+D(n) = 1                                   for a single application (no pooling)
+D(n) = D_min + (1 − D_min) / √n            for n ≥ 2                 (D_min = 0.6, assumption)
 ```
 
-- **Tokens/s per GPU** comes from the hardware profile (Section 10). It must be calibrated with AIConfigurator for the real model, input and output lengths and latency target [S04, S05].
-- **Production derating** (0.6): benchmark results overstate what a production service achieves [S11]. Calibrate with GenAI-Perf on a real endpoint [S06].
+The square root follows the usual behaviour of independent fluctuations: their sum grows with √n, not n. Examples: D(2) = 0.88, D(4) = 0.80, D(9) = 0.73, D(16) = 0.70. n counts language-model applications and interactive non-LLM applications in the tier.
+
+**Language-model GPUs.**
+
+```
+diversified peak(size) = Σ peak tokens/s of applications of that size × D(n)
+effective tokens/s per GPU(size) = measured figure                       if measured
+                                 = figure × production derating (0.6)    if derived or placeholder
+LLM GPUs = roundup( Σ over sizes [ diversified peak(size) / effective tokens/s per GPU(size) ] )
+```
+
+- **Tokens/s per GPU** comes from the hardware profile at the **response speed** chosen in Setup (Section 10): Fast (~130 tokens/s per user), Standard (~95) or Relaxed (~55). Faster responses leave fewer users per GPU.
+- **Production derating** (0.6) applies only to figures that are not measured at a fixed response speed (small-model figures, the GB300 medium figure) and to non-LLM GPU-seconds, which are placeholders [S11]. Measured benchmark figures [S44] are used as they are. Calibrate both with GenAI-Perf on a real endpoint [S06].
 
 **Non-LLM GPUs.**
 
 ```
 GPU-hours per day = units per day × GPU-seconds per unit / 3,600 / derating
 peak GPUs (interactive only) = units per day × GPU-seconds per unit × peak share / (window × 3,600) × burst / derating
-non-LLM GPUs = roundup( Σ peak GPUs × D )
+non-LLM GPUs = roundup( Σ peak GPUs × D(n) )
 ```
+
+**Below the GPU threshold.** If a tier has no language-model application and its non-LLM workloads need less than 0.25 GPU in total (e.g. a few face verifications per second), the tool does not size a GPU. The result reads "Below GPU threshold: run on existing servers (CPU or a shared GPU)".
 
 **Batch work fills idle time first.** Batch workloads (OCR, deduplication, image analysis, fine-tuning) use idle GPU-hours of the interactive fleet before any extra GPU is added:
 
@@ -168,10 +185,12 @@ annual energy (MWh)   = IT load × (idle fraction + (1 − idle fraction) × uti
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
-1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup) or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
+1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup), **unknown**, or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
 2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest GPU-hour cost (GPUs × $/GPU-hour).
 
 The user can force a profile in Setup.
+
+**Unknown grid.** If the country has no outage data, or the data is older than 2020, the grid is shown as "Unknown: check grid reliability" and air-cooled hardware is assumed. It is never shown as OK without data.
 
 **What the grid setting changes, and what it does not.** It changes which hardware is allowed and the grid warning in the results. It does not yet add the cost of backup power (UPS, generators, batteries) or diesel, which on a weak grid is material. This is a known gap (Section 16).
 
@@ -300,11 +319,11 @@ All rates are **requests per person with access per day**, averaged over every d
 
 ## 10. Hardware profiles
 
-| ID | Profile | Cooling | Rack kW | kW per GPU (all-in) | Tokens/s per GPU S / M / L | $/GPU-hour | Capex per GPU | Software $/GPU/yr | Weak-grid suitable |
-|---|---|---|---|---|---|---|---|---|---|
-| P1 | HGX H200 8-GPU, air-cooled | Air | 41 | 1.4 | 8,000 / 1,930 / 779 | 2.6 | 40,000 | 4500 | yes |
-| P3 | HGX B200 8-GPU, air-cooled | Air | 60 | 1.7 | 12,000 / 3,981 / 1,461 | 3.69 | 50,000 | 4500 | yes |
-| P2 | GB300 NVL72, liquid-cooled rack | Liquid | 130 | 2.1 | 16,000 / 5,000 / 5,667 | 4.92 | 65,000 | 4500 | no |
+| ID | Profile | Cooling | Rack kW | kW per GPU (all-in) | Large model L tok/s per GPU (Fast / Standard / Relaxed) | Medium M | Small S | $/GPU-hour | Capex per GPU | Software $/GPU/yr | Weak-grid suitable |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| P1 | HGX H200 8-GPU, air-cooled | Air | 41 | 1.4 | 611 / 779 / 1,302 (measured) | 1,152 / 1,930 / 2,978 (measured) | 5,000 / 8,000 / 12,000 (derived, derated) | 2.6 | 40,000 | 4500 | yes |
+| P3 | HGX B200 8-GPU, air-cooled | Air | 60 | 1.7 | 1,051 / 1,461 / 4,852 (measured) | 2,352 / 3,981 / 5,994 (measured) | 8,000 / 12,000 / 18,000 (derived, derated) | 3.69 | 50,000 | 4500 | yes |
+| P2 | GB300 NVL72, liquid-cooled rack | Liquid | 130 | 2.1 | 3,404 / 5,667 / 8,552 (measured) | 3,000 / 5,000 / 7,800 (derived, derated) | 12,000 / 16,000 / 18,370 (derived, derated) | 4.92 | 65,000 | 4500 | no |
 
 Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW. The production derating (0.6) is applied on top.
 
@@ -312,25 +331,25 @@ Evidence per profile:
 
 **P1 · HGX H200 8-GPU, air-cooled**
 
-- *L*: 779 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (SemiAnalysis InferenceX) (S44).
-- *M*: 1,930 tok/s per GPU, Llama 3.3 70B at 76 tok/s per user (S44).
-- *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: calibrate with AIConfigurator.
+- *L*: DeepSeek R1: 611 / 779 / 1,302 tok/s per GPU at 130 / 94 / 57 tok/s per user (SemiAnalysis InferenceX) (S44).
+- *M*: Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
+- *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.
 - *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
 - *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU: placeholder, replace with vendor quote.
 
 **P3 · HGX B200 8-GPU, air-cooled**
 
-- *L*: 1,461 tok/s per GPU, DeepSeek R1 at 89 tok/s per user (S44).
-- *M*: 3,981 tok/s per GPU, Llama 3.3 70B at 76 tok/s per user (S44).
-- *S*: Derived: about 3x the 70B figure. Low confidence.
+- *L*: DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44).
+- *M*: Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
+- *S*: Derived: about 3x the 70B figure. Low confidence: derated.
 - *power*: 1.7 kW per GPU all-in, implied by InferenceX tokens per MW for B200 (S44).
 - *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.
 
 **P2 · GB300 NVL72, liquid-cooled rack**
 
-- *L*: 5,667 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (S44): 7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
-- *M*: Derived: B200 70B figure x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B MoE reaches >40,000 tok/s per GPU on GB200) (S44).
-- *S*: 16,099 tok/s per GPU, Llama 3.1 8B, MLPerf Inference v5.1 server scenario (S45).
+- *L*: DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
+- *M*: Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).
+- *S*: MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).
 - *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
 - *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
 
@@ -345,32 +364,54 @@ The gap also depends on the model. It is largest for large mixture-of-experts re
 
 For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
 
-## 11. Layer 5: 10-year cost
+## 11. Layer 5: 10-year cost (present value)
 
-For each tier, the tool computes the cost of every buying mode the tier allows (Section 7 table), then picks the cheapest. Undiscounted, demand held flat over the horizon, in USD. Structure follows NVIDIA's inference cost method [S03] and the FinOps Foundation AI cost estimation guidance [S12].
+For each tier, the tool computes the cost of every buying mode the tier allows (Section 7 table), year by year, discounts it to present value, and picks the cheapest. In USD. Structure follows NVIDIA's inference cost method [S03] and the FinOps Foundation AI cost estimation guidance [S12].
+
+**Year factors** (year y = 1 … 10, costs counted at the start of each year):
 
 ```
-API / managed (per year)   = Σ [ uncached input (M) × API input price + output (M) × API output price ] × API multiplier
-                             + (non-LLM GPUs + extra batch GPUs) × 8,760 × $/GPU-hour
-GPU-as-a-service (per year) = total GPUs × 8,760 × $/GPU-hour
-Owned (capex over horizon)  = total GPUs × capex per GPU × roundup(horizon / refresh years) + IT MW × facility cost per MW
-Owned (opex per year)       = energy MWh × 1,000 × tariff + GPUs × software per GPU
-                             + staff (4 FTE × cost per FTE, if any GPU) + maintenance 5% × (GPU capex + facility capex)
-10-year total               = per-year cost × 10   (Owned: capex + opex × 10)
-$ per million tokens        = cheapest 10-year cost / (annual equivalent tokens × 10)
+growth(y)   = (1 + demand growth)^(y−1)          user input, default 0%
+price(y)    = (1 − market price decline)^(y−1)   user input, default 0%; applies to API tokens, GPU rental, GPU purchases
+discount(y) = 1 / (1 + discount rate)^(y−1)      user input, default 8% (6-10% is a common range for public infrastructure)
+GPUs(y)     = roundup( GPUs in year 1 × growth(y) )
 ```
 
-Every cost item has a Low / Base / High value. The tool shows the 10-year cost of the cheapest option in all three, as a range. A client quote replaces the range for that item.
+**Buying modes:**
+
+```
+API / managed(y)    = price(y) × [ growth(y) × Σ ( uncached input (M) × input price
+                                                   + cached input (M) × input price × cached share
+                                                   + output (M) × output price ) × API multiplier
+                                   + non-LLM and batch GPUs(y) × 8,760 × $/GPU-hour ]
+GPU-as-a-service(y) = price(y) × GPUs(y) × 8,760 × $/GPU-hour
+Owned:
+  facility capex (year 1)      = IT MW in the last year × facility cost per MW
+  GPU purchase (each refresh)  = GPUs needed at the end of the cycle × capex per GPU × price(first year of cycle)
+  opex(y)                      = energy × tariff + GPUs × software per GPU + staff(GPUs) × cost per FTE
+                                 + 5% × (GPU capex + facility capex)
+  staff(GPUs)                  = 1 FTE + GPUs / 100                (assumption: 1 additional FTE per ~100 GPUs)
+present value                  = Σ discount(y) × cost(y)
+$ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
+```
+
+**Cached input is priced, not free.** Providers charge cached input tokens at a discount: 10% of the normal input price at Anthropic [S46], up to 50% at OpenAI [S47]. The tool uses 10% / 25% / 50% (Low / Base / High). On owned or rented GPUs cached tokens skip the prefill computation, so they do not add GPU load.
+
+**Ranges and the cheapest option.** Every cost item has a Low / Base / High value (Section 14). The results table shows **every allowed option** across Low – Base – High, marks the cheapest at Base with ★, and flags any tier where the cheapest option changes within the range. In that case the choice depends on prices and the client should obtain quotes. A client quote replaces the range for that item.
 
 ## 12. Recommended step (the ladder)
 
 | Condition | Step |
 |---|---|
+| Only tiny non-LLM workloads (below 0.25 GPU) | **Below GPU threshold:** run on existing servers (CPU or a shared GPU). |
 | Tier T1 or T2 | **Step 0:** use cloud or API now, under residency terms where required. |
 | Tier T3 or T4, facility power below 1 MW | **Step 1:** small sovereign inference node in an existing facility. |
-| Tier T3 or T4, facility power 1 MW or more | **Step 2:** dedicated capacity through a private operator or PPP (IFC-investable). |
+| Tier T3 or T4, 1 to 10 MW | **Step 2:** colocation in an existing commercial data centre, run by a private operator. |
+| Tier T3 or T4, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
 
-Triggers to move up a step: a confidential or restricted application reaches production; measured utilisation of a Step 1 node stays above ~60% for two quarters; the grid check shows a warning (budget backup and storage before committing capex).
+A PPP or IFC transaction for a facility of one or two megawatts is not realistic: transaction costs and minimum ticket sizes call for roughly 10 MW or more (assumption, adjustable). Between 1 and 10 MW, hosting in an existing colocation site is the practical route.
+
+Triggers to move up a step: a confidential or restricted application reaches production; measured utilisation of a node stays above ~60% for two quarters; the grid check shows a warning or "unknown" (budget backup and storage before committing capex).
 
 ## 13. Worked example
 
@@ -384,10 +425,10 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 | Output tokens per request | (400 + 0) x 1.1 | 440 |
 | Daily equivalent tokens | output + (input - cached) x 0.15 | 1,193,500 |
 | Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 80.2 |
-| Diversified peak in tier T3 | x D 0.7 | 56.2 |
-| GPUs | roundup(peak / (1,930 tok/s x derating 0.6)) | 1 |
+| Pooling in tier T3 | one application, so D = 1 | 80.2 |
+| GPUs | roundup(peak / 1,930 tok/s per GPU, measured at Standard speed, no derating) | 1 |
 | IT load / facility | GPUs x 1.4 kW; x PUE 1.6 | 1.4 kW / 2.2 kW |
-| Cheapest eligible option (T3) | min(GPU-as-a-service, Owned) over 10 years | GPU-as-a-service, $227,760 |
+| Cheapest allowed option (T3) | min(GPU-as-a-service, Owned), present value over 10 years at 8% | GPU-as-a-service, $165,055 |
 
 Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
 
@@ -397,17 +438,27 @@ Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justi
 |---|---|---|---|
 | global_egdi_average | 0.638 | S17 | UN E-Government Survey 2024 world average |
 | pue | 1.6 | S22 | Uptime Institute global average ~1.56; hot climates and small sites higher |
-| diversity_factor | 0.7 | method | Coincident peak / sum of standalone peaks, applied within a tier |
-| production_derating | 0.6 | S11, S06 | Benchmarks overstate production throughput; calibrate with GenAI-Perf |
+| diversity_mode | scaled | method | scaled: D depends on the number of applications in the tier; fixed: v0.1 constant |
+| diversity_factor | 0.7 | method | Used only in fixed mode (v0.1 parity) |
+| diversity_factor_min | 0.6 | assumption | Floor of D for many applications. D(n) = D_min + (1 - D_min) / sqrt(n); D = 1 for a single application |
+| production_derating | 0.6 | S11, S06 | Applied only to derived or placeholder throughput figures and non-LLM GPU-seconds, not to measured benchmark figures |
 | prefill_weight | 0.15 | S03, S07 | Cost of an uncached input token relative to an output token |
 | idle_power_fraction | 0.3 | S09, S10 | Share of rated IT power drawn when idle |
-| horizon_years | 10 | - | Demand held flat in v0.1 |
+| horizon_years | 10 | - | Analysis horizon |
+| discount_rate | 0.08 | assumption | Real discount rate for present value; 6-10% is a common range for public infrastructure appraisal. User input |
+| demand_growth | 0.0 | user | Annual growth of requests. User input |
+| price_decline | 0.0 | user | Annual decline of market prices (API tokens, GPU rental, GPU capex at refresh). User input |
+| gpu_threshold | 0.25 | assumption | Tiers with only non-LLM workloads needing less than this many GPUs run on existing servers |
 | tokens_per_user_day_ceiling | 240000 | S24 | Epoch AI human-equivalent ceiling |
 | weak_grid_outages_threshold | 1 | analyst | Outages per month above which liquid-cooled dense racks are excluded |
 | step1_max_facility_mw | 1 | analyst | Below this, a sovereign tier fits in an existing facility |
+| step3_min_facility_mw | 10 | assumption | From this size, a dedicated facility via PPP or private operator is realistic; between 1 and 10 MW, colocation in an existing commercial data centre |
 | dense_profile_min_it_mw | 1 | analyst | Below this IT load, a 130 kW liquid-cooled rack is not worth it; use air-cooled |
 | maintenance_share | 0.05 | analyst | Share of capex per year |
-| fte_per_owned_tier | 4 | analyst |  |
+| staff_mode | scaled | method | scaled: FTE = minimum + GPUs / GPUs per FTE; flat: v0.1 constant |
+| fte_min | 1 | assumption | Minimum operations staff for an owned deployment |
+| gpus_per_fte | 100 | assumption | One additional FTE per ~100 GPUs |
+| fte_per_owned_tier | 4 | analyst | Used only in flat mode (v0.1 parity) |
 | cost_per_fte_usd | 60000 | analyst | Local market; override if known |
 | gpu_refresh_years | 5 | S03 |  |
 
@@ -420,6 +471,7 @@ Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justi
 | gpu_capex_multiplier | 0.8 | 1.0 | 1.3 | analyst | Applied to hardware profile capex per GPU |
 | gpu_hour_multiplier | 0.7 | 1.0 | 1.5 | S11 | Applied to hardware profile $/GPU-hour; local providers price higher |
 | api_price_multiplier | 0.7 | 1.0 | 1.5 | S21 | Applied to synced API prices; residency premium in high case |
+| cached_input_price_share | 0.1 | 0.25 | 0.5 | S46, S47 | Price of a cached input token as a share of the normal input price |
 
 **API prices**
 
@@ -466,7 +518,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
 - **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
 - **Backup power on weak grids** (UPS, generators, batteries, diesel) is not costed yet; the tool only flags it.
-- **Demand is flat** over 10 years: no growth curve, no discounting.
+- **Growth and price decline are single annual rates** set by the user (default 0%). There is no adoption curve per application.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
 
@@ -519,5 +571,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | S43 | EpiQAL: Benchmarking LLMs in Epidemiological QA and Reasoning (token usage appendix) | arXiv 2601.03471 | Reasoning tokens per question ~0.2k-2.5k for current reasoning models | https://arxiv.org/pdf/2601.03471 |
 | S44 | InferenceX (formerly InferenceMAX): open, continuous inference benchmarks; chip comparisons and performance per dollar | SemiAnalysis (2025-2026) | Tokens/s per GPU at fixed interactivity (H200, B200, GB300; DeepSeek R1, Llama 3.3 70B); tokens per MW; ownership cost per chip-hour | https://inferencex.semianalysis.com/compare/deepseek-r1-gb300-vs-h200 |
 | S45 | NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1) | NVIDIA, results audited by MLCommons (Sept 2025) | GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1 | https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut |
+| S46 | Prompt caching (pricing: cache reads at 10% of the base input price) | Anthropic documentation | Cached input price share, low end | https://docs.claude.com/en/docs/build-with-claude/prompt-caching |
+| S47 | Prompt caching guide (cached input tokens billed at a discount) | OpenAI documentation | Cached input price share, up to 50% of input price | https://platform.openai.com/docs/guides/prompt-caching |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

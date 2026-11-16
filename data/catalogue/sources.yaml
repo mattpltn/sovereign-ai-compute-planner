@@ -269,3 +269,15 @@
   url: https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut
   used_for: 'GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1'
   type: Audited benchmark
+- id: S46
+  title: 'Prompt caching (pricing: cache reads at 10% of the base input price)'
+  publisher: Anthropic documentation
+  url: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+  used_for: Cached input price share, low end
+  type: Provider pricing
+- id: S47
+  title: Prompt caching guide (cached input tokens billed at a discount)
+  publisher: OpenAI documentation
+  url: https://platform.openai.com/docs/guides/prompt-caching
+  used_for: Cached input price share, up to 50% of input price
+  type: Provider pricing
