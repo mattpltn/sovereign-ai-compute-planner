@@ -46,6 +46,11 @@ shiny run app.py             # http://127.0.0.1:8000
 
 Deploy to Posit Connect: `rsconnect deploy shiny . --entrypoint app:app`.
 
+**GitHub Pages (no server).** `.github/workflows/pages.yml` exports the app with Shinylive on every push to `main`: Python runs in the visitor's browser (WebAssembly), nothing is sent to a server. Enable it once in Settings → Pages → Source: GitHub Actions. First load takes 20-40 seconds.
+Note: on GitHub Free/Pro, a Pages site is public even when the repo is private.
+
+Local static test: `shinylive export . site && python -m http.server --directory site 8008`.
+
 ## Layout
 
 ```
