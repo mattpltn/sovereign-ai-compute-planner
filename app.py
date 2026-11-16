@@ -482,6 +482,12 @@ def server(input, output, session):
                         ". Set requests per person per day under Advanced if the client knows it.")
         if quotes():
             msgs.append("Client quotes in use: " + ", ".join(quotes()))
+        order = {"T1": 1, "T2": 2, "T3": 3, "T4": 4}
+        moved = [a["name"] for a in apps.get()
+                 if order[input[f'map{a["data_class"]}']()] > order[D["class_to_tier"][a["data_class"]]]]
+        if moved:
+            msgs.append(f'{len(moved)} application{"s" if len(moved) != 1 else ""} placed above the default tier by your '
+                        f'placement rules ({", ".join(moved)}): this enlarges the sovereign site.')
         return ui.div(ui.tags.ul(*[ui.tags.li(m) for m in msgs], style="margin:0"), class_="warn") if msgs else None
 
     DEST = {"T1": "Public data", "T2": "Internal data", "T3": "Confidential data", "T4": "Restricted data"}
@@ -682,8 +688,11 @@ def server(input, output, session):
     def ladder():
         r = result()
         return pd.DataFrame([{
-            "Tier": f'{t} · {D["tiers"][t]["name"]}', "GPUs": fmt(v["sizing"]["gpus"]),
-            "Facility power": power(v["sizing"]["facility_mw"]) if v["sizing"]["gpus"] else "-",
+            "Tier": f'{t} · {D["tiers"][t]["name"]}',
+            "GPUs": ("service" if v["capacity"]["kind"] == "service" else
+                     f'{v["sizing"]["gpus"]} ({v["sizing"].get("servers")} servers)' if v["capacity"]["kind"] == "build"
+                     else fmt(v["sizing"]["gpus"])),
+            "Facility power": power(v["sizing"]["facility_mw"]) if v["capacity"]["kind"] == "build" else "-",
             "Utilisation": f'{v["sizing"]["utilisation"]:.0%}',
             "Apps / pooling": f'{v["sizing"]["n_apps"]} / D {v["sizing"]["diversity"]:.2f}' if v["sizing"]["n_apps"] else "-",
             "Hardware": v["hardware"] if v["sizing"]["gpus"] else "-",
@@ -836,15 +845,27 @@ def server(input, output, session):
                   "Model": "non-LLM"} for x in r["nontoken"]]
         return pd.DataFrame(rows) if rows else None
 
-    @render.download(filename="sovereign_ai_compute_results.csv")
+    @render.download(filename="sovereign_ai_compute_results_raw.csv")
     def dl_results():
         r = result()
-        df = pd.DataFrame([{"tier": t, "step": v["step"], "mode": v["cheapest_mode"], "grid": v["grid"],
-                            "hardware": v["hardware"],
-                            **{k: v["sizing"][k] for k in ("gpus", "it_kw", "facility_mw", "racks", "energy_mwh", "utilisation")},
-                            **{f"cost_{s}": v["cost_range"][s] for s in ("low", "base", "high")}}
-                           for t, v in r["tiers"].items()])
-        yield df.to_csv(index=False)
+        rows = []
+        for t, v in r["tiers"].items():
+            kind = v["capacity"]["kind"]
+            phys = kind in ("build", "rent")
+            sz = v["sizing"]
+            rows.append({
+                "tier": t, "buying_option": v["cheapest_mode"], "capacity": kind, "step": v["step"], "grid": v["grid"],
+                "hardware": v["hardware"] if phys else "",
+                "servers": sz.get("servers", "") if kind == "build" else "",
+                "gpus": sz["gpus"] if phys else "", "it_kw": sz["it_kw"] if phys else "",
+                "facility_kw": sz["facility_mw"] * 1000 if kind == "build" else "",
+                "racks": sz["racks"] if kind == "build" else "", "energy_mwh_year": sz["energy_mwh"] if kind == "build" else "",
+                "utilisation": sz["utilisation"] if phys else "",
+                "notional_gpus_if_api": sz["gpus"] if kind == "service" else "",
+                **{f"cost_pv_{s_}": v["cost_range"][s_] for s_ in ("low", "base", "high")},
+            })
+        yield ("# Raw, unrounded figures for analysts. Planning-grade estimates: present to clients rounded, as ranges.\n"
+               + pd.DataFrame(rows).to_csv(index=False))
 
     @render.download(filename="scenario.json")
     def dl_scenario():

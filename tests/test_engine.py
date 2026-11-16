@@ -333,3 +333,13 @@ def test_no_local_provider_forces_owned_t3_and_shared_site():
     sep = one(apps, local_gpu_provider=False, shared_sovereign_site=False)
     assert "GPU-as-a-service" not in sep["tiers"]["T3"]["tco"]["base"]
     assert r["totals"]["cost"] < sep["totals"]["cost"]          # one team, pooled servers
+
+
+def test_server_rounding_reaches_physical_figures():
+    r = one([dict(uid="t", name="tax", type="process_agent", volume=2000, data_class=4)])
+    t4 = r["tiers"]["T4"]
+    assert t4["cheapest_mode"] == "Owned"
+    sz, cap = t4["sizing"], t4["capacity"]
+    assert sz["gpus"] % 8 == 0 and sz["gpus"] == cap["gpus"]
+    assert sz["it_kw"] == pytest.approx(cap["it_kw"])
+    assert sz["facility_mw"] * 1000 == pytest.approx(cap["facility_kw"])

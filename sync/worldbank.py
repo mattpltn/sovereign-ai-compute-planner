@@ -87,13 +87,40 @@ def read_csv(name: str, field: str) -> dict:
     return {r["iso3"]: (float(r[field]), r.get("year", "")) for r in csv.DictReader(rows) if r.get(field)}
 
 
+def discover(pattern: str) -> list[tuple[str, int | None]]:
+    """Find indicator codes and their API source by name, across all World Bank databases.
+
+    Used when a known code has been archived or moved (e.g. Enterprise Surveys outages left WDI in 2026).
+    """
+    import re
+    found = []
+    page, pages = 1, 1
+    while page <= pages and page <= 40:
+        r = requests.get(f"{API}/indicator", params={"format": "json", "per_page": 1000, "page": page}, timeout=180)
+        r.raise_for_status()
+        head, rows = r.json()
+        pages = head.get("pages", 1)
+        for x in rows or []:
+            if re.search(pattern, x.get("name", ""), re.I):
+                found.append((x["id"], int(x["source"]["id"]) if x.get("source", {}).get("id") else None))
+        page += 1
+    return found
+
+
 def main() -> int:
     meta = countries()
     data = {k: {**v, "_sources": {}} for k, v in meta.items()}
     log = []
     for field, (code, src, f) in INDICATORS.items():
         vals = None
-        for c, s_ in [(code, src)] + CANDIDATES.get(field, []):
+        cands = [(code, src)] + CANDIDATES.get(field, [])
+        if field == "outages_per_month":
+            try:
+                cands += discover(r"outages in a typical month")
+                log.append(f"outages: discovered {cands[len(CANDIDATES.get(field, [])) + 1:]}")
+            except Exception as e:  # noqa: BLE001
+                log.append(f"outages: discovery FAILED {str(e)[:120]}")
+        for c, s_ in cands:
             try:
                 vals = latest(c, s_)
                 code = c
