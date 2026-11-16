@@ -5,6 +5,11 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-16
+### Fixed
+- Data sync failed at its test step: two agriculture tests read the freshly synced Estonia share instead of their own fixture. The sync itself had worked (all three agriculture indicator codes confirmed against API metadata; outages per month found for 145 countries).
+- GitHub Actions moved to checkout v5 and setup-python v6 (Node.js 20 deprecation).
+
 ## [0.7.0] - 2026-11-16
 ### Added
 - Agriculture advisory: "Who are these farmers?" choice. Everyone eligible keeps the Kisan e-Mitra rates (0.00015 / 0.0005 / 0.002); farmers using the advisory service use 0.05 / 0.1 / 0.3 per farmer per day (assumption, Low confidence). Saved as `population_basis`; older scenarios load as "everyone eligible" with identical results. Shown next to the volume in the results.
