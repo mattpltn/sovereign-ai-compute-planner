@@ -1,4 +1,5 @@
-# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+# Use-case catalogue. Every default carries its evidence and a confidence level (volume, tokens).
+# Volume = how many tasks per day. Tokens = size of each task. See docs/DEFAULTS.md.
 - id: UC01
   name: Citizen services assistant (multilingual chat)
   category: Chatbot
@@ -8,13 +9,13 @@
   eligible_share: 1
   fixed_base: 0
   pilot_users: 500
-  adoption_low: 0.02
-  adoption_base: 0.05
-  adoption_high: 0.1
+  adoption_low: 0.0045
+  adoption_base: 0.011
+  adoption_high: 0.045
   citizen_facing: 1
   tasks_per_user_day: 0.1
   isl: 1500
-  osl: 400
+  osl: 300
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
@@ -23,14 +24,30 @@
   peak_share: 0.6
   peak_window_h: 10
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.5
   model_class: M
   data_class: 2
   sources:
   - S01
   - S07
+  - S31
+  - S32
+  - S33
+  - S34
+  - S40
+  - S42
   note: Sporadic use (~3 queries/month per adopter). ISL includes retrieved context (RAG).
+  confidence:
+    volume: Medium
+    tokens: Medium
+  evidence:
+    adoption: 'Calibrated as queries per 10,000 people per day (at 45% internet use and 0.1 tasks per active user). Low 2 / Base 5 / High 20. Anchor: India''s Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million
+      PM-KISAN beneficiaries, i.e. ~1-2 per 10,000 per day (S40). A multi-service assistant is assumed to sit above a single-scheme bot.'
+    tokens: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
+    cache: 'System-prompt cache hit 50%: Kimi/Mooncake production trace reports up to 50% cache hit (S34). Agentic coding reaches ~94% (S42), not assumed here.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC02
   name: Civil servant copilot (drafting, summarising)
   category: Copilot
@@ -40,13 +57,13 @@
   eligible_share: 0.3
   fixed_base: 0
   pilot_users: 200
-  adoption_low: 0.1
-  adoption_base: 0.3
-  adoption_high: 0.6
+  adoption_low: 0.15
+  adoption_base: 0.33
+  adoption_high: 0.8
   citizen_facing: 0
-  tasks_per_user_day: 8
-  isl: 3000
-  osl: 600
+  tasks_per_user_day: 3.6
+  isl: 2000
+  osl: 400
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
@@ -55,14 +72,36 @@
   peak_share: 0.8
   peak_window_h: 8
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.2
   model_class: M
   data_class: 3
   sources:
   - S01
   - S26
+  - S31
+  - S32
+  - S33
+  - S34
+  - S36
+  - S37
+  - S38
+  - S39
+  - S42
   note: Eligible share = desk-based staff. Check against US Army allowance of 200k tokens/user/month [S26].
+  confidence:
+    volume: Medium
+    tokens: Medium
+  evidence:
+    eligible_share: '30% of civil servants are desk-based knowledge workers: analyst assumption, replace with HR data.'
+    adoption: 'Low 0.15 / Base 0.33 / High 0.80. Base: Singapore Pair, ~50,000 regular users of ~150,000 public officers (S38). High: UK GDS trial, ~80% of licensed staff active in the last 30 days (S36). Low: half of Base.'
+    tasks: '3.6 messages per weekly active user per day: ChatGPT ~2.5-2.6 billion messages/day for ~700 million weekly users (S39). Consistent with UK trial (39% used it several times a day) and Australian trial (1 in 3 daily)
+      (S36, S37).'
+    tokens: Input 2,000 + system prompt 1,000, output 400. Azure production chat median 1,020 in / 129 out in 2023 (S31); OpenRouter average >6,000 in / ~400 out by late 2025, driven by longer context (S32). Work copilots
+      attach documents, so input sits between the two.
+    cache: 'System-prompt cache hit 50%: Kimi/Mooncake production trace reports up to 50% cache hit (S34). Agentic coding reaches ~94% (S42), not assumed here.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC03
   name: Document intake and extraction (permits, land, registries)
   category: Content / extraction
@@ -78,7 +117,7 @@
   citizen_facing: 0
   tasks_per_user_day: 1
   isl: 4000
-  osl: 500
+  osl: 400
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.05
@@ -93,7 +132,18 @@
   data_class: 3
   sources:
   - S01
+  - S32
+  - S33
+  - S41
   note: Fixed base = documents per day; 1 task per document. Assumes text already digitised (OCR in NonToken).
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    volume: 'Documents per day is a country input: take it from the registry or permit office.'
+    tokens: Input 4,000 (3-4 page form) + system 500, output 400. OpenRouter API traffic averages >6,000 in / ~400 out (S32); Anthropic API data shows output grows far slower than input (S41).
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC04
   name: Translation into national and local languages
   category: Translation
@@ -103,9 +153,9 @@
   eligible_share: 1
   fixed_base: 0
   pilot_users: 500
-  adoption_low: 0.01
-  adoption_base: 0.03
-  adoption_high: 0.06
+  adoption_low: 0.0025
+  adoption_base: 0.0056
+  adoption_high: 0.022
   citizen_facing: 1
   tasks_per_user_day: 0.2
   isl: 500
@@ -118,13 +168,22 @@
   peak_share: 0.6
   peak_window_h: 10
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.2
   model_class: S
   data_class: 2
   sources:
   - S01
+  - S33
   note: ''
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    adoption: No public anchor. Set at half the citizen-assistant rate (Base ≈ 2.5 requests per 10,000 people per day). Low confidence.
+    tokens: 'Input ≈ output for translation (500 / 500): structural, not measured.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC05
   name: Community health worker triage assistant
   category: Chatbot
@@ -140,7 +199,7 @@
   citizen_facing: 0
   tasks_per_user_day: 10
   isl: 2000
-  osl: 500
+  osl: 400
   reasoning_tokens: 1000
   agent_steps: 1
   retry: 1.1
@@ -149,13 +208,27 @@
   peak_share: 0.7
   peak_window_h: 10
   burst: 1.5
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.5
   model_class: M
   data_class: 4
   sources:
   - S01
+  - S31
+  - S32
+  - S33
+  - S43
   note: Fixed base = health workers. Seasonal factor covers epidemic peaks.
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    tasks: '10 consultations per health worker per day: analyst assumption, replace with programme data.'
+    tokens: Input 2,000 + system prompt 1,000, output 400. Azure production chat median 1,020 in / 129 out in 2023 (S31); OpenRouter average >6,000 in / ~400 out by late 2025, driven by longer context (S32). Work copilots
+      attach documents, so input sits between the two.
+    reasoning: 'Reasoning tokens per call 1,000-2,000: measured 0.2k-2.5k per question for current reasoning models (S43). Reasoning models carry >50% of OpenRouter tokens (S32).'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC06
   name: Education tutor (secondary students)
   category: Chatbot
@@ -169,9 +242,9 @@
   adoption_base: 0.15
   adoption_high: 0.3
   citizen_facing: 1
-  tasks_per_user_day: 2
+  tasks_per_user_day: 3.6
   isl: 1500
-  osl: 500
+  osl: 400
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
@@ -180,13 +253,29 @@
   peak_share: 0.7
   peak_window_h: 8
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.3
   model_class: M
   data_class: 2
   sources:
   - S01
+  - S31
+  - S32
+  - S33
+  - S36
+  - S37
+  - S39
   note: Fixed base = students.
+  confidence:
+    volume: Medium
+    tokens: Medium
+  evidence:
+    tasks: '3.6 messages per weekly active user per day: ChatGPT ~2.5-2.6 billion messages/day for ~700 million weekly users (S39). Consistent with UK trial (39% used it several times a day) and Australian trial (1 in 3 daily)
+      (S36, S37). Users under 26 send nearly half of ChatGPT messages (S39).'
+    tokens: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
+    adoption: 'Production adoption 5/15/30% of students: analyst assumption.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
+    peak: 'Peak share and window: office-hours logic (no public government trace). Analyst assumption, low confidence.'
 - id: UC07
   name: Agriculture advisory (voice / SMS)
   category: Chatbot
@@ -196,9 +285,9 @@
   eligible_share: 1
   fixed_base: 2000000
   pilot_users: 1000
-  adoption_low: 0.01
-  adoption_base: 0.03
-  adoption_high: 0.08
+  adoption_low: 0.002
+  adoption_base: 0.005
+  adoption_high: 0.02
   citizen_facing: 1
   tasks_per_user_day: 0.1
   isl: 800
@@ -211,13 +300,25 @@
   peak_share: 0.6
   peak_window_h: 10
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 2
   model_class: S
   data_class: 1
   sources:
   - S01
+  - S31
+  - S32
+  - S33
+  - S40
   note: Fixed base = farming households. Speech handled in NonToken. Seasonal factor = planting season.
+  confidence:
+    volume: Medium
+    tokens: Medium
+  evidence:
+    adoption: 'Queries per farming household per day: Low 2 / Base 5 / High 20 per 10,000. Low equals Kisan e-Mitra (8,000-20,000 queries/day, ~93 million beneficiaries) (S40).'
+    tokens: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
+    seasonal: 'Seasonal 2.0 for planting season: analyst assumption.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
 - id: UC08
   name: Tax and customs risk agent
   category: Agent
@@ -232,11 +333,11 @@
   adoption_high: 1
   citizen_facing: 0
   tasks_per_user_day: 1
-  isl: 6000
-  osl: 800
-  reasoning_tokens: 2000
-  agent_steps: 6
-  retry: 1.2
+  isl: 2500
+  osl: 500
+  reasoning_tokens: 1000
+  agent_steps: 3
+  retry: 1.1
   system_prompt_tokens: 1500
   cache_hit: 0.5
   peak_share: 0.8
@@ -249,7 +350,19 @@
   sources:
   - S01
   - S25
+  - S32
+  - S33
+  - S35
+  - S43
   note: Fixed base = declarations per day. Agentic workloads use 4-15x more tokens than chat [S25].
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    tokens: 'Single agent: target ~4x the tokens of a chat task (Anthropic: agents use ~4x chat tokens) (S35). 3 calls x (2,500 + 1,500 system) in, (500 + 1,000 reasoning) out ≈ 18k tokens per task.'
+    reasoning: 'Reasoning tokens per call 1,000-2,000: measured 0.2k-2.5k per question for current reasoning models (S43). Reasoning models carry >50% of OpenRouter tokens (S32).'
+    volume: Declarations per day is a country input (customs/tax administration).
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
 - id: UC09
   name: Legal and regulatory research
   category: Agent / reasoning
@@ -266,7 +379,7 @@
   tasks_per_user_day: 3
   isl: 8000
   osl: 1000
-  reasoning_tokens: 3000
+  reasoning_tokens: 2000
   agent_steps: 3
   retry: 1.1
   system_prompt_tokens: 1000
@@ -274,14 +387,25 @@
   peak_share: 0.8
   peak_window_h: 8
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1
   model_class: L
   data_class: 2
   sources:
   - S01
   - S25
+  - S32
+  - S33
+  - S35
+  - S43
   note: ''
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    tokens: 'Multi-agent research: target ~15x the tokens of a chat task (Anthropic: multi-agent systems ~15x chat) (S35). 3 calls x (8,000 + 1,000) in, (1,000 + 2,000 reasoning) out ≈ 40k tokens per task.'
+    reasoning: 'Reasoning tokens per call 1,000-2,000: measured 0.2k-2.5k per question for current reasoning models (S43). Reasoning models carry >50% of OpenRouter tokens (S32).'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
 - id: UC10
   name: Government software engineering assistant
   category: Copilot
@@ -296,23 +420,33 @@
   adoption_high: 0.9
   citizen_facing: 0
   tasks_per_user_day: 30
-  isl: 4000
-  osl: 400
+  isl: 1500
+  osl: 100
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
-  system_prompt_tokens: 1000
+  system_prompt_tokens: 500
   cache_hit: 0.6
   peak_share: 0.8
   peak_window_h: 8
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1
   model_class: M
   data_class: 3
   sources:
   - S01
+  - S31
+  - S33
+  - S42
   note: Fixed base = government developers.
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    tokens: 'Input 1,500, output 100. Azure production coding median 1,500 in / 13 out (completions) (S31); chat questions return longer answers. Agentic coding is far heavier (S42): add a separate row if planned.'
+    tasks: '30 requests per developer per day: analyst assumption.'
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
 - id: UC11
   name: Call centre and court transcript summaries
   category: Content / extraction
@@ -337,13 +471,21 @@
   peak_share: 0.8
   peak_window_h: 10
   burst: 1.5
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.2
   model_class: S
   data_class: 3
   sources:
   - S01
+  - S33
   note: Fixed base = calls/hearings per day. Speech-to-text itself is in NonToken.
+  confidence:
+    volume: Low
+    tokens: High
+  evidence:
+    tokens: Input 3,000 ≈ a 15-minute call (~150 spoken words/min, ~1.3 tokens per word), output 400.
+    volume: Calls/hearings per day is a country input.
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
 - id: UC12
   name: Policy analysis agent
   category: Agent
@@ -357,25 +499,35 @@
   adoption_base: 0.6
   adoption_high: 0.9
   citizen_facing: 0
-  tasks_per_user_day: 4
-  isl: 10000
+  tasks_per_user_day: 2
+  isl: 8000
   osl: 1500
-  reasoning_tokens: 4000
-  agent_steps: 8
-  retry: 1.2
+  reasoning_tokens: 2000
+  agent_steps: 4
+  retry: 1.1
   system_prompt_tokens: 2000
   cache_hit: 0.5
   peak_share: 0.8
   peak_window_h: 8
   burst: 1.5
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1
   model_class: L
   data_class: 3
   sources:
   - S01
   - S25
+  - S32
+  - S35
+  - S43
   note: Fixed base = analysts.
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    tokens: 'Multi-agent research: target ~15x the tokens of a chat task (Anthropic: multi-agent systems ~15x chat) (S35). 4 calls x (8,000 + 2,000) in, (1,500 + 2,000 reasoning) out ≈ 60k tokens per task.'
+    reasoning: 'Reasoning tokens per call 1,000-2,000: measured 0.2k-2.5k per question for current reasoning models (S43). Reasoning models carry >50% of OpenRouter tokens (S32).'
+    tasks: '2 analyses per analyst per day: analyst assumption.'
 - id: UC13
   name: Security and intelligence analysis
   category: Agent
@@ -400,13 +552,18 @@
   peak_share: 0.8
   peak_window_h: 8
   burst: 1.5
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1
   model_class: L
   data_class: 4
   sources:
   - S01
   note: 'Excluded by default (Include = 0): usually outside World Bank engagement.'
+  confidence:
+    volume: Low
+    tokens: Low
+  evidence:
+    note: Excluded by default.
 - id: UC14
   name: Open data and statistics Q&A
   category: Chatbot
@@ -416,13 +573,13 @@
   eligible_share: 1
   fixed_base: 0
   pilot_users: 200
-  adoption_low: 0.002
-  adoption_base: 0.005
-  adoption_high: 0.01
+  adoption_low: 0.0009
+  adoption_base: 0.0022
+  adoption_high: 0.0089
   citizen_facing: 1
   tasks_per_user_day: 0.3
   isl: 2500
-  osl: 400
+  osl: 300
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
@@ -431,13 +588,21 @@
   peak_share: 0.6
   peak_window_h: 10
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.2
   model_class: M
   data_class: 1
   sources:
   - S01
+  - S31
+  - S32
   note: ''
+  confidence:
+    volume: Low
+    tokens: Medium
+  evidence:
+    adoption: No public anchor. Base ≈ 1 query per 10,000 people per day (a fifth of the citizen assistant). Low confidence.
+    tokens: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
 - id: UC15
   name: Social protection case management
   category: Copilot
@@ -447,13 +612,13 @@
   eligible_share: 1
   fixed_base: 5000
   pilot_users: 200
-  adoption_low: 0.2
-  adoption_base: 0.5
+  adoption_low: 0.15
+  adoption_base: 0.33
   adoption_high: 0.8
   citizen_facing: 0
-  tasks_per_user_day: 15
-  isl: 3000
-  osl: 500
+  tasks_per_user_day: 3.6
+  isl: 2000
+  osl: 400
   reasoning_tokens: 0
   agent_steps: 1
   retry: 1.1
@@ -462,10 +627,27 @@
   peak_share: 0.8
   peak_window_h: 8
   burst: 2
-  sla_headroom: 1.2
+  sla_headroom: 1.1
   seasonal: 1.3
   model_class: M
   data_class: 4
   sources:
   - S01
+  - S31
+  - S32
+  - S33
+  - S36
+  - S37
+  - S38
+  - S39
   note: Fixed base = caseworkers.
+  confidence:
+    volume: Medium
+    tokens: Medium
+  evidence:
+    adoption: 'Low 0.15 / Base 0.33 / High 0.80. Base: Singapore Pair, ~50,000 regular users of ~150,000 public officers (S38). High: UK GDS trial, ~80% of licensed staff active in the last 30 days (S36). Low: half of Base.'
+    tasks: '3.6 messages per weekly active user per day: ChatGPT ~2.5-2.6 billion messages/day for ~700 million weekly users (S39). Consistent with UK trial (39% used it several times a day) and Australian trial (1 in 3 daily)
+      (S36, S37).'
+    tokens: Input 2,000 + system prompt 1,000, output 400. Azure production chat median 1,020 in / 129 out in 2023 (S31); OpenRouter average >6,000 in / ~400 out by late 2025, driven by longer context (S32). Work copilots
+      attach documents, so input sits between the two.
+    burst: 'Burst 2.0, SLA headroom 1.1: production LLM traffic is bursty, API traffic more than chat (S33). Headroom reduced from 1.2 to avoid double counting with burst.'
