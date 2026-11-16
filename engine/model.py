@@ -30,6 +30,8 @@ class Profile:
     hardware_choice: str = "auto"       # "auto" or a hardware id applied to all tiers
     speed: str = "base"                 # response speed target -> throughput point: low (fast) / base / high (relaxed)
     finance: dict = field(default_factory=dict)       # discount_rate, demand_growth, price_decline (fractions)
+    local_gpu_provider: bool = True     # is there an in-country GPU-as-a-service provider (needed to rent in T3)?
+    shared_sovereign_site: bool = True  # Confidential (T3) and Restricted (T4) share one secure site
 
 
 # ----------------------------------------------------------------- Layers 0-3
@@ -250,6 +252,12 @@ def staff_fte(n_gpus: float, d: dict) -> float:
     return d["fte_min"]["value"] + n_gpus / d["gpus_per_fte"]["value"]
 
 
+def _server_round(n: int, hw: dict) -> int:
+    """Owned GPUs come in whole servers (8-GPU HGX) or racks (72-GPU NVL72)."""
+    k = hw.get("gpus_per_server", 1)
+    return int(math.ceil(n / k) * k) if n > 0 else 0
+
+
 def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dict, scenario: str) -> dict:
     """Present value (discounted at year start) of each allowed buying mode over the horizon."""
     tier = sz["tier"]
@@ -280,18 +288,18 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
     if t["api"]:
         out["API / managed"] = sum(disc[y] * price[y] * (api_llm * grow[y] + nt_gpus[y] * 8760 * rate) for y in years)
         detail["API / managed"] = dict(annual_y1=api_llm + nt_gpus[1] * 8760 * rate)
-    if t["gpuaas"]:
+    if t["gpuaas"] and (tier != "T3" or p.local_gpu_provider):
         out["GPU-as-a-service"] = sum(disc[y] * price[y] * gpus[y] * 8760 * rate for y in years)
         detail["GPU-as-a-service"] = dict(annual_y1=gpus[1] * 8760 * rate)
     if t["owned"]:
-        it_mw_max = max(gpus.values()) * hw["kw_per_gpu"] / 1000
+        it_mw_max = _server_round(max(gpus.values()), hw) * hw["kw_per_gpu"] / 1000
         fac_capex = it_mw_max * cp["fac"]
         total = fac_capex  # facility built in year 1, sized for the last year
         opex_y1 = None
         purchases = []
         for c in range(math.ceil(H / R)):
             start, end = 1 + c * R, min(H, (c + 1) * R)
-            owned = gpus[end]                                   # buy for demand at the end of the cycle
+            owned = _server_round(gpus[end], hw)                 # whole servers, for demand at the end of the cycle
             total += disc[start] * owned * capex_gpu * price[start]
             purchases.append((start, owned * capex_gpu * price[start]))
             for y in range(start, end + 1):
@@ -304,25 +312,35 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
                 if opex_y1 is None:
                     opex_y1 = opex
         out["Owned"] = total
-        detail["Owned"] = dict(upfront=fac_capex + purchases[0][1], facility_capex=fac_capex,
+        n1 = _server_round(gpus[min(H, R)], hw)
+        detail["Owned"] = dict(gpus=n1, servers=n1 // hw.get("gpus_per_server", 1) if n1 else 0,
+                               it_kw=n1 * hw["kw_per_gpu"], facility_kw=n1 * hw["kw_per_gpu"] * pue,
+                               racks=_roundup(n1 * hw["kw_per_gpu"] / hw["rack_kw"]) if n1 else 0,
+                               upfront=fac_capex + purchases[0][1], facility_capex=fac_capex,
                                gpu_capex_y1=purchases[0][1], refresh=[(y, v) for y, v in purchases[1:]],
                                annual_opex_y1=opex_y1 or 0.0, pue=pue, capex_per_mw=cp["fac"])
     tokens_pv = sum(disc[y] * sz["annual_eq_m"] * grow[y] for y in years)
     return {"modes": out, "detail": detail, "tokens_pv_m": tokens_pv}
 
 
-def step_for(tier: str, sz: dict, d: dict) -> str:
+def step_for(tier: str, sz: dict, d: dict, mode: str = "", owned: dict | None = None) -> str:
+    """Recommended step, worded after the buying option actually chosen."""
     if sz["below_threshold"]:
         return "Below GPU threshold: run on existing servers (CPU or a shared GPU)"
     if sz["gpus"] == 0:
         return "No demand in this tier"
-    if tier in ("T1", "T2"):
-        return "Step 0: use cloud / API under residency terms now"
-    mw = sz["facility_mw"]
+    if mode == "API / managed":
+        return "Step 0: buy as an API service" + (" with in-country or regional data residency" if tier == "T2" else "")
+    if mode == "GPU-as-a-service":
+        return ("Step 1: rent GPUs from an in-country provider" if tier == "T3"
+                else "Step 0: rent cloud GPUs" + (" with data residency" if tier == "T2" else ""))
+    mw = (owned or {}).get("facility_kw", sz["facility_mw"] * 1000) / 1000
+    srv = (owned or {}).get("servers")
+    what = f"own {srv} server{'s' if srv != 1 else ''}" if srv else "own the servers"
     if mw < d["step1_max_facility_mw"]["value"]:
-        return "Step 1: small sovereign inference node in an existing facility"
+        return f"Step 1: {what} in an existing secure server room"
     if mw < d["step3_min_facility_mw"]["value"]:
-        return "Step 2: colocation in an existing commercial data centre, private operator"
+        return f"Step 2: {what} in a colocation data centre run by a private operator"
     return "Step 3: dedicated facility via PPP or private operator (IFC-investable)"
 
 
@@ -343,44 +361,73 @@ def grid_status(p: Profile, hw: dict, sz: dict, tier: str, d: dict) -> str:
     return "OK"
 
 
+def _solve_tier(t, dem, nt, p, hardware, d, api_prices):
+    air = next(h for h in hardware if h["weak_grid_ok"])
+    first = size_tier(t, dem, nt, air, d, p.speed, p.country)
+    um = d.get("throughput_uncertainty", {"low": 1.0, "base": 1.0, "high": 1.0})
+    best = None
+    for h in candidate_hardware(p, hardware, first["it_kw"] / 1000, d):
+        sz = size_tier(t, dem, nt, h, d, p.speed, p.country)
+        base = tco_tier(sz, dem, h, api_prices, p, d, "base")["modes"]
+        key = (min(base.values()) if base and sz["gpus"] else 0.0, sz["it_kw"])
+        if best is None or key < best[0]:          # hardware with the lowest cost of the cheapest allowed option
+            best = (key, h, sz)
+    _, hw, sz = best
+    sizes = {sc: (sz if um[sc] == 1.0 else size_tier(t, dem, nt, hw, d, p.speed, p.country, um[sc])) for sc in SCENARIOS}
+    res = {sc: tco_tier(sizes[sc], dem, hw, api_prices, p, d, sc) for sc in SCENARIOS}
+    tco = {s: res[s]["modes"] for s in SCENARIOS}
+    detail = {s: res[s]["detail"] for s in SCENARIOS}
+    if sz["gpus"] == 0 or not tco["base"]:
+        mode, cost, winners = ("Below GPU threshold" if sz["below_threshold"] else "No demand"), 0.0, {}
+    else:
+        winners = {s: min(tco[s], key=tco[s].get) for s in SCENARIOS}
+        mode = winners["base"]
+        cost = tco["base"][mode]
+    cost_range = {s: (tco[s][winners[s]] if winners else None) for s in SCENARIOS}
+    per_m = cost / res["base"]["tokens_pv_m"] if res["base"]["tokens_pv_m"] and cost else None
+    owned = detail["base"].get("Owned") if mode == "Owned" else None
+    # Capacity actually acquired: owned servers, rented GPUs, or nothing (API service).
+    if mode == "Owned":
+        cap = dict(kind="build", gpus=owned["gpus"], servers=owned["servers"], it_kw=owned["it_kw"],
+                   facility_kw=owned["facility_kw"], racks=owned["racks"])
+    elif mode == "GPU-as-a-service":
+        cap = dict(kind="rent", gpus=sz["gpus"], servers=None, it_kw=sz["it_kw"], facility_kw=None, racks=None)
+    else:
+        cap = dict(kind="service" if sz["gpus"] else "none", gpus=None, servers=None, it_kw=None, facility_kw=None, racks=None)
+    return dict(sizing=sz, sizing_range={sc: dict(gpus=sizes[sc]["gpus"], facility_mw=sizes[sc]["facility_mw"])
+                                         for sc in SCENARIOS},
+                tco=tco, detail=detail, facility=facility_for(p.country, hw, d), cheapest_mode=mode, cheapest_cost=cost,
+                winners=winners, winner_changes=len(set(winners.values())) > 1, cost_range=cost_range,
+                usd_per_m_eq_tokens=per_m, capacity=cap, grid=grid_status(p, hw, sz, t, d),
+                step=step_for(t, sz, d, mode, owned), hardware=hw["id"], merged_into=None)
+
+
 def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) -> dict:
     api_prices = api_prices or d["api_prices_fallback"]
     dem = demand_rows(p, d)
     nt = nontoken_rows(p, d)
     hardware = catalogue["hardware"]
-    tiers = {}
-    for t in TIERS:
-        air = next(h for h in hardware if h["weak_grid_ok"])
-        first = size_tier(t, dem, nt, air, d, p.speed, p.country)
-        options = [(h, size_tier(t, dem, nt, h, d, p.speed, p.country))
-                   for h in candidate_hardware(p, hardware, first["it_kw"] / 1000, d)]
-        hw, sz = min(options, key=lambda o: (o[1]["gpus"] * o[0]["gpu_hour_usd"], o[1]["it_kw"]))
-        um = d.get("throughput_uncertainty", {"low": 1.0, "base": 1.0, "high": 1.0})
-        sizes = {sc: (sz if um[sc] == 1.0 else size_tier(t, dem, nt, hw, d, p.speed, p.country, um[sc])) for sc in SCENARIOS}
-        res = {sc: tco_tier(sizes[sc], dem, hw, api_prices, p, d, sc) for sc in SCENARIOS}
-        tco = {s: res[s]["modes"] for s in SCENARIOS}
-        detail = {s: res[s]["detail"] for s in SCENARIOS}
-        if sz["gpus"] == 0 or not tco["base"]:
-            mode, best, winners = ("Below GPU threshold" if sz["below_threshold"] else "No demand"), 0.0, {}
-        else:
-            winners = {s: min(tco[s], key=tco[s].get) for s in SCENARIOS}
-            mode = winners["base"]
-            best = tco["base"][mode]
-        flips = len(set(winners.values())) > 1
-        cost_range = {s: (tco[s][winners[s]] if winners else None) for s in SCENARIOS}
-        per_m = best / res["base"]["tokens_pv_m"] if res["base"]["tokens_pv_m"] and best else None
-        fac = facility_for(p.country, hw, d)
-        tiers[t] = dict(sizing=sz, sizing_range={sc: dict(gpus=sizes[sc]["gpus"], facility_mw=sizes[sc]["facility_mw"])
-                                                  for sc in SCENARIOS}, tco=tco, detail=detail, facility=fac, cheapest_mode=mode, cheapest_cost=best, winners=winners,
-                        winner_changes=flips, cost_range=cost_range, usd_per_m_eq_tokens=per_m,
-                        grid=grid_status(p, hw, sz, t, d), step=step_for(t, sz, d), hardware=hw["id"])
+    tiers = {t: _solve_tier(t, dem, nt, p, hardware, d, api_prices) for t in TIERS}
+    # Shared sovereign site: Confidential work moves into the Restricted site when it would otherwise be owned
+    # separately (data can always move to a more secure tier). One site, one team, pooled GPUs.
+    t3, t4 = tiers["T3"], tiers["T4"]
+    if (p.shared_sovereign_site and t3["sizing"]["gpus"] and t4["sizing"]["gpus"]
+            and t3["cheapest_mode"] == "Owned" and t4["cheapest_mode"] == "Owned"):
+        dem = [dict(r, tier="T4") if r["tier"] == "T3" else r for r in dem]
+        nt = [dict(x, tier="T4") if x["tier"] == "T3" else x for x in nt]
+        tiers["T4"] = _solve_tier("T4", dem, nt, p, hardware, d, api_prices)
+        tiers["T4"]["shared_site"] = True
+        tiers["T3"] = _solve_tier("T3", dem, nt, p, hardware, d, api_prices)   # now empty
+        tiers["T3"]["merged_into"] = "T4"
+        tiers["T3"]["step"] = "Served by the shared sovereign site (with Restricted data)"
     alloc = allocate(dem, nt, tiers)
     return dict(demand=dem, nontoken=nt, tiers=tiers, by_app=alloc,
                 totals=dict(gpus_range={sc: sum(v["sizing_range"][sc]["gpus"] for v in tiers.values()) for sc in SCENARIOS},
                             mw_range={sc: sum(v["sizing_range"][sc]["facility_mw"] for v in tiers.values()) for sc in SCENARIOS},
                             gpus=sum(v["sizing"]["gpus"] for v in tiers.values()),
                             facility_mw=sum(v["sizing"]["facility_mw"] for v in tiers.values()),
-                            cost=sum(v["cheapest_cost"] for v in tiers.values())))
+                            cost=sum(v["cheapest_cost"] for v in tiers.values()),
+                            cost_range={sc: sum((v["cost_range"][sc] or 0) for v in tiers.values()) for sc in SCENARIOS}))
 
 
 def allocate(dem: list, nt: list, tiers: dict) -> dict:

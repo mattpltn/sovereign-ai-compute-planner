@@ -2,7 +2,29 @@
 
 # Sovereign AI Compute Planner: Methodology
 
-Version 0.4 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+Version 0.5 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+
+## Summary for presenters (one page)
+
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, accurate to roughly ±30%, not an engineering design or a procurement specification.
+
+**The four inputs that matter.**
+1. *The applications and their volume*: who uses each one and how many (staff with access, documents per day, citizens served). This is the single biggest driver.
+2. *The data class of each application*: it decides where the application may run (public cloud, in-country cloud, sovereign site).
+3. *The country*: grid reliability, electricity price, construction cost, and whether an in-country GPU provider exists.
+4. *The adoption scenario*: cautious, expected or aggressive use.
+
+**How to read the results page.**
+- *The banner* gives the answer in two lines: the 10-year cost and what to build in-country.
+- *1 · How much will it cost?* compares the three adoption scenarios. Each bar is split by data class, and the whisker shows the price range (hardware, cloud and API prices, GPU efficiency).
+- *2 · What needs to be built or bought?* shows one card per destination. A cloud or API card shows the annual bill and nothing to build. A sovereign-site card shows servers, GPUs, power, the upfront capex next to the annual running cost, and renting as the alternative where an in-country provider exists.
+- *3 · Where does the cost come from?* splits the cost by application.
+
+**What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
+
+**What they cannot be used for.** Procurement quantities, budget lines, or quotes. Before any commitment, replace the defaults with the client's own data: pilot logs, vendor quotes, and a site assessment (Annex A explains how).
+
+**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Demand is held flat over 10 years unless a growth rate is entered. Backup fuel on weak grids is not costed.
 
 ## 1. Purpose and scope
 
@@ -35,7 +57,9 @@ GPUs per tier → IT kW → facility MW → energy                         Layer
    │
 10-year cost per allowed buying mode → cheapest option                Layer 5
    │
-Recommended step (0 cloud now, 1 small sovereign node, 2 dedicated capacity)
+Recommended step, worded after the option chosen:
+  below GPU threshold · Step 0 buy as a service · Step 1 rent in-country or own servers in an existing room
+  · Step 2 own servers in a colocation data centre · Step 3 dedicated facility via PPP
 ```
 
 The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01], with two corrections: input and output tokens are kept separate, because they load the hardware differently [S07], and the system prompt is added to input before cache savings are removed.
@@ -200,50 +224,18 @@ cooling multiplier (liquid vs air) = 0.90 / 1.085 / 1.10 (Low / Base / High)
 
 Why a range for the liquid multiplier: Turner & Townsend measured liquid-cooled AI facilities in the US at 7-10% more than air-cooled facilities of the same IT capacity [S53]. Schneider Electric's cost model found the two equal at the same rack density, and 10-14% cheaper for liquid when it allows 2-4 times denser racks [S54]. Construction costs normally include UPS and generators; diesel and fuel logistics on weak grids are not costed (Section 16).
 
-| World Bank region | PUE air | PUE liquid | Source / note |
-|---|---|---|---|
-| Sub-Saharan Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
-| Middle East & North Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
-| Latin America & Caribbean | 1.79 | 1.65 | Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50) |
-| South Asia | 1.56 | 1.46 | Proxy: global average 2024 (S22); hot climates likely higher |
-| East Asia & Pacific | 1.56 | 1.46 | Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50) |
-| Europe & Central Asia | 1.46 | 1.38 | Uptime Institute regional average for Europe (2020 survey) |
-| North America | 1.53 | 1.43 | Europe is ~5% below US/Canada (S49) |
+Country and regional values, and how to calibrate a specific site with the Schneider Electric calculators: Annex A.
 
-| Country | Market | $ per W of IT | Year | Source |
-|---|---|---|---|---|
-| NGA | Lagos | 10.87 | 2026 | S52 |
-| ZAF | Johannesburg | 10.62 | 2026 | S52 |
-| KEN | Nairobi | 10.03 | 2026 | S52 |
-| IND | Mumbai | 6.83 | 2026 | S52 |
-| CHN | Shanghai | 5.79 | 2026 | S52 |
-| VNM | Ho Chi Minh City | 8.32 | 2026 | S52 |
-| COL | Bogota | 9.13 | 2026 | S52 |
-| ARE | UAE | 9.2 | 2026 | S52 |
-| IDN | Jakarta | 11.21 | 2025 | S53 |
-| MYS | Malaysia | 11.37 | 2025 | S53 |
-| SAU | Saudi Arabia | 11.3 | 2025 | S53 |
-| SGP | Singapore | 14.53 | 2025 | S53 |
-| JPN | Tokyo | 15.2 | 2025 | S53 |
+**Owned capacity comes in whole servers.** GPUs are sold in servers, not one by one: 8 GPUs per HGX server (H200, B200) and 72 per GB300 NVL72 rack. Owned capacity, its power and its cost are rounded up to whole servers. Rented GPUs are counted one by one.
 
-| Region (proxy for other countries) | $ per W of IT | Basis |
-|---|---|---|
-| Sub-Saharan Africa | 10.51 | Average of Lagos, Johannesburg, Nairobi |
-| Middle East & North Africa | 10.25 | Average of Saudi Arabia and UAE |
-| Latin America & Caribbean | 9.13 | Bogota only: low confidence |
-| South Asia | 6.83 | Mumbai only: low confidence, likely low for smaller markets |
-| East Asia & Pacific | 10.3 | Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai) |
-| Europe & Central Asia | 11.0 | Global default |
-| North America | 11.0 | Global default |
+**One shared sovereign site (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. The result is one facility, one operations team and pooled GPUs. The option can be switched off in Setup.
 
-**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
-1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
-2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
+**Is there an in-country GPU provider?** Renting GPUs for Confidential data assumes an in-country provider exists. Setup asks the question (default: no or not sure). Without one, owning is the only option for Confidential data.
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
 1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup), **unknown**, or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
-2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest GPU-hour cost (GPUs × $/GPU-hour).
+2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest cost for the cheapest allowed buying option. An owned-only tier is therefore compared on ownership cost (servers, energy, facility), not on rental price.
 
 The user can force a profile in Setup.
 
@@ -261,7 +253,7 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 |---|---|---|---|---|---|---|---|---|---|
 | Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
 | Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
-| Learning tutor (students) | Students with access | 0.1 / 0.27 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
+| Learning tutor (students) | Students with access | 0.07 / 0.19 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
 | Clinical decision support (frontline health workers) | Health workers with access | 3 / 10 / 20 | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
 | Developer coding assistant | Developers with access | 10 / 30 / 60 | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1 | 3 | Low / Medium |
 | Document intake and extraction | Documents per day | 1 / 1 / 1 | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1.2 | 3 | High / Medium |
@@ -271,14 +263,14 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 | Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
 | Clinical safety net (runs automatically on every patient visit) | Patient visits per day | 1 / 1 / 1 | 2,000 + 1,000 / 200 / 0 | 3 x retry 1.05 | M | 70% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Low |
 | Teacher assistant (lesson planning, differentiated materials) | Teachers with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 600 / 0 | 1 x retry 1.1 | M | 70% / 10 | 2 / 1.1 / 1.2 | 2 | Low / Medium |
-| Agriculture advisory for farmers (chat or voice) | Farmers registered on the service | 0.1 / 0.37 / 0.6 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Low / Medium |
+| Agriculture advisory for farmers (chat or voice) | Farmers in the target population | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Medium / Medium |
 | Voice agent for public services (phone line, real time) | Calls per day | 1 / 1 / 1 | 1,500 + 800 / 80 / 0 | 6 x retry 1.05 | M | 70% / 10 | 2 / 1.3 / 1.3 | 3 | High / Low |
 
 ### Other AI types (non-LLM)
 
 | Type | Volume entered by user | GPU-seconds per unit | Mode | Default data class | Confidence |
 |---|---|---|---|---|---|
-| Speech-to-text | Audio hours per day | 6 | Interactive | 3 | Medium |
+| Speech-to-text | Audio hours per day | 12 | Interactive | 3 | Medium |
 | OCR and layout extraction | Pages per day | 0.3 | Batch | 3 | Low |
 | Face verification (1:1 authentication) | Verifications per day | 0.02 | Interactive | 4 | Low |
 | Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | Batch | 4 | Low |
@@ -304,7 +296,7 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Learning tutor (students)**
 
-- *rate*: Base 0.27 interactions per student with access per day: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59), and only ~15% of students with access engage with it (S58). Low 0.1: about a third of Base, for schools without classroom integration. High 1.08 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39).
+- *rate*: Base 0.19 interactions per student with access per day, averaged over the 7-day week: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59), i.e. 0.27 per weekday x 5/7. Only ~15% of students with access engage with it (S58). Khan Academy does not define an interaction; it is treated as one message. Low 0.07: about a third of Base, for schools without classroom integration. High 1.08 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39).
 - *tokens*: As citizen assistant (S31, S32).
 
 **Clinical decision support (frontline health workers)**
@@ -350,23 +342,23 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Teacher assistant (lesson planning, differentiated materials)**
 
-- *rate*: Modelled on the staff copilot rates (S36, S37, S39): no published per-teacher usage data yet. Often a more realistic first step than student tutors; a World Bank pilot in Peru is training ~500 teachers with Copilot (reviewer-provided, internal source, to verify).
+- *rate*: Modelled on the staff copilot rates (S36, S37, S39): no published per-teacher usage data found yet. Often a more realistic first step than student tutors.
 - *tokens*: Copilot shape with longer outputs (lesson plans, worksheets): 600 output tokens.
 
 **Agriculture advisory for farmers (chat or voice)**
 
-- *rate*: Per registered farmer per day. Digital Green's Farmer.Chat: active users consult ~18 times a month (~0.6/day) and 61% of Kenyan users use it meaningfully: 0.61 x 0.6 ≈ 0.37 (reviewer-provided, to verify against Digital Green and 60 Decibels). For a whole farming population rather than registered users, use the citizen assistant rate: India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93M beneficiaries (S40).
+- *rate*: Queries per farmer in the target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40): Low = 0.00015, the midpoint. Base and High (~3x, ~13x) are assumptions for services built around advisory rather than grievances. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate.
 - *tokens*: Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels.
 - *seasonal*: 2.0 for planting season: assumption.
 
 **Voice agent for public services (phone line, real time)**
 
-- *rate*: One task per call; calls per day come from the call centre. Example: Portugal's 112 emergency line receives ~9 million calls a year (reviewer-provided, to verify).
+- *rate*: One task per call; calls per day come from the government service line (tax, social security, civil registry). Peak pattern assumes office hours; an emergency line runs 24/7 and needs a flatter pattern (override, or model it with a lower peak share).
 - *tokens*: ~6 conversational turns per call with short spoken replies (80 tokens) and growing context: assumption. Strict response time: SLA headroom 1.3 and use the Fast response speed. Add Speech-to-text (call hours) and Text-to-speech applications for the audio.
 
 **Speech-to-text**
 
-- *gpu*: 6 GPU-seconds per audio hour (~600x real time) for batched, optimised Whisper large-v3 / turbo on one data-centre GPU: Baseten reports 1,800-2,400x real time on an H100 node (S55). Unbatched single-stream decoding is far slower (~27x real time on H100, i.e. ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45).
+- *gpu*: 12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node (S55); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45).
 
 **OCR and layout extraction**
 
@@ -413,48 +405,13 @@ All rates are **requests per person with access per day**, averaged over every d
 
 | ID | Profile | Cooling | Rack kW | kW per GPU (all-in) | Large model L tok/s per GPU (Fast / Standard / Relaxed) | Medium M | Small S | $/GPU-hour | Capex per GPU | Software $/GPU/yr | Weak-grid suitable |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| P1 | HGX H200 8-GPU, air-cooled | Air | 41 | 1.4 | 611 / 779 / 1,302 (measured) | 1,152 / 1,930 / 2,978 (measured) | 5,000 / 8,000 / 12,000 (derived, derated) | 2.6 | 40,000 | 4500 | yes |
-| P3 | HGX B200 8-GPU, air-cooled | Air | 60 | 1.7 | 1,051 / 1,461 / 4,852 (measured) | 2,352 / 3,981 / 5,994 (measured) | 8,000 / 12,000 / 18,000 (derived, derated) | 3.69 | 50,000 | 4500 | yes |
+| P1 | HGX H200 8-GPU, air-cooled | Air | 41 | 1.4 | 625 / 819 / 1,591 (measured) | 1,152 / 1,930 / 2,978 (measured) | 5,000 / 8,000 / 12,000 (derived, derated) | 2.6 | 40,000 | 4500 | yes |
+| P3 | HGX B200 8-GPU, air-cooled | Air | 60 | 2.0 | 1,051 / 1,461 / 4,852 (measured) | 2,352 / 3,981 / 5,994 (measured) | 8,000 / 12,000 / 18,000 (derived, derated) | 3.69 | 50,000 | 4500 | yes |
 | P2 | GB300 NVL72, liquid-cooled rack | Liquid | 130 | 2.1 | 3,404 / 5,667 / 8,552 (measured) | 3,000 / 5,000 / 7,800 (derived, derated) | 12,000 / 16,000 / 18,370 (derived, derated) | 4.92 | 65,000 | 4500 | no |
 
-Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW. The production derating (0.6) is applied on top.
+Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW or taken from the vendor's system rating. Measured figures are used as they are; the production derating (0.6) applies only to derived figures (Section 8).
 
-Evidence per profile:
-
-**P1 · HGX H200 8-GPU, air-cooled**
-
-- *L*: DeepSeek R1: 611 / 779 / 1,302 tok/s per GPU at 130 / 94 / 57 tok/s per user (SemiAnalysis InferenceX) (S44).
-- *M*: Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
-- *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.
-- *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
-- *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU: placeholder, replace with vendor quote.
-
-**P3 · HGX B200 8-GPU, air-cooled**
-
-- *L*: DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44).
-- *M*: Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
-- *S*: Derived: about 3x the 70B figure. Low confidence: derated.
-- *power*: 1.7 kW per GPU all-in, implied by InferenceX tokens per MW for B200 (S44).
-- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.
-
-**P2 · GB300 NVL72, liquid-cooled rack**
-
-- *L*: DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
-- *M*: Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).
-- *S*: MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).
-- *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
-- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
-
-
-### Vendor claims versus independent benchmarks
-
-NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
-
-Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
-
-The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
-
-For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
+Evidence for each figure, and the comparison of vendor claims with independent benchmarks: Annex B.
 
 ## 11. Layer 5: 10-year cost (present value)
 
@@ -491,6 +448,8 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 **Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
 
+**The results page** is organised around three client questions (see the summary at the top): the 10-year cost under three adoption scenarios, the capacity to build or buy per destination, and the cost per application. Detailed tables (every option Low – Base – High, tiers and hardware, rent or own per tier, demand) are collapsed below. The raw CSV export is unrounded, for analysts.
+
 **Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
 
 **Rounding.** Results are rounded to two significant figures and shown as "about X" with a Low – High range (e.g. "about $1.6M, range $1.4–2.1M"). The tool does not have more precision than that.
@@ -501,11 +460,18 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 | Condition | Step |
 |---|---|
+The step is worded after the buying option the tool actually chose, so the two never contradict each other.
+
+| Condition | Step |
+|---|---|
 | Only tiny non-LLM workloads (below 0.25 GPU) | **Below GPU threshold:** run on existing servers (CPU or a shared GPU). |
-| Tier T1 or T2 | **Step 0:** use cloud or API now, under residency terms where required. |
-| Tier T3 or T4, facility power below 1 MW | **Step 1:** small sovereign inference node in an existing facility. |
-| Tier T3 or T4, 1 to 10 MW | **Step 2:** colocation in an existing commercial data centre, run by a private operator. |
-| Tier T3 or T4, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
+| Cheapest option is API | **Step 0:** buy as an API service (with data residency for internal data). |
+| Cheapest option is GPU rental | **Step 0:** rent cloud GPUs (public or internal data), or **Step 1:** rent GPUs from an in-country provider (confidential data). |
+| Owned, facility power below 1 MW | **Step 1:** own N servers in an existing secure server room. |
+| Owned, 1 to 10 MW | **Step 2:** own N servers in a colocation data centre run by a private operator. |
+| Owned, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
+
+Cloud and API tiers show no GPUs, racks or power in the results: nothing is built for them.
 
 A PPP or IFC transaction for a facility of one or two megawatts is not realistic: transaction costs and minimum ticket sizes call for roughly 10 MW or more (assumption, adjustable). Between 1 and 10 MW, hosting in an existing colocation site is the practical route.
 
@@ -526,7 +492,7 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 | Pooling in tier T3 | one application, so D = 1 | 80.2 |
 | GPUs | roundup(peak / 1,930 tok/s per GPU, measured at Standard speed, no derating) | 1 |
 | IT load / facility | GPUs x 1.4 kW; x PUE 1.56 (global average; example country has no region) | 1.4 kW / 2.2 kW |
-| Cheapest allowed option (T3) | min(GPU-as-a-service, Owned), present value over 10 years at 8% | GPU-as-a-service, $165,055 |
+| Cheapest allowed option (T3, in-country provider available) | min(GPU-as-a-service, Owned), present value over 10 years at 8%, rounded | GPU-as-a-service, about $170,000 |
 
 Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
 
@@ -623,6 +589,89 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
 
+## Annex A. Facility values by country and site calibration
+
+| World Bank region | PUE air | PUE liquid | Source / note |
+|---|---|---|---|
+| Sub-Saharan Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
+| Middle East & North Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
+| Latin America & Caribbean | 1.79 | 1.65 | Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50) |
+| South Asia | 1.56 | 1.46 | Proxy: global average 2024 (S22); hot climates likely higher |
+| East Asia & Pacific | 1.56 | 1.46 | Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50) |
+| Europe & Central Asia | 1.46 | 1.38 | Uptime Institute regional average for Europe (2020 survey) |
+| North America | 1.53 | 1.43 | Europe is ~5% below US/Canada (S49) |
+
+| Country | Market | $ per W of IT | Year | Source |
+|---|---|---|---|---|
+| NGA | Lagos | 10.87 | 2026 | S52 |
+| ZAF | Johannesburg | 10.62 | 2026 | S52 |
+| KEN | Nairobi | 10.03 | 2026 | S52 |
+| IND | Mumbai | 6.83 | 2026 | S52 |
+| CHN | Shanghai | 5.79 | 2026 | S52 |
+| VNM | Ho Chi Minh City | 8.32 | 2026 | S52 |
+| COL | Bogota | 9.13 | 2026 | S52 |
+| ARE | UAE | 9.2 | 2026 | S52 |
+| IDN | Jakarta | 11.21 | 2025 | S53 |
+| MYS | Malaysia | 11.37 | 2025 | S53 |
+| SAU | Saudi Arabia | 11.3 | 2025 | S53 |
+| SGP | Singapore | 14.53 | 2025 | S53 |
+| JPN | Tokyo | 15.2 | 2025 | S53 |
+
+| Region (proxy for other countries) | $ per W of IT | Basis |
+|---|---|---|
+| Sub-Saharan Africa | 10.51 | Average of Lagos, Johannesburg, Nairobi |
+| Middle East & North Africa | 10.25 | Average of Saudi Arabia and UAE |
+| Latin America & Caribbean | 9.13 | Bogota only: low confidence |
+| South Asia | 6.83 | Mumbai only: low confidence, likely low for smaller markets |
+| East Asia & Pacific | 10.3 | Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai) |
+| Europe & Central Asia | 11.0 | Global default |
+| North America | 11.0 | Global default |
+
+**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
+1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
+2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
+
+
+## Annex B. Hardware evidence and vendor claims
+
+Evidence per profile:
+
+**P1 · HGX H200 8-GPU, air-cooled**
+
+- *L*: DeepSeek R1: 625 / 819 / 1,591 tok/s per GPU at 128 / 89 / 50 tok/s per user, from the same InferenceX comparison as the B200 profile, so the two are measured at identical points (S44).
+- *M*: Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
+- *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.
+- *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
+- *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU: placeholder, replace with vendor quote.
+
+**P3 · HGX B200 8-GPU, air-cooled**
+
+- *L*: DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44). Same comparison as P1: B200 gains more than H200 at relaxed speeds (3.0x H200 at 50 tok/s per user, 1.8x at 89) because larger batches fit in its memory.
+- *M*: Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
+- *S*: Derived: about 3x the 70B figure. Low confidence: derated.
+- *power*: 2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage.
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.
+
+**P2 · GB300 NVL72, liquid-cooled rack**
+
+- *L*: DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
+- *M*: Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).
+- *S*: MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).
+- *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
+
+
+### Vendor claims versus independent benchmarks
+
+NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
+
+Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
+
+The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
+
+For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
+
+
 ## 17. Sources
 
 | ID | Source | Publisher | Used for | Link |
@@ -686,5 +735,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | S57 | AI-based clinical decision support for primary care: a real-world study (AI Consult, 39,849 visits) | Penda Health / OpenAI (arXiv 2507.16947, 2025) | Background clinical safety net on every visit, activated at key decision points | https://arxiv.org/abs/2507.16947 |
 | S58 | Learning in the Open: What AI Is (and Isn't) Changing | Khan Academy (2026) | Khanmigo: ~269,000 weekday interactions; ~15% of students with access engage | https://blog.khanacademy.org/learning-in-the-open-what-ai-is-and-isnt-changing/ |
 | S59 | Sal Khan: AI tutors need human input | McGraw Prize in Education | Khanmigo reach: nearly 1 million students | https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input |
+| S60 | NVIDIA DGX B200 datasheet (system power ~14.3 kW max, 8x B200) | NVIDIA | B200 power per GPU | https://www.nvidia.com/en-us/data-center/dgx-b200/ |
+| S61 | Digital Green Farmer.Chat Study, Kenya (Lean Data, 450 farmers, July-August 2025) | 60 Decibels | 61% meaningful users (impact metric, not usage frequency) | https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

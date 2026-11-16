@@ -121,6 +121,7 @@ def gen_example(cat, d, arch) -> str:
     t = arch["staff_copilot"]
     hw = next(h for h in cat["hardware"] if h["id"] == "P1")
     pre = d["prefill_weight"]["value"]
+    best_rounded = float(f'{r["tiers"]["T3"]["cheapest_cost"]:.2g}')
     k = t["agent_steps"] * t["retry"]
     lines = [
         f"A staff copilot for **1,000 staff with access**, data class 3, Base scenario, hardware P1.",
@@ -136,7 +137,7 @@ def gen_example(cat, d, arch) -> str:
         f'| Pooling in tier T3 | one application, so D = {s["diversity"]:g} | {s["peak_eq_tps"]["M"]:,.1f} |',
         f'| GPUs | roundup(peak / {hw["tokens_per_s_per_gpu"]["M"]["base"]:,} tok/s per GPU, measured at Standard speed, no derating) | {s["gpus"]} |',
         f'| IT load / facility | GPUs x {hw["kw_per_gpu"]:g} kW; x PUE {s["pue"]:.2f} (global average; example country has no region) | {s["it_kw"]:.1f} kW / {s["facility_mw"] * 1000:.1f} kW |',
-        f'| Cheapest allowed option (T3) | min(GPU-as-a-service, Owned), present value over 10 years at {d["discount_rate"]["value"]:.0%} | {r["tiers"]["T3"]["cheapest_mode"]}, ${r["tiers"]["T3"]["cheapest_cost"]:,.0f} |',
+        f'| Cheapest allowed option (T3, in-country provider available) | min(GPU-as-a-service, Owned), present value over 10 years at {d["discount_rate"]["value"]:.0%}, rounded | {r["tiers"]["T3"]["cheapest_mode"]}, about ${best_rounded:,.0f} |',
         "",
         f'Utilisation of that single GPU is {s["utilisation"]:.0%}: one copilot for 1,000 staff does not justify dedicated '
         "hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.",
