@@ -136,7 +136,7 @@ def test_copilot_volume_from_user_input():
                       [dict(uid="a", name="x", type="staff_copilot", volume=1000, data_class=3)],
                       ARCH, dict(D["class_to_tier"]))
     r = run(p, CAT, D)
-    assert r["demand"][0]["sessions"] == pytest.approx(1800)   # 1.8 requests per person with access [S36]
+    assert r["demand"][0]["sessions"] == pytest.approx(1400)   # 1.4 requests per person with access [S36]
     assert r["demand"][0]["tier"] == "T3"
 
 

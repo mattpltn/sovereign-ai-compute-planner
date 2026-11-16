@@ -7,6 +7,8 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 ### Changed
 - Hardware throughput recalibrated to independent benchmarks (SemiAnalysis InferenceX [S44], MLPerf v5.1 [S45]) at a fixed interactivity (~90-95 tok/s per user for large reasoning models, ~75 for 70B). Liquid (GB300 NVL72) vs air (H200) gap on the large model: 65x (NVIDIA claim) → 7.3x per GPU. P1 H200: L 90 → 779, M 800 → 1,930 tok/s per GPU; kW per GPU 1.7 → 1.4. P2 rental price scaled to the ownership cost ratio ($4.92/GPU-hour).
 - Automatic hardware choice: among allowed profiles (air-cooled only on weak grids or below 1 MW), picks the lowest GPU-hour cost for each tier.
+- Review corrections: staff copilot Base rate 1.8 → 1.4 (UK survey shares scaled by the 80% of licence holders active monthly), Low 0.85 → 0.7; citizen assistant Low 0.0002 → 0.00015 (Kisan e-Mitra midpoint); agent multipliers stated exactly (4.9x, 14.7x); tutor and rate units defined; P1 rental vs ownership cost clarified; kW per GPU explained (1.275 kW server only vs 1.4 kW all-in).
+- Methodology application table now shows burst, SLA headroom and seasonal factors.
 ### Added
 - Profile P3: HGX B200, air-cooled (newer silicon without liquid cooling).
 - Methodology section "Vendor claims versus independent benchmarks"; per-profile evidence.

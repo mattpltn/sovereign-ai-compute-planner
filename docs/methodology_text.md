@@ -68,7 +68,7 @@ requests per day = volume × rate(scenario)
 - For types measured in **items** (documents, texts, calls, cases), `rate` = 1: each item is one request.
 - The user can override `rate` per application under Advanced.
 
-Example: the staff copilot rate of 1.8 comes from the UK cross-government trial, where 39% of 20,000 civil servants used Copilot several times a day and 43% several times a week [S36]: 0.39 × 4 + 0.43 × 0.5 ≈ 1.8.
+Example: the staff copilot rate of 1.4 comes from the UK cross-government trial [S36]. Among survey respondents, 39% used Copilot several times a day and 43% several times a week: 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is scaled by the 80% of licence holders who were active in the last 30 days: 1.78 × 0.8 ≈ 1.4 per person with access.
 
 ## 5. Layers 1-2: tokens per request
 
@@ -181,11 +181,15 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at about 5 times a copilot request and the research agent at about 16 times. The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request (≈18.2k vs ≈3.7k tokens) and the research agent at 14.7 times (≈55k). The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 
-India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 million PM-KISAN beneficiaries [S40], i.e. about 1-2 queries per 10,000 people per day. The citizen assistant Low rate equals Kisan e-Mitra; Base is 2.5 times higher and High 10 times higher, for assistants that cover several services.
+India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 million PM-KISAN beneficiaries [S40], i.e. 0.9-2.2 queries per 10,000 people per day. The citizen assistant Low rate (0.00015) is the midpoint of that range; Base is about 3 times higher and High about 13 times higher, for assistants that cover several services (assumption).
+
+### Units used for usage rates
+
+All rates are **requests per person with access per day**, averaged over every day of the week. When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). ChatGPT's 3.6 is messages per *weekly* active user per day [S39].
 
 ## 10. Hardware profiles
 

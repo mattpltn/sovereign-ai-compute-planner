@@ -36,11 +36,12 @@ def gen_types(arch) -> str:
     nt = [a for a in arch.values() if not is_llm(a)]
     t1 = table(
         ["Type", "Volume entered by user", "Requests per unit per day (Low / Base / High)", "Input + system / output / reasoning tokens per call",
-         "Calls per task", "Model", "Peak share / window (h)", "Burst", "Default data class", "Confidence (volume / size)"],
+         "Calls per task", "Model", "Peak share / window (h)", "Burst / SLA headroom / seasonal", "Default data class", "Confidence (volume / size)"],
         [[a["label"], a["unit_label"], f'{a["rate"]["low"]:g} / {a["rate"]["base"]:g} / {a["rate"]["high"]:g}',
           f'{a["isl"]:,} + {a["system_prompt_tokens"]:,} / {a["osl"]:,} / {a["reasoning_tokens"]:,}',
           f'{a["agent_steps"]} x retry {a["retry"]}', a["model_class"], f'{a["peak_share"]:.0%} / {a["peak_window_h"]}',
-          a["burst"], a["data_class"], f'{a["confidence"]["volume"]} / {a["confidence"]["tokens"]}'] for a in llm])
+          f'{a["burst"]:g} / {a["sla_headroom"]:g} / {a["seasonal"]:g}', a["data_class"],
+          f'{a["confidence"]["volume"]} / {a["confidence"]["tokens"]}'] for a in llm])
     t2 = table(["Type", "Volume entered by user", "GPU-seconds per unit", "Mode", "Default data class", "Confidence"],
                [[a["label"], a["unit_label"], f'{a["gpu_seconds_per_unit"]:g}', a["mode"], a["data_class"],
                  a["confidence"]["tokens"]] for a in nt])

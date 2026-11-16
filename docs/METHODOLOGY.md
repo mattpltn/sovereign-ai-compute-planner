@@ -70,7 +70,7 @@ requests per day = volume × rate(scenario)
 - For types measured in **items** (documents, texts, calls, cases), `rate` = 1: each item is one request.
 - The user can override `rate` per application under Advanced.
 
-Example: the staff copilot rate of 1.8 comes from the UK cross-government trial, where 39% of 20,000 civil servants used Copilot several times a day and 43% several times a week [S36]: 0.39 × 4 + 0.43 × 0.5 ≈ 1.8.
+Example: the staff copilot rate of 1.4 comes from the UK cross-government trial [S36]. Among survey respondents, 39% used Copilot several times a day and 43% several times a week: 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is scaled by the 80% of licence holders who were active in the last 30 days: 1.78 × 0.8 ≈ 1.4 per person with access.
 
 ## 5. Layers 1-2: tokens per request
 
@@ -181,18 +181,18 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 ### Generative AI types
 
-| Type | Volume entered by user | Requests per unit per day (Low / Base / High) | Input + system / output / reasoning tokens per call | Calls per task | Model | Peak share / window (h) | Burst | Default data class | Confidence (volume / size) |
+| Type | Volume entered by user | Requests per unit per day (Low / Base / High) | Input + system / output / reasoning tokens per call | Calls per task | Model | Peak share / window (h) | Burst / SLA headroom / seasonal | Default data class | Confidence (volume / size) |
 |---|---|---|---|---|---|---|---|---|---|
-| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.85 / 1.8 / 3.6 | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 | 3 | High / Medium |
-| Citizen assistant (chat or voice) | People who can use it (target population) | 0.0002 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 | 2 | Medium / Medium |
-| Learning tutor (students) | Students with access | 0.18 / 0.54 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 | 2 | Low / Medium |
-| Clinical decision support (frontline health workers) | Health workers with access | 3 / 10 / 20 | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 | 4 | Low / Medium |
-| Developer coding assistant | Developers with access | 10 / 30 / 60 | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 | 3 | Low / Medium |
-| Document intake and extraction | Documents per day | 1 / 1 / 1 | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 | 3 | High / Medium |
-| Translation | Texts translated per day | 1 / 1 / 1 | 500 + 200 / 500 / 0 | 1 x retry 1.05 | S | 60% / 10 | 2 | 2 | High / Medium |
-| Call, meeting or hearing summaries | Calls or hearings per day | 1 / 1 / 1 | 3,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 | 3 | High / High |
-| Process agent (single agent, e.g. tax or customs risk check) | Cases per day | 1 / 1 / 1 | 2,500 + 1,500 / 500 / 1,000 | 3 x retry 1.1 | L | 80% / 10 | 1.5 | 4 | High / Medium |
-| Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 | 3 | Low / Medium |
+| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
+| Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
+| Learning tutor (students) | Students with access | 0.18 / 0.54 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Low / Medium |
+| Clinical decision support (frontline health workers) | Health workers with access | 3 / 10 / 20 | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
+| Developer coding assistant | Developers with access | 10 / 30 / 60 | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1 | 3 | Low / Medium |
+| Document intake and extraction | Documents per day | 1 / 1 / 1 | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1.2 | 3 | High / Medium |
+| Translation | Texts translated per day | 1 / 1 / 1 | 500 + 200 / 500 / 0 | 1 x retry 1.05 | S | 60% / 10 | 2 / 1.1 / 1 | 2 | High / Medium |
+| Call, meeting or hearing summaries | Calls or hearings per day | 1 / 1 / 1 | 3,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1 | 3 | High / High |
+| Process agent (single agent, e.g. tax or customs risk check) | Cases per day | 1 / 1 / 1 | 2,500 + 1,500 / 500 / 1,000 | 3 x retry 1.1 | L | 80% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Medium |
+| Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
 
 ### Other AI types (non-LLM)
 
@@ -209,20 +209,20 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Staff copilot (drafting, summarising, Q&A)**
 
-- *rate*: UK cross-government trial, 20,000 civil servants: 39% used it several times a day, 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.8 per person with access. Low 0.85: Australian trial, 1 in 3 daily, 46% a few times a week (S37). High 3.6: ChatGPT, ~2.5B messages/day for ~700M weekly users (S39).
+- *rate*: UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week.
 - *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two.
 - *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34).
 - *burst*: Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption.
 
 **Citizen assistant (chat or voice)**
 
-- *rate*: Queries per person in the target population per day. Low = India's Kisan e-Mitra: 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, about 0.0001-0.0002 (S40). Base 2.5x and High 10x that, for assistants covering several services.
+- *rate*: Queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 (S40). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption.
 - *tokens*: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
 - *seasonal*: 1.3 for deadline or benefit-payment peaks: assumption.
 
 **Learning tutor (students)**
 
-- *rate*: 5% / 15% / 30% of students active, times 3.6 messages per active user per day (ChatGPT, S39; users under 26 send nearly half of ChatGPT messages). Active share is an assumption.
+- *rate*: Rate per student with access = share of students active in a given week (assumed 5% / 15% / 30%) x 3.6 messages per weekly active user per day (ChatGPT: ~2.5B messages per day / ~700M weekly active users, averaged over all 7 days) (S39). Users under 26 send nearly half of ChatGPT messages. The active shares are assumptions.
 - *tokens*: As citizen assistant (S31, S32).
 
 **Clinical decision support (frontline health workers)**
@@ -254,12 +254,12 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 **Process agent (single agent, e.g. tax or customs risk check)**
 
 - *rate*: One task per case. Volume comes from the client.
-- *tokens*: About 5x a copilot request (≈18k tokens per case). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43).
+- *tokens*: About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43).
 
 **Research agent (multi-agent, e.g. legal or policy analysis)**
 
 - *rate*: Research tasks per analyst per day: assumption.
-- *tokens*: About 16x a copilot request (≈55k tokens per task). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
+- *tokens*: About 15x a copilot request (≈55k vs ≈3.7k tokens per task, 14.7x). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
 
 **Speech-to-text**
 
@@ -288,11 +288,15 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at about 5 times a copilot request and the research agent at about 16 times. The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request (≈18.2k vs ≈3.7k tokens) and the research agent at 14.7 times (≈55k). The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 
-India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 million PM-KISAN beneficiaries [S40], i.e. about 1-2 queries per 10,000 people per day. The citizen assistant Low rate equals Kisan e-Mitra; Base is 2.5 times higher and High 10 times higher, for assistants that cover several services.
+India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 million PM-KISAN beneficiaries [S40], i.e. 0.9-2.2 queries per 10,000 people per day. The citizen assistant Low rate (0.00015) is the midpoint of that range; Base is about 3 times higher and High about 13 times higher, for assistants that cover several services (assumption).
+
+### Units used for usage rates
+
+All rates are **requests per person with access per day**, averaged over every day of the week. When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). ChatGPT's 3.6 is messages per *weekly* active user per day [S39].
 
 ## 10. Hardware profiles
 
@@ -311,8 +315,8 @@ Evidence per profile:
 - *L*: 779 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (SemiAnalysis InferenceX) (S44).
 - *M*: 1,930 tok/s per GPU, Llama 3.3 70B at 76 tok/s per user (S44).
 - *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: calibrate with AIConfigurator.
-- *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44); DGX H200 server 10.2 kW per 8 GPUs (S10).
-- *price*: GPU rental $2.60/hour (S11). Capex per GPU: placeholder, replace with vendor quote.
+- *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
+- *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU: placeholder, replace with vendor quote.
 
 **P3 · HGX B200 8-GPU, air-cooled**
 
@@ -325,7 +329,7 @@ Evidence per profile:
 **P2 · GB300 NVL72, liquid-cooled rack**
 
 - *L*: 5,667 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (S44): 7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
-- *M*: Derived: B200 70B figure x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence.
+- *M*: Derived: B200 70B figure x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B MoE reaches >40,000 tok/s per GPU on GB200) (S44).
 - *S*: 16,099 tok/s per GPU, Llama 3.1 8B, MLPerf Inference v5.1 server scenario (S45).
 - *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
 - *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
@@ -374,18 +378,18 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 
 | Step | Calculation | Result |
 |---|---|---|
-| Requests per day | 1,000 x 1.8 | 1,800 |
+| Requests per day | 1,000 x 1.4 | 1,400 |
 | Input tokens per request | (2,000 + 1,000) x 1.1 | 3,300 |
 | Cached input per request | 1,000 x 0.5 x 1.1 | 550 |
 | Output tokens per request | (400 + 0) x 1.1 | 440 |
-| Daily equivalent tokens | output + (input - cached) x 0.15 | 1,534,500 |
-| Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 103.2 |
-| Diversified peak in tier T3 | x D 0.7 | 72.2 |
+| Daily equivalent tokens | output + (input - cached) x 0.15 | 1,193,500 |
+| Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 80.2 |
+| Diversified peak in tier T3 | x D 0.7 | 56.2 |
 | GPUs | roundup(peak / (1,930 tok/s x derating 0.6)) | 1 |
 | IT load / facility | GPUs x 1.4 kW; x PUE 1.6 | 1.4 kW / 2.2 kW |
 | Cheapest eligible option (T3) | min(GPU-as-a-service, Owned) over 10 years | GPU-as-a-service, $227,760 |
 
-Utilisation of that single GPU is 2%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
+Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
 
 ## 14. Global defaults
 
