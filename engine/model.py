@@ -361,6 +361,19 @@ def grid_status(p: Profile, hw: dict, sz: dict, tier: str, d: dict) -> str:
     return "OK"
 
 
+def _as_servers(sz: dict, hw: dict, d: dict) -> dict:
+    """Physical figures for owned capacity: whole servers, then power, energy and utilisation from those GPUs."""
+    n = _server_round(sz["gpus"], hw)
+    if not n or n == sz["gpus"]:
+        return dict(sz, servers=n // hw.get("gpus_per_server", 1) if n else 0)
+    idle = d["idle_power_fraction"]["value"]
+    util = min(1.0, sz["utilisation"] * sz["gpus"] / n)
+    it_kw = n * hw["kw_per_gpu"]
+    return dict(sz, gpus=n, servers=n // hw.get("gpus_per_server", 1), gpus_needed=sz["gpus"], utilisation=util,
+                it_kw=it_kw, facility_mw=it_kw * sz["pue"] / 1000, racks=_roundup(it_kw / hw["rack_kw"]),
+                energy_mwh=it_kw * (idle + (1 - idle) * util) * sz["pue"] * 8760 / 1000)
+
+
 def _solve_tier(t, dem, nt, p, hardware, d, api_prices):
     air = next(h for h in hardware if h["weak_grid_ok"])
     first = size_tier(t, dem, nt, air, d, p.speed, p.country)
@@ -386,6 +399,10 @@ def _solve_tier(t, dem, nt, p, hardware, d, api_prices):
     cost_range = {s: (tco[s][winners[s]] if winners else None) for s in SCENARIOS}
     per_m = cost / res["base"]["tokens_pv_m"] if res["base"]["tokens_pv_m"] and cost else None
     owned = detail["base"].get("Owned") if mode == "Owned" else None
+    # Owned capacity is physical: round GPUs to whole servers before reporting power, energy and utilisation.
+    if winners:
+        sizes = {sc: (_as_servers(sizes[sc], hw, d) if winners[sc] == "Owned" else sizes[sc]) for sc in SCENARIOS}
+        sz = sizes["base"]
     # Capacity actually acquired: owned servers, rented GPUs, or nothing (API service).
     if mode == "Owned":
         cap = dict(kind="build", gpus=owned["gpus"], servers=owned["servers"], it_kw=owned["it_kw"],

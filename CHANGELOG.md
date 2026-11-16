@@ -5,6 +5,18 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-11-16
+### Fixed
+- Server rounding now reaches the physical figures: for owned capacity, GPUs are rounded to whole servers before IT load, facility power, racks, energy and utilisation are calculated (previously only the cost used the rounded count).
+- Raw CSV export: adds servers and facility kW; GPUs, kW and racks are blank for API tiers, with a separate "notional_gpus_if_api" column; file renamed and labelled as raw.
+- Details table shows "service" instead of GPUs for API tiers, and "N (S servers)" for owned capacity.
+- Outage data sync: the Enterprise Surveys indicator left WDI, so the sync now finds it by name across all World Bank databases. Until the sync is re-run, every country shows the grid as "Unknown".
+### Added
+- Results flag applications placed above their default tier by the placement rules.
+### Changed
+- Presenter summary: the price range is "typically ±30–40%, prices and GPU efficiency only"; adoption uncertainty is separate and often larger.
+- Methodology: staff formula worded per owned site (Confidential and Restricted share one by default); shared-site rule states pooling, server rounding and the single 2-FTE minimum after the merge; duplicate table header in Section 12 removed.
+
 ## [0.5.0] - 2026-11-16
 ### Added
 - Results page rebuilt around the client's three questions: a two-line answer banner; "How much will it cost?" with the three adoption scenarios stacked by data class and a price-range whisker; "What needs to be built or bought?" with one card per destination (servers, GPUs, power, upfront capex, annual running cost, rent alternative); "Where does the cost come from?" by application. Detailed tables collapsed below.

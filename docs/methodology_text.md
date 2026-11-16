@@ -4,7 +4,7 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 
 ## Summary for presenters (one page)
 
-**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, accurate to roughly ±30%, not an engineering design or a procurement specification.
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is shown separately, as three scenarios, and is often larger.
 
 **The four inputs that matter.**
 1. *The applications and their volume*: who uses each one and how many (staff with access, documents per day, citizens served). This is the single biggest driver.
@@ -224,9 +224,9 @@ Why a range for the liquid multiplier: Turner & Townsend measured liquid-cooled 
 
 Country and regional values, and how to calibrate a specific site with the Schneider Electric calculators: Annex A.
 
-**Owned capacity comes in whole servers.** GPUs are sold in servers, not one by one: 8 GPUs per HGX server (H200, B200) and 72 per GB300 NVL72 rack. Owned capacity, its power and its cost are rounded up to whole servers. Rented GPUs are counted one by one.
+**Owned capacity comes in whole servers.** GPUs are sold in servers, not one by one: 8 GPUs per HGX server (H200, B200) and 72 per GB300 NVL72 rack. For owned capacity, GPUs are rounded up to whole servers first; IT load, facility power, racks, energy, utilisation and cost are then all calculated from the rounded number. Rented GPUs are counted one by one.
 
-**One shared sovereign site (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. The result is one facility, one operations team and pooled GPUs. The option can be switched off in Setup.
+**One shared sovereign site (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. After the merge, the site is sized as one tier: pooling uses the number of applications on the site (e.g. 3 applications give D = 0.83), servers are rounded once for the combined load, there is one facility, and one 2-FTE staff minimum instead of two. The option can be switched off in Setup.
 
 **Is there an in-country GPU provider?** Renting GPUs for Confidential data assumes an in-country provider exists. Setup asks the question (default: no or not sure). Without one, owning is the only option for Confidential data.
 
@@ -293,7 +293,9 @@ Owned:
   GPU purchase (each refresh)  = GPUs needed at the end of the cycle × capex per GPU × price(first year of cycle)
   opex(y)                      = energy × tariff + GPUs × software per GPU + staff(GPUs) × cost per FTE
                                  + 5% × (GPU capex + facility capex)
-  staff(GPUs)                  = 2 FTE per site + GPUs / 100        (assumption: one site per tier, 1 FTE per ~100 GPUs)
+  staff(GPUs)                  = 2 FTE per site + GPUs / 100        (assumption: one site per owned destination, and
+                                                                     Confidential + Restricted share one site by default;
+                                                                     1 FTE per ~100 GPUs)
 present value                  = Σ discount(y) × cost(y)
 $ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
 ```
@@ -312,8 +314,6 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 ## 12. Recommended step (the ladder)
 
-| Condition | Step |
-|---|---|
 The step is worded after the buying option the tool actually chose, so the two never contradict each other.
 
 | Condition | Step |
@@ -325,7 +325,9 @@ The step is worded after the buying option the tool actually chose, so the two n
 | Owned, 1 to 10 MW | **Step 2:** own N servers in a colocation data centre run by a private operator. |
 | Owned, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
 
-Cloud and API tiers show no GPUs, racks or power in the results: nothing is built for them.
+Cloud and API tiers show no GPUs, racks or power in the results: nothing is built for them. The raw CSV export keeps their notional GPU count in a separate, labelled column for analysts.
+
+If the placement rules put an application above its default tier (e.g. internal data mapped to the sovereign site), the results flag it, so a presenter can explain why the sovereign site is larger than expected.
 
 A PPP or IFC transaction for a facility of one or two megawatts is not realistic: transaction costs and minimum ticket sizes call for roughly 10 MW or more (assumption, adjustable). Between 1 and 10 MW, hosting in an existing colocation site is the practical route.
 
