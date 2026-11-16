@@ -5,7 +5,6 @@ Posit Connect: rsconnect deploy shiny . --entrypoint app:app
 """
 from __future__ import annotations
 
-import io
 import json
 from copy import deepcopy
 
@@ -102,7 +101,7 @@ app_ui = ui.page_sidebar(
         ui.hr(),
         ui.download_button("dl_scenario", "Save scenario (JSON)"),
         ui.input_file("ul_scenario", "Load scenario", accept=[".json"]),
-        ui.download_button("dl_results", "Export results (Excel)"),
+        ui.download_button("dl_results", "Export results (CSV)"),
         width=300,
     ),
     ui.navset_tab(
@@ -351,18 +350,14 @@ def server(input, output, session):
             ui.update_select(f"map{c}", selected=t)
         loaded.set(sc)
 
-    @render.download(filename="sovereign_ai_compute_results.xlsx")
+    @render.download(filename="sovereign_ai_compute_results.csv")
     def dl_results():
         r = result()
-        buf = io.BytesIO()
-        with pd.ExcelWriter(buf, engine="openpyxl") as xw:
-            pd.DataFrame([{**{"tier": t, "step": v["step"], "mode": v["cheapest_mode"], "grid": v["grid"]},
-                           **{k: v["sizing"][k] for k in ("gpus", "it_kw", "facility_mw", "racks", "energy_mwh", "utilisation")},
-                           **{f"cost_{s}": v["cost_range"][s] for s in ("low", "base", "high")}}
-                          for t, v in r["tiers"].items()]).to_excel(xw, "Ladder", index=False)
-            pd.DataFrame(r["demand"]).to_excel(xw, "Demand", index=False)
-            pd.DataFrame(r["nontoken"]).to_excel(xw, "NonToken", index=False)
-        yield buf.getvalue()
-
+        df = pd.DataFrame([{**{"tier": t, "step": v["step"], "mode": v["cheapest_mode"], "grid": v["grid"],
+                               "hardware": v["hardware"]},
+                            **{k: v["sizing"][k] for k in ("gpus", "it_kw", "facility_mw", "racks", "energy_mwh", "utilisation")},
+                            **{f"cost_{s}": v["cost_range"][s] for s in ("low", "base", "high")}}
+                           for t, v in r["tiers"].items()])
+        yield df.to_csv(index=False)
 
 app = App(app_ui, server)

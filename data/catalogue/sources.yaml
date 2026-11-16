@@ -1,4 +1,4 @@
-# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+# Sources. Vendor sources: use their structure, calibrate their numbers.
 - id: S01
   title: 'AI Tokenomics: forecasting worksheet (base demand, workload multipliers, operational shaping)'
   publisher: NVIDIA
@@ -179,3 +179,81 @@
   url: https://fedscoop.com/ai-infrastructure-economics-public-sector/
   used_for: Classical ML on CPU; ~90% of government AI is inference
   type: Press
+- id: S31
+  title: 'Splitwise: Efficient generative LLM inference using phase splitting (Azure LLM inference trace 2023)'
+  publisher: Microsoft / ISCA 2024
+  url: https://arxiv.org/abs/2311.18677
+  used_for: 'Production token shapes: chat median 1,020 in / 129 out; coding median 1,500 in / 13 out'
+  type: Production trace
+- id: S32
+  title: 'State of AI: An Empirical 100 Trillion Token Study with OpenRouter'
+  publisher: OpenRouter / a16z (2025)
+  url: https://openrouter.ai/state-of-ai
+  used_for: Average prompt grew ~1.5k to >6k, completion ~150 to ~400; reasoning models >50% of tokens
+  type: Production data
+- id: S33
+  title: 'BurstGPT: A Real-World Workload Dataset to Optimize LLM Serving Systems'
+  publisher: HKUST(GZ) et al., Azure OpenAI traces
+  url: https://arxiv.org/abs/2401.17644
+  used_for: Burstiness of LLM traffic; API burstier than chat
+  type: Production trace
+- id: S34
+  title: 'Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving (Kimi)'
+  publisher: Moonshot AI / Tsinghua
+  url: https://arxiv.org/abs/2407.00079
+  used_for: Prefix cache hit up to ~50% in production trace
+  type: Production trace
+- id: S35
+  title: How we built our multi-agent research system
+  publisher: Anthropic Engineering (2025)
+  url: https://www.anthropic.com/engineering/multi-agent-research-system
+  used_for: Agents ~4x chat tokens; multi-agent ~15x
+  type: Provider data
+- id: S36
+  title: 'Microsoft 365 Copilot Experiment: Cross-Government Findings Report'
+  publisher: UK Government Digital Service (June 2025)
+  url: https://www.gov.uk/government/publications/microsoft-365-copilot-experiment-cross-government-findings-report
+  used_for: ~80% of licensed civil servants active monthly; 39% use several times a day
+  type: Government evaluation
+- id: S37
+  title: Evaluation of the whole-of-government trial of Microsoft 365 Copilot
+  publisher: Australian Digital Transformation Agency (2024)
+  url: https://www.digital.gov.au/initiatives/copilot-trial/summary-evaluation-findings/cts-evaluation-findings
+  used_for: 1 in 3 trial participants used Copilot daily
+  type: Government evaluation
+- id: S38
+  title: 'Pair (Singapore public-service LLM assistant): usage statistics'
+  publisher: GovTech / Open Government Products; Straits Times (May 2025); GovInsider
+  url: https://www.developer.tech.gov.sg/products/categories/productivity-tools/pair/overview
+  used_for: ~50,000 regular users of ~150,000 public officers
+  type: Government data
+- id: S39
+  title: How People Use ChatGPT (NBER Working Paper 34255)
+  publisher: OpenAI / Harvard, NBER (Sept 2025)
+  url: https://www.nber.org/papers/w34255
+  used_for: ~700M weekly users, ~2.5-2.6B messages/day (≈3.6 per weekly user per day)
+  type: Provider data, peer-reviewed series
+- id: S40
+  title: Kisan e-Mitra usage (Lok Sabha reply Dec 2025, PIB) and PM-KISAN 22nd instalment beneficiaries (PIB, March 2026)
+  publisher: Government of India
+  url: https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/mar/doc2026319829701.pdf
+  used_for: 8,000-20,000 chatbot queries/day for ~93 million beneficiaries
+  type: Government data
+- id: S41
+  title: Anthropic Economic Index report, September 2025 (with API dataset)
+  publisher: Anthropic
+  url: https://www.anthropic.com/research/anthropic-economic-index-september-2025-report
+  used_for: Per-task input/output token indices; output grows slower than input
+  type: Provider data
+- id: S42
+  title: 'TraceLab: Characterizing Coding Agent Workloads for LLM Serving'
+  publisher: University of Washington (2026)
+  url: https://syfi.cs.washington.edu/blog/2026-06-25-tracelab/
+  used_for: 'Agentic coding: inputs outnumber outputs ~294x, mostly cached'
+  type: Production trace
+- id: S43
+  title: 'EpiQAL: Benchmarking LLMs in Epidemiological QA and Reasoning (token usage appendix)'
+  publisher: arXiv 2601.03471
+  url: https://arxiv.org/pdf/2601.03471
+  used_for: Reasoning tokens per question ~0.2k-2.5k for current reasoning models
+  type: Benchmark

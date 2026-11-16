@@ -1,13 +1,27 @@
-"""The engine must reproduce Sovereign_AI_Compute_Planner_v0.1.xlsx on the example country."""
+"""The engine must reproduce Sovereign_AI_Compute_Planner_v0.1.xlsx on the example country.
+
+Parity tests use the frozen v0.1 catalogue (tests/fixtures). The live catalogue has since moved to sourced defaults.
+"""
+from copy import deepcopy
+from pathlib import Path
+
 import pytest
+import yaml
 
 from engine import default_profile, load_catalogue, load_defaults, run
 
 CAT, D = load_catalogue(), load_defaults()
+V01 = yaml.safe_load((Path(__file__).parent / "fixtures" / "use_cases_v01.yaml").read_text())
+
+
+def v01_profile():
+    p = default_profile("XEX")
+    p.apps = deepcopy(V01)
+    return p
 
 
 def base_run(**kw):
-    p = default_profile("XEX")
+    p = v01_profile()
     p.hardware_choice = "P1"  # the Excel uses P1 for every tier
     for k, v in kw.items():
         setattr(p, k, v)
@@ -48,7 +62,7 @@ def test_ladder_steps():
 
 
 def test_split_moves_traffic_between_tiers():
-    p = default_profile("XEX")
+    p = v01_profile()
     p.hardware_choice = "P1"
     uc09 = next(a for a in p.apps if a["id"] == "UC09")
     uc09["traffic_split"] = {2: 0.5, 3: 0.5}
@@ -77,3 +91,32 @@ def test_tco_range_ordered():
     _, r = base_run()
     rng = r["tiers"]["T4"]["cost_range"]
     assert rng["low"] < rng["base"] < rng["high"]
+
+
+# ---------------------------------------------------------------- sourced defaults
+def chat_task_tokens(a):
+    k = a["agent_steps"] * a["retry"]
+    return (a["isl"] + a["system_prompt_tokens"] + a["osl"] + a["reasoning_tokens"]) * k
+
+
+def test_every_default_has_evidence_and_confidence():
+    for a in CAT["use_cases"]:
+        assert a.get("evidence"), a["id"]
+        assert set(a["confidence"]) == {"volume", "tokens"}, a["id"]
+
+
+def test_agent_multipliers_match_anthropic_ranges():
+    by = {a["id"]: a for a in CAT["use_cases"]}
+    chat = chat_task_tokens(by["UC02"])
+    assert 3 <= chat_task_tokens(by["UC08"]) / chat <= 7        # single agent ~4x [S35]
+    for uid in ("UC09", "UC12"):
+        assert 8 <= chat_task_tokens(by[uid]) / chat <= 20      # multi-agent ~15x [S35]
+
+
+def test_citizen_rate_matches_calibration():
+    p = default_profile("XEX")
+    p.country = dict(p.country, egdi=D["global_egdi_average"]["value"])  # no EGDI adjustment
+    r = run(p, CAT, D)
+    uc01 = next(x for x in r["demand"] if x["id"] == "UC01")
+    per_10k = uc01["sessions"] / p.country["population"] * 10000
+    assert per_10k == pytest.approx(5, rel=0.02)
