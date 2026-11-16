@@ -1,0 +1,36 @@
+# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+- id: P1
+  name: HGX H100/H200 8-GPU, air-cooled
+  cooling: Air
+  rack_kw: 41
+  kw_per_gpu: 1.7
+  gpu_hour_usd: 2.6
+  capex_per_gpu_usd: 40000
+  software_per_gpu_year_usd: 4500
+  weak_grid_ok: true
+  sources:
+  - S02
+  - S10
+  - S11
+  note: 'L: NVIDIA 90 tok/s/GPU (H200, DeepSeek-R1) [S02]. kW/GPU implied by NVIDIA 54k tok/s per MW [S02]; DGX H100/H200 = 10.2 kW per 8-GPU server [S10]; rack = 4 servers. Price: GMI H200 list [S11].
+    S and M: PLACEHOLDERS, replace with AIConfigurator output. Capex/GPU: placeholder, replace with vendor quote.'
+  tokens_per_s_per_gpu:
+    S: 3000
+    M: 800
+    L: 90
+- id: P2
+  name: GB300 NVL72, liquid-cooled
+  cooling: Liquid
+  rack_kw: 130
+  kw_per_gpu: 2.1
+  gpu_hour_usd: 2.65
+  capex_per_gpu_usd: 65000
+  software_per_gpu_year_usd: 4500
+  weak_grid_ok: false
+  sources:
+  - S02
+  note: 'L: NVIDIA 6,000 tok/s/GPU and 2.8M tok/s per MW (DeepSeek-R1, vendor analysis, conditions not published) [S02]. Price: NVIDIA [S02]. Rack kW, S, M, capex: PLACEHOLDERS.'
+  tokens_per_s_per_gpu:
+    S: 12000
+    M: 4000
+    L: 6000

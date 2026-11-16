@@ -1,0 +1,3 @@
+iso3,usd_kwh,year
+# Curated business electricity tariffs (USD/kWh). No free API exists (GlobalPetrolPrices feed is paid).
+# Add rows from the utility tariff sheet or https://www.globalpetrolprices.com/electricity_prices/ with the year.

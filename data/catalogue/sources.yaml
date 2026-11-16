@@ -1,0 +1,181 @@
+# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+- id: S01
+  title: 'AI Tokenomics: forecasting worksheet (base demand, workload multipliers, operational shaping)'
+  publisher: NVIDIA
+  url: https://www.nvidia.com/en-us/solutions/ai/tokenomics-guide/
+  used_for: Layers 1-3 structure
+  type: Vendor
+- id: S02
+  title: 'Rethinking AI TCO: Why Cost per Token Is the Only Metric That Matters (Apr 2026)'
+  publisher: NVIDIA
+  url: https://blogs.nvidia.com/blog/lowest-token-cost-ai-factories/
+  used_for: Tokens/s per GPU and per MW, $/GPU-hour, cost per token formula
+  type: Vendor
+- id: S03
+  title: 'LLM Inference Benchmarking: How Much Does Your LLM Inference Cost?'
+  publisher: NVIDIA
+  url: https://developer.nvidia.com/blog/llm-inference-benchmarking-how-much-does-your-llm-inference-cost/
+  used_for: Instances = peak / throughput at latency target; TCO structure, licensing, depreciation
+  type: Vendor
+- id: S04
+  title: AIConfigurator
+  publisher: NVIDIA ai-dynamo (open source)
+  url: https://github.com/ai-dynamo/aiconfigurator
+  used_for: Workload + SLA -> configuration and minimum GPUs
+  type: Tool
+- id: S05
+  title: Lightning-Fast Configuration Optimization for Multi-Framework LLM Inference
+  publisher: arXiv
+  url: https://arxiv.org/html/2601.06288v1
+  used_for: Method behind AIConfigurator
+  type: Paper
+- id: S06
+  title: GenAI-Perf documentation
+  publisher: NVIDIA
+  url: https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/genai-perf-README.html
+  used_for: Measured throughput and latency; derating calibration
+  type: Tool
+- id: S07
+  title: Right-sizing and auto-scaling an inference system
+  publisher: AWS Prescriptive Guidance
+  url: https://docs.aws.amazon.com/prescriptive-guidance/latest/gen-ai-inference-architecture-and-best-practices-on-aws/right-sizing-and-auto-scaling.html
+  used_for: Keep input and output lengths separate; benchmark real workload shapes
+  type: Independent check
+- id: S08
+  title: MLPerf Inference (datacenter results)
+  publisher: MLCommons
+  url: https://mlcommons.org/benchmarks/inference-datacenter/
+  used_for: Non-token throughput (vision, Whisper speech)
+  type: Benchmark
+- id: S09
+  title: MLCommons Power working group
+  publisher: MLCommons
+  url: https://mlcommons.org/working-groups/benchmarks/power/
+  used_for: Power measurement method; idle power
+  type: Benchmark
+- id: S10
+  title: 'DGX H100/H200 User Guide: system power 10.2 kW max'
+  publisher: NVIDIA
+  url: https://docs.nvidia.com/dgx/dgxh100-user-guide/introduction-to-dgxh100.html
+  used_for: Server power for P1
+  type: Vendor spec
+- id: S11
+  title: MLPerf Inference numbers vs production throughput; GPU rental rates
+  publisher: GMI Cloud
+  url: https://www.gmicloud.ai/en/blog/mlperf-inference-vs-production-throughput
+  used_for: Production derating rationale; $/GPU-hour
+  type: Provider
+- id: S12
+  title: Cost Estimation of AI Workloads
+  publisher: FinOps Foundation
+  url: https://www.finops.org/wg/cost-estimation-of-ai-workloads/
+  used_for: TCO structure
+  type: Independent
+- id: S13
+  title: 'Government Migration to Cloud Ecosystems: Multiple Options, Significant Benefits, Manageable Risks'
+  publisher: World Bank (2022)
+  url: https://www.worldbank.org/en/topic/digital/publication/government-migration-to-cloud-ecosystems-multiple-options-significant-benefits-manageable-risks
+  used_for: Hybrid as default; tier logic
+  type: World Bank
+- id: S14
+  title: Data Classification Matrix and Cloud Assessment Framework
+  publisher: World Bank (2023)
+  url: https://openknowledge.worldbank.org/entities/publication/876f86a8-5ed0-4f44-8ea4-ab49695521e8/full
+  used_for: Data class -> security requirements -> tier
+  type: World Bank
+- id: S15
+  title: Individuals using the Internet (% of population), IT.NET.USER.ZS
+  publisher: World Bank / ITU
+  url: https://data.worldbank.org/indicator/IT.NET.USER.ZS
+  used_for: Country!B6
+  type: Data
+- id: S16
+  title: ITU ICT statistics
+  publisher: ITU
+  url: https://www.itu.int/en/ITU-D/Statistics/pages/stat/default.aspx
+  used_for: Connectivity cross-check
+  type: Data
+- id: S17
+  title: UN E-Government Survey, data centre (EGDI)
+  publisher: UN DESA
+  url: https://publicadministration.un.org/egovkb/en-us/Data-Center
+  used_for: Country!B8:B9
+  type: Data
+- id: S18
+  title: Worldwide Bureaucracy Indicators
+  publisher: World Bank
+  url: https://www.worldbank.org/en/data/interactive/2019/05/21/worldwide-bureaucracy-indicators-dashboard
+  used_for: Country!B7
+  type: Data
+- id: S19
+  title: 'Enterprise Surveys: infrastructure (electrical outages)'
+  publisher: World Bank
+  url: https://www.enterprisesurveys.org/en/data/exploretopics/infrastructure
+  used_for: Country!B12
+  type: Data
+- id: S20
+  title: Electricity prices
+  publisher: GlobalPetrolPrices
+  url: https://www.globalpetrolprices.com/electricity_prices/
+  used_for: Country!B11
+  type: Data
+- id: S21
+  title: Model list and prices
+  publisher: OpenRouter
+  url: https://openrouter.ai/models
+  used_for: API prices
+  type: Market data
+- id: S22
+  title: Global Data Center Survey (PUE)
+  publisher: Uptime Institute
+  url: https://uptimeinstitute.com/resources/research-and-reports
+  used_for: Country!B14
+  type: Industry survey
+- id: S23
+  title: Data Center Development Cost Guide
+  publisher: Cushman & Wakefield
+  url: https://www.cushmanwakefield.com/en/united-states/insights/data-center-development-cost-guide
+  used_for: Facility capex per MW
+  type: Industry
+- id: S24
+  title: How many digital workers could OpenAI deploy?
+  publisher: Epoch AI
+  url: https://epochai.substack.com/p/how-many-digital-workers-could-openai
+  used_for: ~240k tokens per human per day sanity ceiling
+  type: Research
+- id: S25
+  title: Agentic workloads use 4-15x more tokens than chat (Signal65 research)
+  publisher: MeriTalk
+  url: https://www.meritalk.com/?p=209235
+  used_for: Agent multipliers
+  type: Industry
+- id: S26
+  title: The Army promised unlimited AI tokens; it ran dry in weeks
+  publisher: DEV Community
+  url: https://dev.to/jahanzaibai/the-army-promised-unlimited-ai-tokens-it-ran-dry-in-weeks-50g
+  used_for: Real public-sector consumption anchor (200k tokens/user/month)
+  type: Press
+- id: S27
+  title: A blueprint for building national compute capacity for AI
+  publisher: OECD (2023)
+  url: https://www.oecd.org/en/publications/a-blueprint-for-building-national-compute-capacity-for-artificial-intelligence_876367e3-en.html
+  used_for: Policy framing
+  type: Policy
+- id: S28
+  title: 7 learnings about compute strategy (KIRA Compute Report 2025)
+  publisher: Philip Fox / KIRA Center
+  url: https://foxphilip.substack.com/p/7-learnings-about-compute-strategy
+  used_for: Bottom-up national demand method
+  type: Research
+- id: S29
+  title: Population, total (SP.POP.TOTL)
+  publisher: World Bank WDI
+  url: https://data.worldbank.org/indicator/SP.POP.TOTL
+  used_for: Country!B5
+  type: Data
+- id: S30
+  title: Why federal leaders must reclaim the economics of AI (CPU inference at US Census)
+  publisher: FedScoop
+  url: https://fedscoop.com/ai-infrastructure-economics-public-sector/
+  used_for: Classical ML on CPU; ~90% of government AI is inference
+  type: Press
