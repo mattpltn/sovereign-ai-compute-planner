@@ -18,6 +18,8 @@ CAT01 = {**CAT, "hardware": HW01}
 D01 = deepcopy(D)
 D01["diversity_mode"]["value"] = "fixed"
 D01["staff_mode"]["value"] = "flat"
+D01["facility_mode"]["value"] = "flat"
+D01["throughput_uncertainty"] = {"low": 1.0, "base": 1.0, "high": 1.0}
 for k in ("discount_rate", "demand_growth", "price_decline"):
     D01[k]["value"] = 0.0
 for sc in ("low", "base", "high"):
@@ -92,7 +94,9 @@ def test_weak_grid_forces_air_cooled():
 def test_quote_overrides_range():
     p = default_profile("XEX")
     p.quotes = {"gpu_hour_usd": 3.0}
-    r = run(p, CAT, D)
+    dq = deepcopy(D)
+    dq["throughput_uncertainty"] = {"low": 1.0, "base": 1.0, "high": 1.0}
+    r = run(p, CAT, dq)
     tco = r["tiers"]["T3"]["tco"]
     # with a quoted GPU-hour, the GPUaaS cost no longer varies across scenarios
     assert tco["low"]["GPU-as-a-service"] == pytest.approx(tco["high"]["GPU-as-a-service"])
@@ -231,8 +235,8 @@ def test_discounting_and_growth():
 
 def test_staff_scales_with_gpus():
     assert staff_fte(0, D) == 0
-    assert staff_fte(1, D) == pytest.approx(1.01)
-    assert staff_fte(300, D) == pytest.approx(4)
+    assert staff_fte(1, D) == pytest.approx(2.01)
+    assert staff_fte(300, D) == pytest.approx(5)
 
 
 def test_below_gpu_threshold():
@@ -272,3 +276,33 @@ def test_volume_warning():
     assert volume_warning(dict(type="research_agent", volume=20000), c, ARCH)
     assert volume_warning(dict(type="research_agent", volume=200), c, ARCH) is None
     assert volume_warning(dict(type="staff_copilot", volume=500000), c, ARCH)
+
+
+# ---------------------------------------------------------------- facility, rent vs own, allocation
+from engine.model import facility_for  # noqa: E402
+
+
+def test_facility_by_country_and_cooling():
+    hw = {h["id"]: h for h in CAT["hardware"]}
+    ken = dict(iso3="KEN", region="Sub-Saharan Africa")
+    air, liq = facility_for(ken, hw["P1"], D), facility_for(ken, hw["P2"], D)
+    assert air["pue"] == pytest.approx(1.79) and liq["pue"] < air["pue"]
+    assert air["capex_per_mw"] == pytest.approx(10.03e6)
+    assert liq["capex_per_mw"] == pytest.approx(10.03e6 * 1.085)
+    assert facility_for(dict(iso3="TZA", region="Sub-Saharan Africa"), hw["P1"], D)["capex_src"].startswith("Sub-Saharan Africa proxy")
+
+
+def test_rent_vs_own_details_and_allocation():
+    r = one([COP, DOC])
+    t = r["tiers"]["T3"]
+    own = t["detail"]["base"]["Owned"]
+    assert own["upfront"] == pytest.approx(own["facility_capex"] + own["gpu_capex_y1"])
+    assert t["detail"]["base"]["GPU-as-a-service"]["annual_y1"] > 0
+    total = sum(sum(v.values()) for v in r["by_app"].values())
+    assert total == pytest.approx(r["totals"]["cost"])
+
+
+def test_throughput_uncertainty_widens_gpu_range():
+    r = one([COP, DOC])
+    g = r["totals"]["gpus_range"]
+    assert g["low"] <= g["base"] <= g["high"] and g["low"] < g["high"]

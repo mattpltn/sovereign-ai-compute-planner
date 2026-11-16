@@ -2,7 +2,7 @@
 
 # Sovereign AI Compute Planner: Methodology
 
-Version 0.3 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+Version 0.4 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
 
 ## 1. Purpose and scope
 
@@ -178,10 +178,67 @@ utilisation         = min(1, (busy + batch) / (total GPUs × 24))
 
 ```
 IT load (kW)          = total GPUs × kW per GPU (all-in, includes CPU, network, storage share)
-facility power (MW)   = IT load × PUE / 1,000                          (PUE 1.6) [S22]
+facility power (MW)   = IT load × PUE / 1,000                          (PUE by region and cooling, Section 8.1)
 racks                 = roundup(IT load / rack kW)
 annual energy (MWh)   = IT load × (idle fraction + (1 − idle fraction) × utilisation) × PUE × 8,760 / 1,000
 ```
+
+**Throughput uncertainty.** Serving software, batching and model mix move tokens/s per GPU by more than the hardware choice in many cases. The Low / Base / High cases multiply tokens/s per GPU by 1.3 / 1.0 / 0.75, so GPUs, MW and cost all carry a range [S44].
+
+### 8.1 Facility: PUE and construction cost by country and cooling
+
+The facility (building, power distribution, backup, cooling) matters for the Owned option and for the air-versus-liquid decision. API and GPU-as-a-service prices already include the provider's facility.
+
+```
+PUE (air)        = site PUE entered by the user, else the regional value below, else the global average 1.56 [S22]
+PUE (liquid)     = 1 + (PUE air − 1) × 0.82          (liquid cooling cut non-IT facility power by 18.1% [S51])
+facility capex   = $ per W of IT × 1,000,000 × IT MW × cooling multiplier × range (0.85 / 1.0 / 1.2)
+$ per W of IT    = the country's market in the Turner & Townsend cost index [S52, S53],
+                   else the average of indexed markets in its region (labelled as a proxy), else $11/W [S23]
+cooling multiplier (liquid vs air) = 0.90 / 1.085 / 1.10 (Low / Base / High)
+```
+
+Why a range for the liquid multiplier: Turner & Townsend measured liquid-cooled AI facilities in the US at 7-10% more than air-cooled facilities of the same IT capacity [S53]. Schneider Electric's cost model found the two equal at the same rack density, and 10-14% cheaper for liquid when it allows 2-4 times denser racks [S54]. Construction costs normally include UPS and generators; diesel and fuel logistics on weak grids are not costed (Section 16).
+
+| World Bank region | PUE air | PUE liquid | Source / note |
+|---|---|---|---|
+| Sub-Saharan Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
+| Middle East & North Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
+| Latin America & Caribbean | 1.79 | 1.65 | Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50) |
+| South Asia | 1.56 | 1.46 | Proxy: global average 2024 (S22); hot climates likely higher |
+| East Asia & Pacific | 1.56 | 1.46 | Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50) |
+| Europe & Central Asia | 1.46 | 1.38 | Uptime Institute regional average for Europe (2020 survey) |
+| North America | 1.53 | 1.43 | Europe is ~5% below US/Canada (S49) |
+
+| Country | Market | $ per W of IT | Year | Source |
+|---|---|---|---|---|
+| NGA | Lagos | 10.87 | 2026 | S52 |
+| ZAF | Johannesburg | 10.62 | 2026 | S52 |
+| KEN | Nairobi | 10.03 | 2026 | S52 |
+| IND | Mumbai | 6.83 | 2026 | S52 |
+| CHN | Shanghai | 5.79 | 2026 | S52 |
+| VNM | Ho Chi Minh City | 8.32 | 2026 | S52 |
+| COL | Bogota | 9.13 | 2026 | S52 |
+| ARE | UAE | 9.2 | 2026 | S52 |
+| IDN | Jakarta | 11.21 | 2025 | S53 |
+| MYS | Malaysia | 11.37 | 2025 | S53 |
+| SAU | Saudi Arabia | 11.3 | 2025 | S53 |
+| SGP | Singapore | 14.53 | 2025 | S53 |
+| JPN | Tokyo | 15.2 | 2025 | S53 |
+
+| Region (proxy for other countries) | $ per W of IT | Basis |
+|---|---|---|
+| Sub-Saharan Africa | 10.51 | Average of Lagos, Johannesburg, Nairobi |
+| Middle East & North Africa | 10.25 | Average of Saudi Arabia and UAE |
+| Latin America & Caribbean | 9.13 | Bogota only: low confidence |
+| South Asia | 6.83 | Mumbai only: low confidence, likely low for smaller markets |
+| East Asia & Pacific | 10.3 | Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai) |
+| Europe & Central Asia | 11.0 | Global default |
+| North America | 11.0 | Global default |
+
+**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
+1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
+2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
@@ -204,7 +261,7 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 |---|---|---|---|---|---|---|---|---|---|
 | Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
 | Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
-| Learning tutor (students) | Students with access | 0.18 / 0.54 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Low / Medium |
+| Learning tutor (students) | Students with access | 0.1 / 0.27 / 1.08 | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
 | Clinical decision support (frontline health workers) | Health workers with access | 3 / 10 / 20 | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
 | Developer coding assistant | Developers with access | 10 / 30 / 60 | 1,500 + 500 / 100 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1 | 3 | Low / Medium |
 | Document intake and extraction | Documents per day | 1 / 1 / 1 | 4,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1.2 | 3 | High / Medium |
@@ -212,23 +269,29 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 | Call, meeting or hearing summaries | Calls or hearings per day | 1 / 1 / 1 | 3,000 + 500 / 400 / 0 | 1 x retry 1.05 | S | 80% / 10 | 1.5 / 1.1 / 1 | 3 | High / High |
 | Process agent (single agent, e.g. tax or customs risk check) | Cases per day | 1 / 1 / 1 | 2,500 + 1,500 / 500 / 1,000 | 3 x retry 1.1 | L | 80% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Medium |
 | Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
+| Clinical safety net (runs automatically on every patient visit) | Patient visits per day | 1 / 1 / 1 | 2,000 + 1,000 / 200 / 0 | 3 x retry 1.05 | M | 70% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Low |
+| Teacher assistant (lesson planning, differentiated materials) | Teachers with access | 0.7 / 1.4 / 3.6 | 2,000 + 1,000 / 600 / 0 | 1 x retry 1.1 | M | 70% / 10 | 2 / 1.1 / 1.2 | 2 | Low / Medium |
+| Agriculture advisory for farmers (chat or voice) | Farmers registered on the service | 0.1 / 0.37 / 0.6 | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Low / Medium |
+| Voice agent for public services (phone line, real time) | Calls per day | 1 / 1 / 1 | 1,500 + 800 / 80 / 0 | 6 x retry 1.05 | M | 70% / 10 | 2 / 1.3 / 1.3 | 3 | High / Low |
 
 ### Other AI types (non-LLM)
 
 | Type | Volume entered by user | GPU-seconds per unit | Mode | Default data class | Confidence |
 |---|---|---|---|---|---|
-| Speech-to-text | Audio hours per day | 60 | Interactive | 3 | Low |
+| Speech-to-text | Audio hours per day | 6 | Interactive | 3 | Medium |
 | OCR and layout extraction | Pages per day | 0.3 | Batch | 3 | Low |
 | Face verification (1:1 authentication) | Verifications per day | 0.02 | Interactive | 4 | Low |
 | Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | Batch | 4 | Low |
 | Satellite or image analysis | Images or tiles per day | 0.1 | Batch | 1 | Low |
 | Model fine-tuning and evaluation | GPU-hours per year | 3600 | Batch | 3 | Medium |
+| Text-to-speech (voice replies) | Audio hours generated per day | 40 | Interactive | 3 | Low |
+| Retrieval indexing (embeddings for document search) | Document pages indexed per day (new + re-indexing) | 0.01 | Batch | 3 | Low |
 
 ### Evidence for each type
 
 **Staff copilot (drafting, summarising, Q&A)**
 
-- *rate*: UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week.
+- *rate*: UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate.
 - *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two.
 - *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34).
 - *burst*: Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption.
@@ -241,12 +304,12 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 
 **Learning tutor (students)**
 
-- *rate*: Rate per student with access = share of students active in a given week (assumed 5% / 15% / 30%) x 3.6 messages per weekly active user per day (ChatGPT: ~2.5B messages per day / ~700M weekly active users, averaged over all 7 days) (S39). Users under 26 send nearly half of ChatGPT messages. The active shares are assumptions.
+- *rate*: Base 0.27 interactions per student with access per day: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59), and only ~15% of students with access engage with it (S58). Low 0.1: about a third of Base, for schools without classroom integration. High 1.08 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39).
 - *tokens*: As citizen assistant (S31, S32).
 
 **Clinical decision support (frontline health workers)**
 
-- *rate*: One request per consultation, 3-20 consultations per worker per day: assumption, replace with programme data.
+- *rate*: One request per consultation typed by the health worker, 3-20 per worker per day: assumption, replace with programme data. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, S57).
 - *tokens*: Chat shape (S31, S32) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question (S43).
 - *seasonal*: 1.5 for epidemic peaks: assumption.
 
@@ -280,9 +343,30 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 - *rate*: Research tasks per analyst per day: assumption.
 - *tokens*: About 15x a copilot request (≈55k vs ≈3.7k tokens per task, 14.7x). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
 
+**Clinical safety net (runs automatically on every patient visit)**
+
+- *rate*: One task per visit, triggered automatically. Visits per day come from the ministry of health. Penda Health's AI Consult runs in the background of every visit at key decision points and alerts the clinician only when it detects a possible error; studied on 39,849 visits in 15 Nairobi clinics (S57).
+- *tokens*: 3 model calls per visit (history, diagnosis, treatment checkpoints), each ~2,000 tokens of visit notes + 1,000 system, 200 out: assumption informed by the AI Consult design (S57).
+
+**Teacher assistant (lesson planning, differentiated materials)**
+
+- *rate*: Modelled on the staff copilot rates (S36, S37, S39): no published per-teacher usage data yet. Often a more realistic first step than student tutors; a World Bank pilot in Peru is training ~500 teachers with Copilot (reviewer-provided, internal source, to verify).
+- *tokens*: Copilot shape with longer outputs (lesson plans, worksheets): 600 output tokens.
+
+**Agriculture advisory for farmers (chat or voice)**
+
+- *rate*: Per registered farmer per day. Digital Green's Farmer.Chat: active users consult ~18 times a month (~0.6/day) and 61% of Kenyan users use it meaningfully: 0.61 x 0.6 ≈ 0.37 (reviewer-provided, to verify against Digital Green and 60 Decibels). For a whole farming population rather than registered users, use the citizen assistant rate: India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93M beneficiaries (S40).
+- *tokens*: Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels.
+- *seasonal*: 2.0 for planting season: assumption.
+
+**Voice agent for public services (phone line, real time)**
+
+- *rate*: One task per call; calls per day come from the call centre. Example: Portugal's 112 emergency line receives ~9 million calls a year (reviewer-provided, to verify).
+- *tokens*: ~6 conversational turns per call with short spoken replies (80 tokens) and growing context: assumption. Strict response time: SLA headroom 1.3 and use the Fast response speed. Add Speech-to-text (call hours) and Text-to-speech applications for the audio.
+
 **Speech-to-text**
 
-- *gpu*: PLACEHOLDER ~60 GPU-seconds per audio hour (~60x real time). Calibrate with the MLPerf Inference Whisper result for your GPU (S08).
+- *gpu*: 6 GPU-seconds per audio hour (~600x real time) for batched, optimised Whisper large-v3 / turbo on one data-centre GPU: Baseten reports 1,800-2,400x real time on an H100 node (S55). Unbatched single-stream decoding is far slower (~27x real time on H100, i.e. ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45).
 
 **OCR and layout extraction**
 
@@ -303,6 +387,14 @@ Each default below has a source or is marked as an assumption. Confidence: **Hig
 **Model fine-tuning and evaluation**
 
 - *gpu*: Enter the training budget directly in GPU-hours per year; it runs in idle GPU time first (S03).
+
+**Text-to-speech (voice replies)**
+
+- *gpu*: PLACEHOLDER 40 GPU-seconds per generated audio hour (~90x real time). Calibrate with the chosen TTS model on the target GPU. Needed for any voice service.
+
+**Retrieval indexing (embeddings for document search)**
+
+- *gpu*: PLACEHOLDER 0.01 GPU-seconds per page (~500 tokens per page with a small embedding model). Almost every assistant depends on an index; size it from the pages in scope divided by the re-indexing period, plus new pages per day.
 
 
 ### How the agent sizes were checked
@@ -390,12 +482,18 @@ Owned:
   GPU purchase (each refresh)  = GPUs needed at the end of the cycle × capex per GPU × price(first year of cycle)
   opex(y)                      = energy × tariff + GPUs × software per GPU + staff(GPUs) × cost per FTE
                                  + 5% × (GPU capex + facility capex)
-  staff(GPUs)                  = 1 FTE + GPUs / 100                (assumption: 1 additional FTE per ~100 GPUs)
+  staff(GPUs)                  = 2 FTE per site + GPUs / 100        (assumption: one site per tier, 1 FTE per ~100 GPUs)
 present value                  = Σ discount(y) × cost(y)
 $ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
 ```
 
 **Cached input is priced, not free.** Providers charge cached input tokens at a discount: 10% of the normal input price at Anthropic [S46], up to 50% at OpenAI [S47]. The tool uses 10% / 25% / 50% (Low / Base / High). On owned or rented GPUs cached tokens skip the prefill computation, so they do not add GPU load.
+
+**Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
+
+**Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
+
+**Rounding.** Results are rounded to two significant figures and shown as "about X" with a Low – High range (e.g. "about $1.6M, range $1.4–2.1M"). The tool does not have more precision than that.
 
 **Ranges and the cheapest option.** Every cost item has a Low / Base / High value (Section 14). The results table shows **every allowed option** across Low – Base – High, marks the cheapest at Base with ★, and flags any tier where the cheapest option changes within the range. In that case the choice depends on prices and the client should obtain quotes. A client quote replaces the range for that item.
 
@@ -427,7 +525,7 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 | Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 80.2 |
 | Pooling in tier T3 | one application, so D = 1 | 80.2 |
 | GPUs | roundup(peak / 1,930 tok/s per GPU, measured at Standard speed, no derating) | 1 |
-| IT load / facility | GPUs x 1.4 kW; x PUE 1.6 | 1.4 kW / 2.2 kW |
+| IT load / facility | GPUs x 1.4 kW; x PUE 1.56 (global average; example country has no region) | 1.4 kW / 2.2 kW |
 | Cheapest allowed option (T3) | min(GPU-as-a-service, Owned), present value over 10 years at 8% | GPU-as-a-service, $165,055 |
 
 Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
@@ -437,7 +535,8 @@ Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justi
 | Parameter | Value | Source | Note |
 |---|---|---|---|
 | global_egdi_average | 0.638 | S17 | UN E-Government Survey 2024 world average |
-| pue | 1.6 | S22 | Uptime Institute global average ~1.56; hot climates and small sites higher |
+| facility_mode | country | method | country: PUE and facility cost by country, region and cooling (facility.yaml); flat: v0.1 single values |
+| pue | 1.6 | S22 | Used only in flat mode (v0.1 parity) |
 | diversity_mode | scaled | method | scaled: D depends on the number of applications in the tier; fixed: v0.1 constant |
 | diversity_factor | 0.7 | method | Used only in fixed mode (v0.1 parity) |
 | diversity_factor_min | 0.6 | assumption | Floor of D for many applications. D(n) = D_min + (1 - D_min) / sqrt(n); D = 1 for a single application |
@@ -456,7 +555,7 @@ Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justi
 | dense_profile_min_it_mw | 1 | analyst | Below this IT load, a 130 kW liquid-cooled rack is not worth it; use air-cooled |
 | maintenance_share | 0.05 | analyst | Share of capex per year |
 | staff_mode | scaled | method | scaled: FTE = minimum + GPUs / GPUs per FTE; flat: v0.1 constant |
-| fte_min | 1 | assumption | Minimum operations staff for an owned deployment |
+| fte_min | 2 | assumption | Operations staff per owned site (one site per tier) |
 | gpus_per_fte | 100 | assumption | One additional FTE per ~100 GPUs |
 | fte_per_owned_tier | 4 | analyst | Used only in flat mode (v0.1 parity) |
 | cost_per_fte_usd | 60000 | analyst | Local market; override if known |
@@ -467,7 +566,7 @@ Utilisation of that single GPU is 1%: one copilot for 1,000 staff does not justi
 | Cost item | Low | Base | High | Source | Note |
 |---|---|---|---|---|---|
 | electricity_usd_kwh | 0.1 | 0.15 | 0.25 | S20 | Used only if the country snapshot has no tariff |
-| facility_capex_usd_per_mw_it | 8000000 | 11000000 | 15000000 | S23 |  |
+| facility_capex_usd_per_mw_it | 8000000 | 11000000 | 15000000 | S23 | Used only in flat mode; country mode uses facility.yaml |
 | gpu_capex_multiplier | 0.8 | 1.0 | 1.3 | analyst | Applied to hardware profile capex per GPU |
 | gpu_hour_multiplier | 0.7 | 1.0 | 1.5 | S11 | Applied to hardware profile $/GPU-hour; local providers price higher |
 | api_price_multiplier | 0.7 | 1.0 | 1.5 | S21 | Applied to synced API prices; residency premium in high case |
@@ -517,8 +616,10 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 - **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
 - **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
-- **Backup power on weak grids** (UPS, generators, batteries, diesel) is not costed yet; the tool only flags it.
-- **Growth and price decline are single annual rates** set by the user (default 0%). There is no adoption curve per application.
+- **Backup fuel on weak grids**: facility construction costs include UPS and generators, but diesel and fuel logistics are not costed; the tool flags weak or unknown grids.
+- **PUE by region** uses fleet averages from surveys (2020 regional, 2024 global), which overstate a new, well-designed site. Use the site PUE input when known.
+- **Demand is flat by default.** Growth and price decline are single optional annual rates (default 0%); there is no adoption curve per application.
+- **Deliberately not modelled** (planning grade): hourly load curves, per-model-copy and GPU memory checks, Monte Carlo simulation, AIConfigurator lookup tables, spillover between tiers.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
 
@@ -573,5 +674,17 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | S45 | NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1) | NVIDIA, results audited by MLCommons (Sept 2025) | GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1 | https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut |
 | S46 | Prompt caching (pricing: cache reads at 10% of the base input price) | Anthropic documentation | Cached input price share, low end | https://docs.claude.com/en/docs/build-with-claude/prompt-caching |
 | S47 | Prompt caching guide (cached input tokens billed at a discount) | OpenAI documentation | Cached input price share, up to 50% of input price | https://platform.openai.com/docs/guides/prompt-caching |
+| S48 | TradeOff Tools: Data center capital cost calculator; Data center efficiency and PUE calculator | Schneider Electric | Site-specific facility $/W and PUE (client calibration) | https://www.se.com/ww/en/work/solutions/for-business/data-centers-and-networks/trade-off-tools |
+| S49 | Which regions have the most energy efficient data centers? (Global Data Center Survey 2020) | Uptime Institute | Regional PUE averages: Europe 1.46, Africa and Middle East 1.79 | https://journal.uptimeinstitute.com/datacenter-energy-efficiency-by-region/ |
+| S50 | Mapping PUE trends by data center region, age and size (Global Data Center Survey 2025) | Uptime Institute (Oct 2025) | Share of facilities below PUE 1.5 by region; newer and larger sites lower | https://intelligence.uptimeinstitute.com/resource/mapping-pue-trends-data-center-region-age-and-size |
+| S51 | Quantifying data center PUE when introducing liquid cooling (ASME paper with NVIDIA) | Vertiv / NVIDIA | Liquid cooling: -18.1% facility power, -10.2% total power, -7% IT power (fans) | https://www.vertiv.com/en-us/about/news-and-events/articles/blog-posts/quantifying-data-center-pue-when-introducing-liquid-cooling/ |
+| S52 | Data Centre Construction Cost Index 2026-2027 (African and lowest-cost markets) | Turner & Townsend, via Engineering News (Oct 2026) | Construction cost per watt: Lagos, Johannesburg, Nairobi, Mumbai, Shanghai, Ho Chi Minh City, Bogota, UAE; 7-10% liquid-cooled premium | https://www.engineeringnews.co.za/article/study-shows-african-countries-competitive-for-data-centre-construction-2026-10-27 |
+| S53 | Data Centre Construction Cost Index 2025-2026 | Turner & Townsend (Nov 2025) | Construction cost per watt: Jakarta, Malaysia, Saudi Arabia, Singapore, Tokyo; 7-10% liquid-cooled premium (US) | https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2025/data-centre-cost-trends |
+| S54 | White Paper 282: Capital Cost Analysis of Immersive Liquid-Cooled vs. Air-Cooled Large Data Centers | Schneider Electric | Liquid vs air capex equal at 10 kW/rack; 10% / 14% lower at 20 / 40 kW/rack | https://www.se.com/ww/en/download/document/SPD_WP282_EN |
+| S55 | The fastest Whisper transcription (2,400x real time large-v3-turbo, 1,800x large-v3 on H100) | Baseten | Batched speech-to-text GPU-seconds per audio hour | https://www.baseten.co/blog/the-fastest-transcription-with-streaming-and-diarization/ |
+| S56 | Best GPU for Whisper (real-time factor by GPU) | Runpod (Sept 2026) | Unbatched Whisper ~25-60x real time per GPU | https://www.runpod.io/articles/guides/best-gpu-for-whisper |
+| S57 | AI-based clinical decision support for primary care: a real-world study (AI Consult, 39,849 visits) | Penda Health / OpenAI (arXiv 2507.16947, 2025) | Background clinical safety net on every visit, activated at key decision points | https://arxiv.org/abs/2507.16947 |
+| S58 | Learning in the Open: What AI Is (and Isn't) Changing | Khan Academy (2026) | Khanmigo: ~269,000 weekday interactions; ~15% of students with access engage | https://blog.khanacademy.org/learning-in-the-open-what-ai-is-and-isnt-changing/ |
+| S59 | Sal Khan: AI tutors need human input | McGraw Prize in Education | Khanmigo reach: nearly 1 million students | https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

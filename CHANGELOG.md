@@ -5,6 +5,18 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-16
+### Added
+- Facility model by country and cooling: PUE by World Bank region (Uptime Institute) with a site PUE override; liquid cooling cuts non-IT power by 18% (NVIDIA/Vertiv); construction cost per watt from the Turner & Townsend index for 13 markets, regional proxies otherwise; liquid-cooled facility multiplier 0.90 / 1.085 / 1.10. Instructions to calibrate a site with the Schneider Electric TradeOff Tools.
+- Rent-or-own table: API and GPU rental per year next to owned upfront capex, annual running cost and GPU refresh.
+- Charts: 10-year cost by data class (with range) and by application.
+- Six application types: clinical safety net (Penda Health model), teacher assistant, agriculture advisory, voice agent, text-to-speech, retrieval indexing.
+- Throughput uncertainty (x1.3 / 1.0 / 0.75) inside the Low / Base / High range; GPU and MW ranges shown.
+### Changed
+- Results rounded to two significant figures and shown as "about X, range A–B"; power shown in kW below 1 MW.
+- Owned staff: 2 FTE per site + 1 per 100 GPUs.
+- Speech-to-text 60 → 6 GPU-seconds per audio hour (batched Whisper, Baseten); tutor rate from Khanmigo usage (0.27 per student with access per day, 15% engage); Pair added as a third copilot reference.
+
 ## [0.3.0] - 2026-11-16
 ### Changed
 - Pooling factor D now depends on the number of applications in the tier: 1 for a single application, D(n) = 0.6 + 0.4/√n otherwise (was a flat 0.7 everywhere).

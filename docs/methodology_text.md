@@ -1,6 +1,6 @@
 # Sovereign AI Compute Planner: Methodology
 
-Version 0.3 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
+Version 0.4 (draft). Planning-grade estimates for early discussions with governments. It does not replace an engineering design or a procurement specification.
 
 ## 1. Purpose and scope
 
@@ -176,10 +176,33 @@ utilisation         = min(1, (busy + batch) / (total GPUs × 24))
 
 ```
 IT load (kW)          = total GPUs × kW per GPU (all-in, includes CPU, network, storage share)
-facility power (MW)   = IT load × PUE / 1,000                          (PUE 1.6) [S22]
+facility power (MW)   = IT load × PUE / 1,000                          (PUE by region and cooling, Section 8.1)
 racks                 = roundup(IT load / rack kW)
 annual energy (MWh)   = IT load × (idle fraction + (1 − idle fraction) × utilisation) × PUE × 8,760 / 1,000
 ```
+
+**Throughput uncertainty.** Serving software, batching and model mix move tokens/s per GPU by more than the hardware choice in many cases. The Low / Base / High cases multiply tokens/s per GPU by 1.3 / 1.0 / 0.75, so GPUs, MW and cost all carry a range [S44].
+
+### 8.1 Facility: PUE and construction cost by country and cooling
+
+The facility (building, power distribution, backup, cooling) matters for the Owned option and for the air-versus-liquid decision. API and GPU-as-a-service prices already include the provider's facility.
+
+```
+PUE (air)        = site PUE entered by the user, else the regional value below, else the global average 1.56 [S22]
+PUE (liquid)     = 1 + (PUE air − 1) × 0.82          (liquid cooling cut non-IT facility power by 18.1% [S51])
+facility capex   = $ per W of IT × 1,000,000 × IT MW × cooling multiplier × range (0.85 / 1.0 / 1.2)
+$ per W of IT    = the country's market in the Turner & Townsend cost index [S52, S53],
+                   else the average of indexed markets in its region (labelled as a proxy), else $11/W [S23]
+cooling multiplier (liquid vs air) = 0.90 / 1.085 / 1.10 (Low / Base / High)
+```
+
+Why a range for the liquid multiplier: Turner & Townsend measured liquid-cooled AI facilities in the US at 7-10% more than air-cooled facilities of the same IT capacity [S53]. Schneider Electric's cost model found the two equal at the same rack density, and 10-14% cheaper for liquid when it allows 2-4 times denser racks [S54]. Construction costs normally include UPS and generators; diesel and fuel logistics on weak grids are not costed (Section 16).
+
+{{FACILITY}}
+
+**Calibrating a specific site.** The Schneider Electric TradeOff Tools [S48] give a site-level estimate (±20%):
+1. *Data center capital cost calculator*: enter IT load (kW), rack density, cooling architecture (air or liquid), redundancy and build or prefabricated. Read the $/W; enter it in Setup → Client quotes as data centre build cost per MW IT (× 1,000,000).
+2. *Data center efficiency and PUE calculator*: enter the location (climate), cooling type and load. Read the annual PUE; enter it in Setup → Site PUE.
 
 **Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
 
@@ -256,12 +279,18 @@ Owned:
   GPU purchase (each refresh)  = GPUs needed at the end of the cycle × capex per GPU × price(first year of cycle)
   opex(y)                      = energy × tariff + GPUs × software per GPU + staff(GPUs) × cost per FTE
                                  + 5% × (GPU capex + facility capex)
-  staff(GPUs)                  = 1 FTE + GPUs / 100                (assumption: 1 additional FTE per ~100 GPUs)
+  staff(GPUs)                  = 2 FTE per site + GPUs / 100        (assumption: one site per tier, 1 FTE per ~100 GPUs)
 present value                  = Σ discount(y) × cost(y)
 $ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
 ```
 
 **Cached input is priced, not free.** Providers charge cached input tokens at a discount: 10% of the normal input price at Anthropic [S46], up to 50% at OpenAI [S47]. The tool uses 10% / 25% / 50% (Low / Base / High). On owned or rented GPUs cached tokens skip the prefill computation, so they do not add GPU load.
+
+**Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
+
+**Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
+
+**Rounding.** Results are rounded to two significant figures and shown as "about X" with a Low – High range (e.g. "about $1.6M, range $1.4–2.1M"). The tool does not have more precision than that.
 
 **Ranges and the cheapest option.** Every cost item has a Low / Base / High value (Section 14). The results table shows **every allowed option** across Low – Base – High, marks the cheapest at Base with ★, and flags any tier where the cheapest option changes within the range. In that case the choice depends on prices and the client should obtain quotes. A client quote replaces the range for that item.
 
@@ -305,8 +334,10 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 - **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
 - **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
-- **Backup power on weak grids** (UPS, generators, batteries, diesel) is not costed yet; the tool only flags it.
-- **Growth and price decline are single annual rates** set by the user (default 0%). There is no adoption curve per application.
+- **Backup fuel on weak grids**: facility construction costs include UPS and generators, but diesel and fuel logistics are not costed; the tool flags weak or unknown grids.
+- **PUE by region** uses fleet averages from surveys (2020 regional, 2024 global), which overstate a new, well-designed site. Use the site PUE input when known.
+- **Demand is flat by default.** Growth and price decline are single optional annual rates (default 0%); there is no adoption curve per application.
+- **Deliberately not modelled** (planning grade): hourly load curves, per-model-copy and GPU memory checks, Monte Carlo simulation, AIConfigurator lookup tables, spillover between tiers.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
 

@@ -1,7 +1,8 @@
 # Global defaults. Maintainers update yearly; users override only via "client quotes".
 # Each entry: value, and for cost items low/base/high for the TCO range.
 global_egdi_average: {value: 0.638, source: S17, note: "UN E-Government Survey 2024 world average"}
-pue: {value: 1.6, source: S22, note: "Uptime Institute global average ~1.56; hot climates and small sites higher"}
+facility_mode: {value: country, source: method, note: "country: PUE and facility cost by country, region and cooling (facility.yaml); flat: v0.1 single values"}
+pue: {value: 1.6, source: S22, note: "Used only in flat mode (v0.1 parity)"}
 diversity_mode: {value: scaled, source: method, note: "scaled: D depends on the number of applications in the tier; fixed: v0.1 constant"}
 diversity_factor: {value: 0.7, source: method, note: "Used only in fixed mode (v0.1 parity)"}
 diversity_factor_min: {value: 0.6, source: assumption, note: "Floor of D for many applications. D(n) = D_min + (1 - D_min) / sqrt(n); D = 1 for a single application"}
@@ -12,6 +13,7 @@ horizon_years: {value: 10, source: "-", note: "Analysis horizon"}
 discount_rate: {value: 0.08, source: assumption, note: "Real discount rate for present value; 6-10% is a common range for public infrastructure appraisal. User input"}
 demand_growth: {value: 0.0, source: user, note: "Annual growth of requests. User input"}
 price_decline: {value: 0.0, source: user, note: "Annual decline of market prices (API tokens, GPU rental, GPU capex at refresh). User input"}
+throughput_uncertainty: {low: 1.3, base: 1.0, high: 0.75, source: "S44", note: "Multiplier on tokens/s per GPU in the Low / Base / High cost cases: serving software, batching and model mix. InferenceX results for one chip at one interactivity vary by more than this across frameworks"}
 gpu_threshold: {value: 0.25, source: assumption, note: "Tiers with only non-LLM workloads needing less than this many GPUs run on existing servers"}
 tokens_per_user_day_ceiling: {value: 240000, source: S24, note: "Epoch AI human-equivalent ceiling"}
 weak_grid_outages_threshold: {value: 1, source: analyst, note: "Outages per month above which liquid-cooled dense racks are excluded"}
@@ -20,7 +22,7 @@ step3_min_facility_mw: {value: 10, source: assumption, note: "From this size, a 
 dense_profile_min_it_mw: {value: 1, source: analyst, note: "Below this IT load, a 130 kW liquid-cooled rack is not worth it; use air-cooled"}
 maintenance_share: {value: 0.05, source: analyst, note: "Share of capex per year"}
 staff_mode: {value: scaled, source: method, note: "scaled: FTE = minimum + GPUs / GPUs per FTE; flat: v0.1 constant"}
-fte_min: {value: 1, source: assumption, note: "Minimum operations staff for an owned deployment"}
+fte_min: {value: 2, source: assumption, note: "Operations staff per owned site (one site per tier)"}
 gpus_per_fte: {value: 100, source: assumption, note: "One additional FTE per ~100 GPUs"}
 fte_per_owned_tier: {value: 4, source: analyst, note: "Used only in flat mode (v0.1 parity)"}
 cost_per_fte_usd: {value: 60000, source: analyst, note: "Local market; override if known"}
@@ -29,7 +31,7 @@ gpu_refresh_years: {value: 5, source: S03}
 # Cost items with ranges (low / base / high). Overridden by client quotes.
 costs:
   electricity_usd_kwh: {low: 0.10, base: 0.15, high: 0.25, source: S20, note: "Used only if the country snapshot has no tariff"}
-  facility_capex_usd_per_mw_it: {low: 8000000, base: 11000000, high: 15000000, source: S23}
+  facility_capex_usd_per_mw_it: {low: 8000000, base: 11000000, high: 15000000, source: S23, note: "Used only in flat mode; country mode uses facility.yaml"}
   gpu_capex_multiplier: {low: 0.8, base: 1.0, high: 1.3, source: analyst, note: "Applied to hardware profile capex per GPU"}
   gpu_hour_multiplier: {low: 0.7, base: 1.0, high: 1.5, source: S11, note: "Applied to hardware profile $/GPU-hour; local providers price higher"}
   api_price_multiplier: {low: 0.7, base: 1.0, high: 1.5, source: S21, note: "Applied to synced API prices; residency premium in high case"}

@@ -1,0 +1,51 @@
+# Facility (data centre building, power and cooling) by country and cooling type.
+# Used for Owned capacity. API and GPU-as-a-service prices already include the provider's facility.
+
+# PUE of air-cooled facilities by World Bank region (fleet averages, so conservative for a new build).
+# Calibrate a specific site with the Schneider Electric "Data center efficiency and PUE calculator" (S48).
+pue_air_by_region:
+  Sub-Saharan Africa: {value: 1.79, source: S49, note: "Uptime Institute regional average for Africa and the Middle East (2020 survey)"}
+  Middle East & North Africa: {value: 1.79, source: S49, note: "Uptime Institute regional average for Africa and the Middle East (2020 survey)"}
+  Latin America & Caribbean: {value: 1.79, source: "S49, S50", note: "Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50)"}
+  South Asia: {value: 1.56, source: S22, note: "Proxy: global average 2024 (S22); hot climates likely higher"}
+  East Asia & Pacific: {value: 1.56, source: "S22, S50", note: "Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50)"}
+  Europe & Central Asia: {value: 1.46, source: S49, note: "Uptime Institute regional average for Europe (2020 survey)"}
+  North America: {value: 1.53, source: S49, note: "Europe is ~5% below US/Canada (S49)"}
+pue_air_default: {value: 1.56, source: S22, note: "Global average PUE 2024 (Uptime Institute)"}
+
+# Liquid cooling (direct-to-chip) reduces cooling and power overhead.
+# NVIDIA/Vertiv ASME study: full liquid cooling cut facility (non-IT) power by 18.1% and total power by 10.2% (S51).
+liquid_overhead_factor: {value: 0.82, source: S51, note: "PUE_liquid = 1 + (PUE_air - 1) x 0.82"}
+
+# Construction cost per watt of IT capacity, by market (Turner & Townsend Data Centre Construction Cost Index).
+# Range used: Low x0.85, Base x1.0, High x1.2 (indicative benchmarks; Schneider's calculator is +/-20%).
+capex_usd_per_w_by_country:
+  NGA: {value: 10.87, market: Lagos, year: 2026, source: S52}
+  ZAF: {value: 10.62, market: Johannesburg, year: 2026, source: S52}
+  KEN: {value: 10.03, market: Nairobi, year: 2026, source: S52}
+  IND: {value: 6.83, market: Mumbai, year: 2026, source: S52}
+  CHN: {value: 5.79, market: Shanghai, year: 2026, source: S52}
+  VNM: {value: 8.32, market: Ho Chi Minh City, year: 2026, source: S52}
+  COL: {value: 9.13, market: Bogota, year: 2026, source: S52}
+  ARE: {value: 9.20, market: UAE, year: 2026, source: S52}
+  IDN: {value: 11.21, market: Jakarta, year: 2025, source: S53}
+  MYS: {value: 11.37, market: Malaysia, year: 2025, source: S53}
+  SAU: {value: 11.30, market: Saudi Arabia, year: 2025, source: S53}
+  SGP: {value: 14.53, market: Singapore, year: 2025, source: S53}
+  JPN: {value: 15.20, market: Tokyo, year: 2025, source: S53}
+# Countries without a market: average of indexed markets in the same region (labelled as a proxy).
+capex_usd_per_w_by_region:
+  Sub-Saharan Africa: {value: 10.51, note: "Average of Lagos, Johannesburg, Nairobi"}
+  Middle East & North Africa: {value: 10.25, note: "Average of Saudi Arabia and UAE"}
+  Latin America & Caribbean: {value: 9.13, note: "Bogota only: low confidence"}
+  South Asia: {value: 6.83, note: "Mumbai only: low confidence, likely low for smaller markets"}
+  East Asia & Pacific: {value: 10.30, note: "Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai)"}
+  Europe & Central Asia: {value: 11.0, note: "Global default"}
+  North America: {value: 11.0, note: "Global default"}
+capex_usd_per_w_default: {value: 11.0, source: S23, note: "Global default when no market or region applies"}
+capex_range: {low: 0.85, base: 1.0, high: 1.2}
+
+# Liquid-cooled facility cost relative to air-cooled at the same IT capacity.
+# Turner & Townsend: liquid-cooled AI facilities cost 7-10% more in the US (S52). Schneider WP282: equal at the same
+# density, 10-14% cheaper when liquid cooling allows 2-4x denser racks (S54).
+liquid_capex_multiplier: {low: 0.90, base: 1.085, high: 1.10}
