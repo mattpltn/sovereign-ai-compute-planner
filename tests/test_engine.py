@@ -12,6 +12,8 @@ from engine import default_profile, load_catalogue, load_defaults, run
 
 CAT, D = load_catalogue(), load_defaults()
 V01 = yaml.safe_load((Path(__file__).parent / "fixtures" / "use_cases_v01.yaml").read_text())
+HW01 = yaml.safe_load((Path(__file__).parent / "fixtures" / "hardware_v01.yaml").read_text())
+CAT01 = {**CAT, "hardware": HW01}
 
 
 def v01_profile():
@@ -25,7 +27,7 @@ def base_run(**kw):
     p.hardware_choice = "P1"  # the Excel uses P1 for every tier
     for k, v in kw.items():
         setattr(p, k, v)
-    return p, run(p, CAT, D)
+    return p, run(p, CAT01, D)
 
 
 def test_gpus_match_excel():
@@ -66,7 +68,7 @@ def test_split_moves_traffic_between_tiers():
     p.hardware_choice = "P1"
     uc09 = next(a for a in p.apps if a["id"] == "UC09")
     uc09["traffic_split"] = {2: 0.5, 3: 0.5}
-    r = run(p, CAT, D)
+    r = run(p, CAT01, D)
     _, r0 = base_run()
     assert r["tiers"]["T2"]["sizing"]["gpus"] < r0["tiers"]["T2"]["sizing"]["gpus"]
     assert r["tiers"]["T3"]["sizing"]["gpus"] > r0["tiers"]["T3"]["sizing"]["gpus"]
@@ -75,7 +77,8 @@ def test_split_moves_traffic_between_tiers():
 def test_weak_grid_forces_air_cooled():
     p = default_profile("XEX")
     r = run(p, CAT, D)  # auto hardware, 5 outages/month
-    assert all(r["tiers"][t]["hardware"] == "P1" for t in r["tiers"])
+    air = {h["id"] for h in CAT["hardware"] if h["weak_grid_ok"]}
+    assert all(r["tiers"][t]["hardware"] in air for t in r["tiers"])
 
 
 def test_quote_overrides_range():
@@ -158,3 +161,16 @@ def test_nontoken_archetype_and_fine_tuning():
 def test_all_archetypes_have_evidence():
     for a in ARCH.values():
         assert a["evidence"] and set(a["confidence"]) == {"volume", "tokens"}
+
+
+def test_liquid_vs_air_gap_matches_independent_benchmarks():
+    hw = {h["id"]: h for h in CAT["hardware"]}
+    ratio_L = hw["P2"]["tokens_per_s_per_gpu"]["L"] / hw["P1"]["tokens_per_s_per_gpu"]["L"]
+    assert 5 <= ratio_L <= 9          # InferenceX: 4.6-7.3x at 65-130 tok/s/user [S44], not NVIDIA's 65x [S02]
+
+
+def test_reliable_grid_and_large_load_allows_liquid():
+    c = dict(default_profile("XEX").country, outages_per_month=0)
+    apps = [dict(uid="a", name="x", type="research_agent", volume=400000, data_class=3)]
+    r = run(build_profile(c, "Base", apps, ARCH, dict(D["class_to_tier"])), CAT, D)
+    assert r["tiers"]["T3"]["hardware"] == "P2"

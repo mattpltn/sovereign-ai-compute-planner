@@ -105,7 +105,7 @@ setup_panel = ui.nav_panel(
             ui.p("Changes how often people use each application (Low / Base / High rates in the Evidence tab). "
                  "Volumes you enter are never changed.", class_="hint"),
             ui.card_header("Hardware"),
-            ui.input_select("hw", None, {"auto": "Automatic (air-cooled on weak grids and small sites)",
+            ui.input_select("hw", None, {"auto": "Automatic (cheapest allowed; air-cooled only on weak grids and sites under 1 MW)",
                                          **{h["id"]: f'{h["id"]} · {h["name"]}' for h in CAT["hardware"]}}),
         ),
         col_widths=[6, 6],

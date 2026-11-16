@@ -166,7 +166,14 @@ racks                 = roundup(IT load / rack kW)
 annual energy (MWh)   = IT load × (idle fraction + (1 − idle fraction) × utilisation) × PUE × 8,760 / 1,000
 ```
 
-**Hardware choice (automatic).** If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user) or the tier's IT load is below 1 MW, the tool uses the air-cooled profile. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility. The user can force a profile.
+**Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
+
+1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup) or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
+2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest GPU-hour cost (GPUs × $/GPU-hour).
+
+The user can force a profile in Setup.
+
+**What the grid setting changes, and what it does not.** It changes which hardware is allowed and the grid warning in the results. It does not yet add the cost of backup power (UPS, generators, batteries) or diesel, which on a weak grid is material. This is a known gap (Section 16).
 
 ## 9. Application types and their evidence
 
@@ -291,10 +298,48 @@ India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 
 
 | ID | Profile | Cooling | Rack kW | kW per GPU (all-in) | Tokens/s per GPU S / M / L | $/GPU-hour | Capex per GPU | Software $/GPU/yr | Weak-grid suitable |
 |---|---|---|---|---|---|---|---|---|---|
-| P1 | HGX H100/H200 8-GPU, air-cooled | Air | 41 | 1.7 | 3,000 / 800 / 90 | 2.6 | 40,000 | 4500 | yes |
-| P2 | GB300 NVL72, liquid-cooled | Liquid | 130 | 2.1 | 12,000 / 4,000 / 6,000 | 2.65 | 65,000 | 4500 | no |
+| P1 | HGX H200 8-GPU, air-cooled | Air | 41 | 1.4 | 8,000 / 1,930 / 779 | 2.6 | 40,000 | 4500 | yes |
+| P3 | HGX B200 8-GPU, air-cooled | Air | 60 | 1.7 | 12,000 / 3,981 / 1,461 | 3.69 | 50,000 | 4500 | yes |
+| P2 | GB300 NVL72, liquid-cooled rack | Liquid | 130 | 2.1 | 16,000 / 5,000 / 5,667 | 4.92 | 65,000 | 4500 | no |
 
-Profile P1 throughput for large reasoning models (90 tokens/s per GPU) and the power per GPU come from NVIDIA's cost-per-token analysis (H200, DeepSeek-R1, 54,000 tokens/s per MW) [S02] and the DGX H100/H200 power rating of 10.2 kW per 8-GPU server [S10]. Profile P2 figures are NVIDIA vendor claims [S02]. Small and medium model throughput and capex per GPU are placeholders until calibrated with AIConfigurator and vendor quotes. The hardware choice changes the MW result by up to ~50 times for the same demand [S02], so it is treated as a policy decision tied to the grid.
+Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW. The production derating (0.6) is applied on top.
+
+Evidence per profile:
+
+**P1 · HGX H200 8-GPU, air-cooled**
+
+- *L*: 779 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (SemiAnalysis InferenceX) (S44).
+- *M*: 1,930 tok/s per GPU, Llama 3.3 70B at 76 tok/s per user (S44).
+- *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: calibrate with AIConfigurator.
+- *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44); DGX H200 server 10.2 kW per 8 GPUs (S10).
+- *price*: GPU rental $2.60/hour (S11). Capex per GPU: placeholder, replace with vendor quote.
+
+**P3 · HGX B200 8-GPU, air-cooled**
+
+- *L*: 1,461 tok/s per GPU, DeepSeek R1 at 89 tok/s per user (S44).
+- *M*: 3,981 tok/s per GPU, Llama 3.3 70B at 76 tok/s per user (S44).
+- *S*: Derived: about 3x the 70B figure. Low confidence.
+- *power*: 1.7 kW per GPU all-in, implied by InferenceX tokens per MW for B200 (S44).
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.
+
+**P2 · GB300 NVL72, liquid-cooled rack**
+
+- *L*: 5,667 tok/s per GPU, DeepSeek R1 at 94 tok/s per user (S44): 7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
+- *M*: Derived: B200 70B figure x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence.
+- *S*: 16,099 tok/s per GPU, Llama 3.1 8B, MLPerf Inference v5.1 server scenario (S45).
+- *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
+
+
+### Vendor claims versus independent benchmarks
+
+NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
+
+Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
+
+The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
+
+For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
 
 ## 11. Layer 5: 10-year cost
 
@@ -336,11 +381,11 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 | Daily equivalent tokens | output + (input - cached) x 0.15 | 1,534,500 |
 | Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 103.2 |
 | Diversified peak in tier T3 | x D 0.7 | 72.2 |
-| GPUs | roundup(peak / (800 tok/s x derating 0.6)) | 1 |
-| IT load / facility | GPUs x 1.7 kW; x PUE 1.6 | 1.7 kW / 2.7 kW |
+| GPUs | roundup(peak / (1,930 tok/s x derating 0.6)) | 1 |
+| IT load / facility | GPUs x 1.4 kW; x PUE 1.6 | 1.4 kW / 2.2 kW |
 | Cheapest eligible option (T3) | min(GPU-as-a-service, Owned) over 10 years | GPU-as-a-service, $227,760 |
 
-Utilisation of that single GPU is 4%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
+Utilisation of that single GPU is 2%: one copilot for 1,000 staff does not justify dedicated hardware on its own. Pooling several applications in a tier (diversity factor) is what makes local capacity efficient.
 
 ## 14. Global defaults
 
@@ -415,7 +460,8 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 
 - **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
-- **Hardware throughput** for small and medium models and **GPU-seconds for non-LLM workloads** are placeholders until calibrated (AIConfigurator, MLPerf [S08]).
+- **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
+- **Backup power on weak grids** (UPS, generators, batteries, diesel) is not costed yet; the tool only flags it.
 - **Demand is flat** over 10 years: no growth curve, no discounting.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.
@@ -467,5 +513,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | S41 | Anthropic Economic Index report, September 2025 (with API dataset) | Anthropic | Per-task input/output token indices; output grows slower than input | https://www.anthropic.com/research/anthropic-economic-index-september-2025-report |
 | S42 | TraceLab: Characterizing Coding Agent Workloads for LLM Serving | University of Washington (2026) | Agentic coding: inputs outnumber outputs ~294x, mostly cached | https://syfi.cs.washington.edu/blog/2026-06-25-tracelab/ |
 | S43 | EpiQAL: Benchmarking LLMs in Epidemiological QA and Reasoning (token usage appendix) | arXiv 2601.03471 | Reasoning tokens per question ~0.2k-2.5k for current reasoning models | https://arxiv.org/pdf/2601.03471 |
+| S44 | InferenceX (formerly InferenceMAX): open, continuous inference benchmarks; chip comparisons and performance per dollar | SemiAnalysis (2025-2026) | Tokens/s per GPU at fixed interactivity (H200, B200, GB300; DeepSeek R1, Llama 3.3 70B); tokens per MW; ownership cost per chip-hour | https://inferencex.semianalysis.com/compare/deepseek-r1-gb300-vs-h200 |
+| S45 | NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1) | NVIDIA, results audited by MLCommons (Sept 2025) | GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1 | https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

@@ -4,6 +4,13 @@ All notable changes to the Sovereign AI Compute Planner. Format: [Keep a Changel
 Every change to the model, defaults or sources must also update `docs/METHODOLOGY.md` (see `CLAUDE.md`).
 
 ## [Unreleased]
+### Changed
+- Hardware throughput recalibrated to independent benchmarks (SemiAnalysis InferenceX [S44], MLPerf v5.1 [S45]) at a fixed interactivity (~90-95 tok/s per user for large reasoning models, ~75 for 70B). Liquid (GB300 NVL72) vs air (H200) gap on the large model: 65x (NVIDIA claim) → 7.3x per GPU. P1 H200: L 90 → 779, M 800 → 1,930 tok/s per GPU; kW per GPU 1.7 → 1.4. P2 rental price scaled to the ownership cost ratio ($4.92/GPU-hour).
+- Automatic hardware choice: among allowed profiles (air-cooled only on weak grids or below 1 MW), picks the lowest GPU-hour cost for each tier.
+### Added
+- Profile P3: HGX B200, air-cooled (newer silicon without liquid cooling).
+- Methodology section "Vendor claims versus independent benchmarks"; per-profile evidence.
+- `tests/fixtures/hardware_v01.yaml` keeps Excel parity.
 
 ## [0.2.1] - 2026-11-16
 ### Added

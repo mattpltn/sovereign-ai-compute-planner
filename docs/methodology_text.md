@@ -164,7 +164,14 @@ racks                 = roundup(IT load / rack kW)
 annual energy (MWh)   = IT load × (idle fraction + (1 − idle fraction) × utilisation) × PUE × 8,760 / 1,000
 ```
 
-**Hardware choice (automatic).** If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user) or the tier's IT load is below 1 MW, the tool uses the air-cooled profile. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility. The user can force a profile.
+**Hardware choice (automatic).** For each tier the tool first decides which profiles are allowed, then picks the cheapest:
+
+1. If the grid is weak (more than 1 outage per month, World Bank Enterprise Surveys [S19], or set by the user in Setup) or the tier's IT load on air-cooled hardware is below 1 MW, only air-cooled profiles are allowed. Dense liquid-cooled racks (above 100 kW per rack) need a reliable grid and a specialised facility.
+2. Among allowed profiles, the tool sizes the tier with each and keeps the one with the lowest GPU-hour cost (GPUs × $/GPU-hour).
+
+The user can force a profile in Setup.
+
+**What the grid setting changes, and what it does not.** It changes which hardware is allowed and the grid warning in the results. It does not yet add the cost of backup power (UPS, generators, batteries) or diesel, which on a weak grid is material. This is a known gap (Section 16).
 
 ## 9. Application types and their evidence
 
@@ -184,7 +191,21 @@ India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 
 
 {{HARDWARE}}
 
-Profile P1 throughput for large reasoning models (90 tokens/s per GPU) and the power per GPU come from NVIDIA's cost-per-token analysis (H200, DeepSeek-R1, 54,000 tokens/s per MW) [S02] and the DGX H100/H200 power rating of 10.2 kW per 8-GPU server [S10]. Profile P2 figures are NVIDIA vendor claims [S02]. Small and medium model throughput and capex per GPU are placeholders until calibrated with AIConfigurator and vendor quotes. The hardware choice changes the MW result by up to ~50 times for the same demand [S02], so it is treated as a policy decision tied to the grid.
+Throughput figures come from independent, open benchmarks run at a fixed **interactivity** (output speed seen by each user): about 90-95 tokens/s per user for the large reasoning model and about 75 for the medium model, from SemiAnalysis InferenceX [S44]; small-model figures from MLPerf Inference v5.1 [S45] or derived (marked). Power per GPU is implied by the benchmark's tokens per MW. The production derating (0.6) is applied on top.
+
+Evidence per profile:
+
+{{HARDWARE_EVIDENCE}}
+
+### Vendor claims versus independent benchmarks
+
+NVIDIA states that GB300 NVL72 delivers 65 times the tokens per GPU of HGX H200 (6,000 vs 90) and 50 times the tokens per MW on DeepSeek-R1 [S02]. Version 0.1 of this tool used those figures, which produced a 10x difference in GPUs between liquid-cooled and air-cooled hardware.
+
+Independent measurements give a smaller gap. At 94 tokens/s per user, InferenceX measures 5,667 tokens/s per GPU on GB300 NVL72 and 779 on H200: 7.3 times per GPU, and about 3.8 times lower cost per token [S44]. Across 65-130 tokens/s per user the per-GPU gap is 4.6-7.3 times. MLPerf v5.1 reports about 5 times Hopper per GPU for GB300 on DeepSeek-R1 [S45]. NVIDIA's 65x corresponds to an operating point where H200 barely produces tokens.
+
+The gap also depends on the model. It is largest for large mixture-of-experts reasoning models, which benefit from the 72-GPU NVLink domain, and much smaller for dense 70B models (about 2x between B200 and H200 [S44]).
+
+For a mixed government portfolio the tool now gives a liquid-versus-air gap of roughly 2-4 times in GPUs and 1.3-3.5 times in cost. The higher end applies to portfolios dominated by large reasoning models. The hardware choice remains a policy decision tied to the grid. The air-cooled B200 profile (P3) is the middle option: newer silicon without liquid cooling.
 
 ## 11. Layer 5: 10-year cost
 
@@ -238,7 +259,8 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 
 - **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
-- **Hardware throughput** for small and medium models and **GPU-seconds for non-LLM workloads** are placeholders until calibrated (AIConfigurator, MLPerf [S08]).
+- **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
+- **Backup power on weak grids** (UPS, generators, batteries, diesel) is not costed yet; the tool only flags it.
 - **Demand is flat** over 10 years: no growth curve, no discounting.
 - **Vendor figures** (NVIDIA) are used for structure and calibration ranges, not as final values.
 - **Placement** is a policy decision. The tool applies the rules the user sets; it does not interpret the law.

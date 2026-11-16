@@ -145,16 +145,14 @@ def size_tier(tier: str, dem: list, nt: list, hw: dict, d: dict) -> dict:
     )
 
 
-def pick_hardware(p: Profile, hardware: list, it_mw_if_air: float, d: dict) -> dict:
-    hw_by_id = {h["id"]: h for h in hardware}
+def candidate_hardware(p: Profile, hardware: list, it_mw_if_air: float, d: dict) -> list:
+    """Profiles allowed for a tier. Weak grid or small load: air-cooled only."""
     if p.hardware_choice != "auto":
-        return hw_by_id[p.hardware_choice]
+        return [h for h in hardware if h["id"] == p.hardware_choice]
     weak = p.country.get("outages_per_month", 0) > d["weak_grid_outages_threshold"]["value"]
-    air = next(h for h in hardware if h["weak_grid_ok"])
     if weak or it_mw_if_air < d["dense_profile_min_it_mw"]["value"]:
-        return air
-    dense = [h for h in hardware if not h["weak_grid_ok"]]
-    return dense[0] if dense else air
+        return [h for h in hardware if h["weak_grid_ok"]]
+    return list(hardware)
 
 
 # ----------------------------------------------------------------- Layer 5
@@ -209,8 +207,9 @@ def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) ->
     for t in TIERS:
         air = next(h for h in hardware if h["weak_grid_ok"])
         first = size_tier(t, dem, nt, air, d)
-        hw = pick_hardware(p, hardware, first["it_kw"] / 1000, d)
-        sz = first if hw["id"] == air["id"] else size_tier(t, dem, nt, hw, d)
+        # Among allowed profiles, take the one with the lowest GPU-hour cost for this tier's load.
+        options = [(h, size_tier(t, dem, nt, h, d)) for h in candidate_hardware(p, hardware, first["it_kw"] / 1000, d)]
+        hw, sz = min(options, key=lambda o: (o[1]["gpus"] * o[0]["gpu_hour_usd"], o[1]["it_kw"]))
         tco = {s: tco_tier(sz, dem, hw, api_prices, p, d, s) for s in SCENARIOS}
         base = tco["base"]
         if sz["gpus"] == 0 or not base:
