@@ -1,36 +1,110 @@
-# Generated from Sovereign_AI_Compute_Planner_v0.1.xlsx. Values are analyst defaults unless a source says otherwise.
+# Hardware profiles. Throughput = output tokens/s per GPU from independent benchmarks, at three response-speed points:
+#   low = fast (~130 tok/s per user for the large model, ~108 for 70B), base = standard (~90-95 / ~76),
+#   high = relaxed (~50-60 / ~45). Setup -> "Response speed" picks the point.
+# "measured" lists classes whose figures are measured benchmarks: used as is. Other classes are derived and derated.
+# Vendor claims (NVIDIA: 65x per GPU, 50x per MW, Hopper vs GB300) are not used as defaults; see docs/METHODOLOGY.md.
 - id: P1
-  name: HGX H100/H200 8-GPU, air-cooled
+  name: HGX H200 8-GPU, air-cooled
   cooling: Air
   rack_kw: 41
-  kw_per_gpu: 1.7
+  kw_per_gpu: 1.4
   gpu_hour_usd: 2.6
   capex_per_gpu_usd: 40000
   software_per_gpu_year_usd: 4500
   weak_grid_ok: true
+  measured:
+  - L
+  - M
+  tokens_per_s_per_gpu:
+    S:
+      low: 5000
+      base: 8000
+      high: 12000
+    M:
+      low: 1152
+      base: 1930
+      high: 2978
+    L:
+      low: 611
+      base: 779
+      high: 1302
   sources:
-  - S02
+  - S44
   - S10
   - S11
-  note: 'L: NVIDIA 90 tok/s/GPU (H200, DeepSeek-R1) [S02]. kW/GPU implied by NVIDIA 54k tok/s per MW [S02]; DGX H100/H200 = 10.2 kW per 8-GPU server [S10]; rack = 4 servers. Price: GMI H200 list [S11].
-    S and M: PLACEHOLDERS, replace with AIConfigurator output. Capex/GPU: placeholder, replace with vendor quote.'
+  evidence:
+    L: 'DeepSeek R1: 611 / 779 / 1,302 tok/s per GPU at 130 / 94 / 57 tok/s per user (SemiAnalysis InferenceX) (S44).'
+    M: 'Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
+    S: 'Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.'
+    power: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
+    price: 'GPU rental $2.60/hour, market rental (S11). NVIDIA''s $1.41 (S02) and SemiAnalysis''s $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU:
+      placeholder, replace with vendor quote.'
+- id: P3
+  name: HGX B200 8-GPU, air-cooled
+  cooling: Air
+  rack_kw: 60
+  kw_per_gpu: 1.7
+  gpu_hour_usd: 3.69
+  capex_per_gpu_usd: 50000
+  software_per_gpu_year_usd: 4500
+  weak_grid_ok: true
+  measured:
+  - L
+  - M
   tokens_per_s_per_gpu:
-    S: 3000
-    M: 800
-    L: 90
+    S:
+      low: 8000
+      base: 12000
+      high: 18000
+    M:
+      low: 2352
+      base: 3981
+      high: 5994
+    L:
+      low: 1051
+      base: 1461
+      high: 4852
+  sources:
+  - S44
+  evidence:
+    L: 'DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44).'
+    M: 'Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
+    S: 'Derived: about 3x the 70B figure. Low confidence: derated.'
+    power: 1.7 kW per GPU all-in, implied by InferenceX tokens per MW for B200 (S44).
+    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.'
 - id: P2
-  name: GB300 NVL72, liquid-cooled
+  name: GB300 NVL72, liquid-cooled rack
   cooling: Liquid
   rack_kw: 130
   kw_per_gpu: 2.1
-  gpu_hour_usd: 2.65
+  gpu_hour_usd: 4.92
   capex_per_gpu_usd: 65000
   software_per_gpu_year_usd: 4500
   weak_grid_ok: false
-  sources:
-  - S02
-  note: 'L: NVIDIA 6,000 tok/s/GPU and 2.8M tok/s per MW (DeepSeek-R1, vendor analysis, conditions not published) [S02]. Price: NVIDIA [S02]. Rack kW, S, M, capex: PLACEHOLDERS.'
+  measured:
+  - L
   tokens_per_s_per_gpu:
-    S: 12000
-    M: 4000
-    L: 6000
+    S:
+      low: 12000
+      base: 16000
+      high: 18370
+    M:
+      low: 3000
+      base: 5000
+      high: 7800
+    L:
+      low: 3404
+      base: 5667
+      high: 8552
+  sources:
+  - S44
+  - S45
+  - S02
+  evidence:
+    L: 'DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA''s own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely
+      runs (S02).'
+    M: 'Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active
+      parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).'
+    S: 'MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).'
+    power: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
+    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.'

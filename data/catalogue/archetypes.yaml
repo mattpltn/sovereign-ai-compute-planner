@@ -12,7 +12,7 @@
   group: Generative AI
   unit: users
   unit_label: Staff with access
-  rate: {low: 0.85, base: 1.8, high: 3.6}
+  rate: {low: 0.7, base: 1.4, high: 3.6}
   isl: 2000
   system_prompt_tokens: 1000
   osl: 400
@@ -29,7 +29,7 @@
   data_class: 3
   confidence: {volume: High, tokens: Medium}
   evidence:
-    rate: "UK cross-government trial, 20,000 civil servants: 39% used it several times a day, 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.8 per person with access. Low 0.85: Australian trial, 1 in 3 daily, 46% a few times a week (S37). High 3.6: ChatGPT, ~2.5B messages/day for ~700M weekly users (S39)."
+    rate: "UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week."
     tokens: "Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two."
     cache: "System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34)."
     burst: "Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption."
@@ -39,7 +39,7 @@
   group: Generative AI
   unit: users
   unit_label: People who can use it (target population)
-  rate: {low: 0.0002, base: 0.0005, high: 0.002}
+  rate: {low: 0.00015, base: 0.0005, high: 0.002}
   isl: 1500
   system_prompt_tokens: 800
   osl: 300
@@ -56,7 +56,7 @@
   data_class: 2
   confidence: {volume: Medium, tokens: Medium}
   evidence:
-    rate: "Queries per person in the target population per day. Low = India's Kisan e-Mitra: 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, about 0.0001-0.0002 (S40). Base 2.5x and High 10x that, for assistants covering several services."
+    rate: "Queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 (S40). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption."
     tokens: "Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32)."
     seasonal: "1.3 for deadline or benefit-payment peaks: assumption."
 
@@ -65,7 +65,7 @@
   group: Generative AI
   unit: users
   unit_label: Students with access
-  rate: {low: 0.18, base: 0.54, high: 1.08}
+  rate: {low: 0.18, base: 0.54, high: 1.08}   # = 0.05 / 0.15 / 0.30 x 3.6
   isl: 1500
   system_prompt_tokens: 800
   osl: 400
@@ -82,7 +82,7 @@
   data_class: 2
   confidence: {volume: Low, tokens: Medium}
   evidence:
-    rate: "5% / 15% / 30% of students active, times 3.6 messages per active user per day (ChatGPT, S39; users under 26 send nearly half of ChatGPT messages). Active share is an assumption."
+    rate: "Rate per student with access = share of students active in a given week (assumed 5% / 15% / 30%) x 3.6 messages per weekly active user per day (ChatGPT: ~2.5B messages per day / ~700M weekly active users, averaged over all 7 days) (S39). Users under 26 send nearly half of ChatGPT messages. The active shares are assumptions."
     tokens: "As citizen assistant (S31, S32)."
 
 - id: frontline_health
@@ -234,7 +234,7 @@
   confidence: {volume: High, tokens: Medium}
   evidence:
     rate: "One task per case. Volume comes from the client."
-    tokens: "About 5x a copilot request (≈18k tokens per case). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43)."
+    tokens: "About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43)."
 
 - id: research_agent
   label: Research agent (multi-agent, e.g. legal or policy analysis)
@@ -259,7 +259,7 @@
   confidence: {volume: Low, tokens: Medium}
   evidence:
     rate: "Research tasks per analyst per day: assumption."
-    tokens: "About 16x a copilot request (≈55k tokens per task). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
+    tokens: "About 15x a copilot request (≈55k vs ≈3.7k tokens per task, 14.7x). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
 
 # ---------------------------------------------------------------- non-token deep learning
 - id: speech_to_text

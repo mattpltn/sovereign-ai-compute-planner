@@ -257,3 +257,27 @@
   url: https://arxiv.org/pdf/2601.03471
   used_for: Reasoning tokens per question ~0.2k-2.5k for current reasoning models
   type: Benchmark
+- id: S44
+  title: 'InferenceX (formerly InferenceMAX): open, continuous inference benchmarks; chip comparisons and performance per dollar'
+  publisher: SemiAnalysis (2025-2026)
+  url: https://inferencex.semianalysis.com/compare/deepseek-r1-gb300-vs-h200
+  used_for: Tokens/s per GPU at fixed interactivity (H200, B200, GB300; DeepSeek R1, Llama 3.3 70B); tokens per MW; ownership cost per chip-hour
+  type: Independent benchmark
+- id: S45
+  title: NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1)
+  publisher: NVIDIA, results audited by MLCommons (Sept 2025)
+  url: https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut
+  used_for: 'GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1'
+  type: Audited benchmark
+- id: S46
+  title: 'Prompt caching (pricing: cache reads at 10% of the base input price)'
+  publisher: Anthropic documentation
+  url: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+  used_for: Cached input price share, low end
+  type: Provider pricing
+- id: S47
+  title: Prompt caching guide (cached input tokens billed at a discount)
+  publisher: OpenAI documentation
+  url: https://platform.openai.com/docs/guides/prompt-caching
+  used_for: Cached input price share, up to 50% of input price
+  type: Provider pricing

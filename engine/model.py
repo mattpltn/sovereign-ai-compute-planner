@@ -28,6 +28,8 @@ class Profile:
     class_to_tier: dict = field(default_factory=dict) # {1:"T1",...}
     quotes: dict = field(default_factory=dict)        # client quotes overriding cost ranges
     hardware_choice: str = "auto"       # "auto" or a hardware id applied to all tiers
+    speed: str = "base"                 # response speed target -> throughput point: low (fast) / base / high (relaxed)
+    finance: dict = field(default_factory=dict)       # discount_rate, demand_growth, price_decline (fractions)
 
 
 # ----------------------------------------------------------------- Layers 0-3
@@ -70,6 +72,7 @@ def app_demand(app: dict, country: dict, ambition: str, d: dict) -> dict:
         above_ceiling=tpud > d["tokens_per_user_day_ceiling"]["value"],
         avg_eq_tps=eq / 86400, peak_eq_tps=peak, model_class=app["model_class"],
         annual_uncached_input_m=(d_in - d_cached) * 365 / 1e6,
+        annual_cached_input_m=d_cached * 365 / 1e6,
         annual_output_m=d_out * 365 / 1e6, annual_eq_m=eq * 365 / 1e6,
     )
 
@@ -114,47 +117,80 @@ def nontoken_rows(p: Profile, d: dict) -> list[dict]:
 
 
 # ----------------------------------------------------------------- Layer 4
-def size_tier(tier: str, dem: list, nt: list, hw: dict, d: dict) -> dict:
-    D = d["diversity_factor"]["value"]
+def diversity(n: int, d: dict) -> float:
+    """Pooling factor for n applications sharing a tier.
+
+    'fixed' mode (v0.1): constant factor. 'scaled' mode: 1 for a single application, then
+    D(n) = D_min + (1 - D_min) / sqrt(n): independent peaks add up roughly with the square root of n.
+    """
+    if d.get("diversity_mode", {}).get("value", "scaled") == "fixed":
+        return d["diversity_factor"]["value"]
+    if n <= 1:
+        return 1.0
+    dmin = d["diversity_factor_min"]["value"]
+    return dmin + (1 - dmin) / math.sqrt(n)
+
+
+def throughput(hw: dict, cls: str, speed: str) -> tuple[float, bool]:
+    """Tokens/s per GPU for a model class at the response-speed point, and whether it is a measured figure."""
+    v = hw["tokens_per_s_per_gpu"][cls]
+    measured = cls in hw.get("measured", [])
+    if isinstance(v, dict):
+        return float(v[speed]), measured
+    return float(v), measured
+
+
+def size_tier(tier: str, dem: list, nt: list, hw: dict, d: dict, speed: str = "base") -> dict:
     der = d["production_derating"]["value"]
     pue = d["pue"]["value"]
     idle = d["idle_power_fraction"]["value"]
-    tps = hw["tokens_per_s_per_gpu"]
-    rows = [r for r in dem if r["tier"] == tier]
+    rows = [r for r in dem if r["tier"] == tier and r["sessions"] > 0]
+    ntr = [w for w in nt if w["tier"] == tier and w["gpu_hours_day"] > 0]
+    n_apps = len({r["id"] for r in rows} | {w["id"] for w in ntr if w["mode"] == "Interactive"})
+    D = diversity(n_apps, d)
+    # Effective throughput: measured figures are used as is; derived or placeholder figures are derated.
+    eff = {}
+    for c in CLASSES:
+        tps, measured = throughput(hw, c, speed)
+        eff[c] = tps if measured else tps * der
     peak = {c: sum(r["peak_eq_tps"] for r in rows if r["model_class"] == c) * D for c in CLASSES}
     avg = {c: sum(r["avg_eq_tps"] for r in rows if r["model_class"] == c) for c in CLASSES}
-    gpus_llm = _roundup(sum(peak[c] / tps[c] for c in CLASSES) / der)
-    ntr = [w for w in nt if w["tier"] == tier]
-    gpus_nt = _roundup(sum(w["peak_gpus"] for w in ntr) * D)
-    busy = (sum(avg[c] / tps[c] for c in CLASSES) / der * 24
+    llm_need = sum(peak[c] / eff[c] for c in CLASSES)
+    nt_need = sum(w["peak_gpus"] for w in ntr) * D
+    gpus_llm, gpus_nt = _roundup(llm_need), _roundup(nt_need)
+    busy = (sum(avg[c] / eff[c] for c in CLASSES) * 24
             + sum(w["gpu_hours_day"] for w in ntr if w["mode"] == "Interactive"))
     batch = sum(w["gpu_hours_day"] for w in ntr if w["mode"] == "Batch")
     base = gpus_llm + gpus_nt
     idle_h = max(0.0, base * 24 - busy)
-    extra = _roundup(max(0.0, batch - idle_h) / 24)
-    total = base + extra
+    extra_need = max(0.0, batch - idle_h) / 24
+    extra = _roundup(extra_need)
+    need = llm_need + nt_need + extra_need          # fractional GPUs actually needed
+    below = (not rows) and 0 < need < d["gpu_threshold"]["value"] if "gpu_threshold" in d else False
+    if below:                                      # tiny non-LLM load: no dedicated GPU
+        gpus_llm = gpus_nt = extra = 0
+    total = gpus_llm + gpus_nt + extra
     util = min(1.0, (busy + batch) / (total * 24)) if total else 0.0
     it_kw = total * hw["kw_per_gpu"]
     return dict(
-        tier=tier, hardware=hw["id"], peak_eq_tps=peak, gpus_llm=gpus_llm, gpus_nontoken=gpus_nt,
-        gpus_batch_extra=extra, gpus=total, utilisation=util, it_kw=it_kw,
-        facility_mw=it_kw * pue / 1000,
+        tier=tier, hardware=hw["id"], n_apps=n_apps, diversity=D, peak_eq_tps=peak, gpus_llm=gpus_llm,
+        gpus_nontoken=gpus_nt, gpus_batch_extra=extra, gpus=total, gpu_need=need, below_threshold=below,
+        utilisation=util, it_kw=it_kw, facility_mw=it_kw * pue / 1000,
         racks=_roundup(it_kw / hw["rack_kw"]) if it_kw else 0,
         energy_mwh=it_kw * (idle + (1 - idle) * util) * pue * 8760 / 1000,
         annual_eq_m=sum(r["annual_eq_m"] for r in rows),
     )
 
 
-def pick_hardware(p: Profile, hardware: list, it_mw_if_air: float, d: dict) -> dict:
-    hw_by_id = {h["id"]: h for h in hardware}
+def candidate_hardware(p: Profile, hardware: list, it_mw_if_air: float, d: dict) -> list:
+    """Profiles allowed for a tier. Weak grid or small load: air-cooled only."""
     if p.hardware_choice != "auto":
-        return hw_by_id[p.hardware_choice]
-    weak = p.country.get("outages_per_month", 0) > d["weak_grid_outages_threshold"]["value"]
-    air = next(h for h in hardware if h["weak_grid_ok"])
-    if weak or it_mw_if_air < d["dense_profile_min_it_mw"]["value"]:
-        return air
-    dense = [h for h in hardware if not h["weak_grid_ok"]]
-    return dense[0] if dense else air
+        return [h for h in hardware if h["id"] == p.hardware_choice]
+    o = p.country.get("outages_per_month")
+    weak_or_unknown = o is None or o > d["weak_grid_outages_threshold"]["value"]
+    if weak_or_unknown or it_mw_if_air < d["dense_profile_min_it_mw"]["value"]:
+        return [h for h in hardware if h["weak_grid_ok"]]
+    return list(hardware)
 
 
 # ----------------------------------------------------------------- Layer 5
@@ -162,44 +198,110 @@ def cost_params(p: Profile, d: dict, scenario: str) -> dict:
     c = d["costs"]
     q = p.quotes or {}
     kwh = q.get("electricity_usd_kwh") or p.country.get("electricity_usd_kwh")
-    out = dict(
+    return dict(
         kwh=kwh if kwh else c["electricity_usd_kwh"][scenario],
         fac=q.get("facility_capex_usd_per_mw_it") or c["facility_capex_usd_per_mw_it"][scenario],
         capex_mult=1.0 if q.get("gpu_capex_usd") else c["gpu_capex_multiplier"][scenario],
         hour_mult=1.0 if q.get("gpu_hour_usd") else c["gpu_hour_multiplier"][scenario],
         api_mult=1.0 if q.get("api_prices") else c["api_price_multiplier"][scenario],
+        cache_share=c["cached_input_price_share"][scenario] if "cached_input_price_share" in c else 0.0,
     )
-    return out
+
+
+def finance(p: Profile, d: dict) -> tuple[float, float, float]:
+    f = p.finance or {}
+    pick = lambda k: f[k] if f.get(k) is not None else d[k]["value"]
+    return pick("discount_rate"), pick("demand_growth"), pick("price_decline")
+
+
+def staff_fte(n_gpus: float, d: dict) -> float:
+    if not n_gpus:
+        return 0.0
+    if d.get("staff_mode", {}).get("value", "scaled") == "flat":
+        return d["fte_per_owned_tier"]["value"]
+    return d["fte_min"]["value"] + n_gpus / d["gpus_per_fte"]["value"]
 
 
 def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dict, scenario: str) -> dict:
+    """Present value (discounted at year start) of each allowed buying mode over the horizon."""
     tier = sz["tier"]
     t = d["tiers"][tier]
     cp = cost_params(p, d, scenario)
     q = p.quotes or {}
-    hor = d["horizon_years"]["value"]
+    r, g, dec = finance(p, d)
+    H, R = int(d["horizon_years"]["value"]), int(d["gpu_refresh_years"]["value"])
+    idle = d["idle_power_fraction"]["value"]
+    pue = d["pue"]["value"]
     rate = (q.get("gpu_hour_usd") or hw["gpu_hour_usd"]) * cp["hour_mult"]
     capex_gpu = (q.get("gpu_capex_usd") or hw["capex_per_gpu_usd"]) * cp["capex_mult"]
     prices = q.get("api_prices") or api_prices
-    n, it_mw = sz["gpus"], sz["it_kw"] / 1000
-    rows = [r for r in dem if r["tier"] == tier]
-    api_llm = sum(r["annual_uncached_input_m"] * prices[r["model_class"]]["input"]
-                  + r["annual_output_m"] * prices[r["model_class"]]["output"] for r in rows) * cp["api_mult"]
+    rows = [x for x in dem if x["tier"] == tier]
+    api_llm = sum(x["annual_uncached_input_m"] * prices[x["model_class"]]["input"]
+                  + x.get("annual_cached_input_m", 0) * prices[x["model_class"]]["input"] * cp["cache_share"]
+                  + x["annual_output_m"] * prices[x["model_class"]]["output"] for x in rows) * cp["api_mult"]
+    years = range(1, H + 1)
+    grow = {y: (1 + g) ** (y - 1) for y in years}
+    price = {y: (1 - dec) ** (y - 1) for y in years}
+    disc = {y: 1 / (1 + r) ** (y - 1) for y in years}
+    gpus = {y: _roundup(sz["gpus"] * grow[y]) for y in years}
+    nt_gpus = {y: _roundup((sz["gpus_nontoken"] + sz["gpus_batch_extra"]) * grow[y]) for y in years}
     out = {}
     if t["api"]:
-        out["API / managed"] = (api_llm + (sz["gpus_nontoken"] + sz["gpus_batch_extra"]) * 8760 * rate) * hor
+        out["API / managed"] = sum(disc[y] * price[y] * (api_llm * grow[y] + nt_gpus[y] * 8760 * rate) for y in years)
     if t["gpuaas"]:
-        out["GPU-as-a-service"] = n * 8760 * rate * hor
+        out["GPU-as-a-service"] = sum(disc[y] * price[y] * gpus[y] * 8760 * rate for y in years)
     if t["owned"]:
-        capex = n * capex_gpu * _roundup(hor / d["gpu_refresh_years"]["value"]) + it_mw * cp["fac"]
-        opex = (sz["energy_mwh"] * 1000 * cp["kwh"] + n * hw["software_per_gpu_year_usd"]
-                + (d["fte_per_owned_tier"]["value"] * d["cost_per_fte_usd"]["value"] if n else 0)
-                + d["maintenance_share"]["value"] * (n * capex_gpu + it_mw * cp["fac"]))
-        out["Owned"] = capex + opex * hor
-    return out
+        it_mw_max = max(gpus.values()) * hw["kw_per_gpu"] / 1000
+        fac_capex = it_mw_max * cp["fac"]
+        total = fac_capex  # facility built in year 1, sized for the last year
+        for c in range(math.ceil(H / R)):
+            start, end = 1 + c * R, min(H, (c + 1) * R)
+            owned = gpus[end]                                   # buy for demand at the end of the cycle
+            total += disc[start] * owned * capex_gpu * price[start]
+            for y in range(start, end + 1):
+                util = min(1.0, sz["utilisation"] * sz["gpus"] * grow[y] / owned) if owned else 0.0
+                energy_mwh = owned * hw["kw_per_gpu"] * (idle + (1 - idle) * util) * pue * 8760 / 1000
+                opex = (energy_mwh * 1000 * cp["kwh"] + owned * hw["software_per_gpu_year_usd"]
+                        + staff_fte(owned, d) * d["cost_per_fte_usd"]["value"]
+                        + d["maintenance_share"]["value"] * (owned * capex_gpu + fac_capex))
+                total += disc[y] * opex
+        out["Owned"] = total
+    tokens_pv = sum(disc[y] * sz["annual_eq_m"] * grow[y] for y in years)
+    return {"modes": out, "tokens_pv_m": tokens_pv}
+
+
+def step_for(tier: str, sz: dict, d: dict) -> str:
+    if sz["below_threshold"]:
+        return "Below GPU threshold: run on existing servers (CPU or a shared GPU)"
+    if sz["gpus"] == 0:
+        return "No demand in this tier"
+    if tier in ("T1", "T2"):
+        return "Step 0: use cloud / API under residency terms now"
+    mw = sz["facility_mw"]
+    if mw < d["step1_max_facility_mw"]["value"]:
+        return "Step 1: small sovereign inference node in an existing facility"
+    if mw < d["step3_min_facility_mw"]["value"]:
+        return "Step 2: colocation in an existing commercial data centre, private operator"
+    return "Step 3: dedicated facility via PPP or private operator (IFC-investable)"
 
 
 # ----------------------------------------------------------------- Run
+def grid_status(p: Profile, hw: dict, sz: dict, tier: str, d: dict) -> str:
+    if sz["gpus"] == 0:
+        return "-"
+    if tier == "T1":
+        return "Offshore: not applicable"
+    o = p.country.get("outages_per_month")
+    if o is None:
+        return "Unknown: check grid reliability (air-cooled assumed)"
+    weak = o > d["weak_grid_outages_threshold"]["value"]
+    if weak and not hw["weak_grid_ok"]:
+        return "WARNING: profile unsuitable for weak grid"
+    if weak:
+        return "Weak grid: budget backup and storage"
+    return "OK"
+
+
 def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) -> dict:
     api_prices = api_prices or d["api_prices_fallback"]
     dem = demand_rows(p, d)
@@ -208,40 +310,24 @@ def run(p: Profile, catalogue: dict, d: dict, api_prices: dict | None = None) ->
     tiers = {}
     for t in TIERS:
         air = next(h for h in hardware if h["weak_grid_ok"])
-        first = size_tier(t, dem, nt, air, d)
-        hw = pick_hardware(p, hardware, first["it_kw"] / 1000, d)
-        sz = first if hw["id"] == air["id"] else size_tier(t, dem, nt, hw, d)
-        tco = {s: tco_tier(sz, dem, hw, api_prices, p, d, s) for s in SCENARIOS}
-        base = tco["base"]
-        if sz["gpus"] == 0 or not base:
-            mode, best = "No demand", 0.0
+        first = size_tier(t, dem, nt, air, d, p.speed)
+        options = [(h, size_tier(t, dem, nt, h, d, p.speed))
+                   for h in candidate_hardware(p, hardware, first["it_kw"] / 1000, d)]
+        hw, sz = min(options, key=lambda o: (o[1]["gpus"] * o[0]["gpu_hour_usd"], o[1]["it_kw"]))
+        res = {s: tco_tier(sz, dem, hw, api_prices, p, d, s) for s in SCENARIOS}
+        tco = {s: res[s]["modes"] for s in SCENARIOS}
+        if sz["gpus"] == 0 or not tco["base"]:
+            mode, best, winners = ("Below GPU threshold" if sz["below_threshold"] else "No demand"), 0.0, {}
         else:
-            mode = min(base, key=base.get)
-            best = base[mode]
-        weak = p.country.get("outages_per_month", 0) > d["weak_grid_outages_threshold"]["value"]
-        if sz["gpus"] == 0:
-            grid = "-"
-        elif t == "T1":
-            grid = "Offshore: not applicable"
-        elif weak and not hw["weak_grid_ok"]:
-            grid = "WARNING: profile unsuitable for weak grid"
-        elif weak:
-            grid = "Weak grid: budget backup and storage"
-        else:
-            grid = "OK"
-        if sz["gpus"] == 0:
-            step = "No demand in this tier"
-        elif t in ("T1", "T2"):
-            step = "Step 0: use cloud / API under residency terms now"
-        elif sz["facility_mw"] < d["step1_max_facility_mw"]["value"]:
-            step = "Step 1: small sovereign inference node in an existing facility"
-        else:
-            step = "Step 2: dedicated capacity via private operator or PPP (IFC-investable)"
-        cost_range = {s: (tco[s].get(mode) if mode in tco[s] else None) for s in SCENARIOS}
-        per_m = best / (sz["annual_eq_m"] * d["horizon_years"]["value"]) if sz["annual_eq_m"] else None
-        tiers[t] = dict(sizing=sz, tco=tco, cheapest_mode=mode, cheapest_cost=best,
-                        cost_range=cost_range, usd_per_m_eq_tokens=per_m, grid=grid, step=step,
-                        hardware=hw["id"])
+            winners = {s: min(tco[s], key=tco[s].get) for s in SCENARIOS}
+            mode = winners["base"]
+            best = tco["base"][mode]
+        flips = len(set(winners.values())) > 1
+        cost_range = {s: (tco[s][winners[s]] if winners else None) for s in SCENARIOS}
+        per_m = best / res["base"]["tokens_pv_m"] if res["base"]["tokens_pv_m"] and best else None
+        tiers[t] = dict(sizing=sz, tco=tco, cheapest_mode=mode, cheapest_cost=best, winners=winners,
+                        winner_changes=flips, cost_range=cost_range, usd_per_m_eq_tokens=per_m,
+                        grid=grid_status(p, hw, sz, t, d), step=step_for(t, sz, d), hardware=hw["id"])
     return dict(demand=dem, nontoken=nt, tiers=tiers,
                 totals=dict(gpus=sum(v["sizing"]["gpus"] for v in tiers.values()),
                             facility_mw=sum(v["sizing"]["facility_mw"] for v in tiers.values()),
