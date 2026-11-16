@@ -281,3 +281,75 @@
   url: https://platform.openai.com/docs/guides/prompt-caching
   used_for: Cached input price share, up to 50% of input price
   type: Provider pricing
+- id: S48
+  title: 'TradeOff Tools: Data center capital cost calculator; Data center efficiency and PUE calculator'
+  publisher: Schneider Electric
+  url: https://www.se.com/ww/en/work/solutions/for-business/data-centers-and-networks/trade-off-tools
+  used_for: Site-specific facility $/W and PUE (client calibration)
+  type: Online tool
+- id: S49
+  title: Which regions have the most energy efficient data centers? (Global Data Center Survey 2020)
+  publisher: Uptime Institute
+  url: https://journal.uptimeinstitute.com/datacenter-energy-efficiency-by-region/
+  used_for: 'Regional PUE averages: Europe 1.46, Africa and Middle East 1.79'
+  type: Industry survey
+- id: S50
+  title: Mapping PUE trends by data center region, age and size (Global Data Center Survey 2025)
+  publisher: Uptime Institute (Oct 2025)
+  url: https://intelligence.uptimeinstitute.com/resource/mapping-pue-trends-data-center-region-age-and-size
+  used_for: Share of facilities below PUE 1.5 by region; newer and larger sites lower
+  type: Industry survey
+- id: S51
+  title: Quantifying data center PUE when introducing liquid cooling (ASME paper with NVIDIA)
+  publisher: Vertiv / NVIDIA
+  url: https://www.vertiv.com/en-us/about/news-and-events/articles/blog-posts/quantifying-data-center-pue-when-introducing-liquid-cooling/
+  used_for: 'Liquid cooling: -18.1% facility power, -10.2% total power, -7% IT power (fans)'
+  type: Engineering study
+- id: S52
+  title: Data Centre Construction Cost Index 2026-2027 (African and lowest-cost markets)
+  publisher: Turner & Townsend, via Engineering News (Oct 2026)
+  url: https://www.engineeringnews.co.za/article/study-shows-african-countries-competitive-for-data-centre-construction-2026-10-27
+  used_for: 'Construction cost per watt: Lagos, Johannesburg, Nairobi, Mumbai, Shanghai, Ho Chi Minh City, Bogota, UAE; 7-10% liquid-cooled premium'
+  type: Industry cost index
+- id: S53
+  title: Data Centre Construction Cost Index 2025-2026
+  publisher: Turner & Townsend (Nov 2025)
+  url: https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2025/data-centre-cost-trends
+  used_for: 'Construction cost per watt: Jakarta, Malaysia, Saudi Arabia, Singapore, Tokyo; 7-10% liquid-cooled premium (US)'
+  type: Industry cost index
+- id: S54
+  title: 'White Paper 282: Capital Cost Analysis of Immersive Liquid-Cooled vs. Air-Cooled Large Data Centers'
+  publisher: Schneider Electric
+  url: https://www.se.com/ww/en/download/document/SPD_WP282_EN
+  used_for: Liquid vs air capex equal at 10 kW/rack; 10% / 14% lower at 20 / 40 kW/rack
+  type: Engineering study
+- id: S55
+  title: The fastest Whisper transcription (2,400x real time large-v3-turbo, 1,800x large-v3 on H100)
+  publisher: Baseten
+  url: https://www.baseten.co/blog/the-fastest-transcription-with-streaming-and-diarization/
+  used_for: Batched speech-to-text GPU-seconds per audio hour
+  type: Provider benchmark
+- id: S56
+  title: Best GPU for Whisper (real-time factor by GPU)
+  publisher: Runpod (Sept 2026)
+  url: https://www.runpod.io/articles/guides/best-gpu-for-whisper
+  used_for: Unbatched Whisper ~25-60x real time per GPU
+  type: Provider benchmark
+- id: S57
+  title: 'AI-based clinical decision support for primary care: a real-world study (AI Consult, 39,849 visits)'
+  publisher: Penda Health / OpenAI (arXiv 2507.16947, 2025)
+  url: https://arxiv.org/abs/2507.16947
+  used_for: Background clinical safety net on every visit, activated at key decision points
+  type: Real-world study
+- id: S58
+  title: 'Learning in the Open: What AI Is (and Isn''t) Changing'
+  publisher: Khan Academy (2026)
+  url: https://blog.khanacademy.org/learning-in-the-open-what-ai-is-and-isnt-changing/
+  used_for: 'Khanmigo: ~269,000 weekday interactions; ~15% of students with access engage'
+  type: Provider data
+- id: S59
+  title: 'Sal Khan: AI tutors need human input'
+  publisher: McGraw Prize in Education
+  url: https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input
+  used_for: 'Khanmigo reach: nearly 1 million students'
+  type: Press

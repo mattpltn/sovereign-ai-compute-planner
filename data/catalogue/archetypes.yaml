@@ -29,7 +29,7 @@
   data_class: 3
   confidence: {volume: High, tokens: Medium}
   evidence:
-    rate: "UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week."
+    rate: "UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is scaled by the 80% of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4 per person with access. Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate."
     tokens: "Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two."
     cache: "System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34)."
     burst: "Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption."
@@ -65,7 +65,7 @@
   group: Generative AI
   unit: users
   unit_label: Students with access
-  rate: {low: 0.18, base: 0.54, high: 1.08}   # = 0.05 / 0.15 / 0.30 x 3.6
+  rate: {low: 0.1, base: 0.27, high: 1.08}
   isl: 1500
   system_prompt_tokens: 800
   osl: 400
@@ -80,9 +80,9 @@
   sla_headroom: 1.1
   seasonal: 1.3
   data_class: 2
-  confidence: {volume: Low, tokens: Medium}
+  confidence: {volume: Medium, tokens: Medium}
   evidence:
-    rate: "Rate per student with access = share of students active in a given week (assumed 5% / 15% / 30%) x 3.6 messages per weekly active user per day (ChatGPT: ~2.5B messages per day / ~700M weekly active users, averaged over all 7 days) (S39). Users under 26 send nearly half of ChatGPT messages. The active shares are assumptions."
+    rate: "Base 0.27 interactions per student with access per day: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59), and only ~15% of students with access engage with it (S58). Low 0.1: about a third of Base, for schools without classroom integration. High 1.08 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39)."
     tokens: "As citizen assistant (S31, S32)."
 
 - id: frontline_health
@@ -107,7 +107,7 @@
   data_class: 4
   confidence: {volume: Low, tokens: Medium}
   evidence:
-    rate: "One request per consultation, 3-20 consultations per worker per day: assumption, replace with programme data."
+    rate: "One request per consultation typed by the health worker, 3-20 per worker per day: assumption, replace with programme data. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, S57)."
     tokens: "Chat shape (S31, S32) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question (S43)."
     seasonal: "1.5 for epidemic peaks: assumption."
 
@@ -261,21 +261,122 @@
     rate: "Research tasks per analyst per day: assumption."
     tokens: "About 15x a copilot request (≈55k vs ≈3.7k tokens per task, 14.7x). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
 
+- id: clinical_safety_net
+  label: Clinical safety net (runs automatically on every patient visit)
+  group: Generative AI
+  unit: items
+  unit_label: Patient visits per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 2000
+  system_prompt_tokens: 1000
+  osl: 200
+  reasoning_tokens: 0
+  agent_steps: 3
+  retry: 1.05
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 1.5
+  sla_headroom: 1.1
+  seasonal: 1.3
+  data_class: 4
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    rate: "One task per visit, triggered automatically. Visits per day come from the ministry of health. Penda Health's AI Consult runs in the background of every visit at key decision points and alerts the clinician only when it detects a possible error; studied on 39,849 visits in 15 Nairobi clinics (S57)."
+    tokens: "3 model calls per visit (history, diagnosis, treatment checkpoints), each ~2,000 tokens of visit notes + 1,000 system, 200 out: assumption informed by the AI Consult design (S57)."
+
+- id: teacher_assistant
+  label: Teacher assistant (lesson planning, differentiated materials)
+  group: Generative AI
+  unit: users
+  unit_label: Teachers with access
+  rate: {low: 0.7, base: 1.4, high: 3.6}
+  isl: 2000
+  system_prompt_tokens: 1000
+  osl: 600
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 1.2
+  data_class: 2
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "Modelled on the staff copilot rates (S36, S37, S39): no published per-teacher usage data yet. Often a more realistic first step than student tutors; a World Bank pilot in Peru is training ~500 teachers with Copilot (reviewer-provided, internal source, to verify)."
+    tokens: "Copilot shape with longer outputs (lesson plans, worksheets): 600 output tokens."
+
+- id: agriculture_advisory
+  label: Agriculture advisory for farmers (chat or voice)
+  group: Generative AI
+  unit: users
+  unit_label: Farmers registered on the service
+  rate: {low: 0.1, base: 0.37, high: 0.6}
+  isl: 1500
+  system_prompt_tokens: 800
+  osl: 300
+  reasoning_tokens: 0
+  agent_steps: 1
+  retry: 1.1
+  cache_hit: 0.5
+  model_class: M
+  peak_share: 0.6
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.1
+  seasonal: 2.0
+  data_class: 1
+  confidence: {volume: Low, tokens: Medium}
+  evidence:
+    rate: "Per registered farmer per day. Digital Green's Farmer.Chat: active users consult ~18 times a month (~0.6/day) and 61% of Kenyan users use it meaningfully: 0.61 x 0.6 ≈ 0.37 (reviewer-provided, to verify against Digital Green and 60 Decibels). For a whole farming population rather than registered users, use the citizen assistant rate: India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93M beneficiaries (S40)."
+    tokens: "Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels."
+    seasonal: "2.0 for planting season: assumption."
+
+- id: voice_agent
+  label: Voice agent for public services (phone line, real time)
+  group: Generative AI
+  unit: items
+  unit_label: Calls per day
+  rate: {low: 1, base: 1, high: 1}
+  isl: 1500
+  system_prompt_tokens: 800
+  osl: 80
+  reasoning_tokens: 0
+  agent_steps: 6
+  retry: 1.05
+  cache_hit: 0.7
+  model_class: M
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 2
+  sla_headroom: 1.3
+  seasonal: 1.3
+  data_class: 3
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    rate: "One task per call; calls per day come from the call centre. Example: Portugal's 112 emergency line receives ~9 million calls a year (reviewer-provided, to verify)."
+    tokens: "~6 conversational turns per call with short spoken replies (80 tokens) and growing context: assumption. Strict response time: SLA headroom 1.3 and use the Fast response speed. Add Speech-to-text (call hours) and Text-to-speech applications for the audio."
+
 # ---------------------------------------------------------------- non-token deep learning
 - id: speech_to_text
   label: Speech-to-text
   group: Other AI (non-LLM)
   unit: items
   unit_label: Audio hours per day
-  gpu_seconds_per_unit: 60
+  gpu_seconds_per_unit: 6
   mode: Interactive
   peak_share: 0.7
   peak_window_h: 10
   burst: 1.5
   data_class: 3
-  confidence: {volume: High, tokens: Low}
+  confidence: {volume: High, tokens: Medium}
   evidence:
-    gpu: "PLACEHOLDER ~60 GPU-seconds per audio hour (~60x real time). Calibrate with the MLPerf Inference Whisper result for your GPU (S08)."
+    gpu: "6 GPU-seconds per audio hour (~600x real time) for batched, optimised Whisper large-v3 / turbo on one data-centre GPU: Baseten reports 1,800-2,400x real time on an H100 node (S55). Unbatched single-stream decoding is far slower (~27x real time on H100, i.e. ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45)."
 
 - id: ocr
   label: OCR and layout extraction
@@ -351,3 +452,33 @@
   confidence: {volume: Medium, tokens: Medium}
   evidence:
     gpu: "Enter the training budget directly in GPU-hours per year; it runs in idle GPU time first (S03)."
+
+- id: text_to_speech
+  label: Text-to-speech (voice replies)
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Audio hours generated per day
+  gpu_seconds_per_unit: 40
+  mode: Interactive
+  peak_share: 0.7
+  peak_window_h: 10
+  burst: 2
+  data_class: 3
+  confidence: {volume: High, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER 40 GPU-seconds per generated audio hour (~90x real time). Calibrate with the chosen TTS model on the target GPU. Needed for any voice service."
+
+- id: embeddings_indexing
+  label: Retrieval indexing (embeddings for document search)
+  group: Other AI (non-LLM)
+  unit: items
+  unit_label: Document pages indexed per day (new + re-indexing)
+  gpu_seconds_per_unit: 0.01
+  mode: Batch
+  peak_share: 0.5
+  peak_window_h: 12
+  burst: 1
+  data_class: 3
+  confidence: {volume: Medium, tokens: Low}
+  evidence:
+    gpu: "PLACEHOLDER 0.01 GPU-seconds per page (~500 tokens per page with a small embedding model). Almost every assistant depends on an index; size it from the pages in scope divided by the re-indexing period, plus new pages per day."
