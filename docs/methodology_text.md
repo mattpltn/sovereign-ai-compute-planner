@@ -78,7 +78,7 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
 
-**Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
+**Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]: employed labour force × public sector share of employment. This counts all public sector employees, including teachers and health workers, so it is an upper bound for office staff; it is shown on the Setup country line; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
 
 ### 3.2 What the tool provides
 

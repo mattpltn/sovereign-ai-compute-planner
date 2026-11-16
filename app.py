@@ -435,6 +435,10 @@ def server(input, output, session):
             bits.append(f'internet use {c["internet_share"]:.0%}')
         if c.get("electricity_usd_kwh"):
             bits.append(f'tariff ${c["electricity_usd_kwh"]:.2f}/kWh')
+        cs = c.get("civil_servants")
+        if cs:
+            yr = c.get("_sources", {}).get("public_employment_share", "")[-4:]
+            bits.append(f"civil servants ~{sig2(cs):,.0f} (all public sector employees, {c['public_employment_share']:.0%} of jobs, {yr})")
         cc = COUNTRIES[input.iso()]
         o, s = cc.get("outages_per_month"), cc.get("firms_with_outages_share")
         if o is not None:
