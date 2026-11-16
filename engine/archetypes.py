@@ -28,7 +28,7 @@ def to_engine_rows(apps: list[dict], archetypes: dict) -> tuple[list, list]:
         cls = int(a.get("data_class") or t["data_class"])
         if is_llm(t):
             r = a.get("rate_override")
-            rate = {"low": r, "base": r, "high": r} if r else t["rate"]
+            rate = {"low": r, "base": r, "high": r} if r else rate_for(a, t)
             llm.append(dict(
                 id=a["uid"], name=a["name"], include=1, stage="Production", driver="Fixed",
                 eligible_share=1, fixed_base=vol, pilot_users=0, citizen_facing=0,
@@ -52,6 +52,38 @@ def to_engine_rows(apps: list[dict], archetypes: dict) -> tuple[list, list]:
                 data_class=cls, type=a["type"],
             ))
     return llm, nt
+
+
+POPULATION_BASIS = {
+    "eligible": "everyone eligible",
+    "users": "service users",
+}
+
+
+def normalize_app(a: dict) -> dict:
+    """Bring an application from any saved scenario version up to date.
+
+    population_basis (v0.7): missing means "eligible", which reproduces earlier results.
+    """
+    a = dict(a)
+    if a.get("population_basis") not in POPULATION_BASIS:
+        a["population_basis"] = "eligible"
+    return a
+
+
+def rate_for(app: dict, t: dict) -> dict:
+    """Low / Base / High rate for an application, using the population basis when the type has one."""
+    by = t.get("rate_by_basis")
+    if by:
+        return by[normalize_app(app)["population_basis"]]
+    return t["rate"]
+
+
+def basis_label(app: dict, archetypes: dict) -> str | None:
+    """'everyone eligible' / 'service users' for types that distinguish them, else None."""
+    if archetypes[app["type"]].get("rate_by_basis"):
+        return POPULATION_BASIS[normalize_app(app)["population_basis"]]
+    return None
 
 
 def build_profile(country: dict, ambition: str, apps: list, archetypes: dict, class_to_tier: dict,
@@ -81,7 +113,13 @@ VOLUME_LIMITS = {
     "frontline_health": ("population", 0.005, "population"),
     "citizen_assistant": ("population", 1.0, "population"),
     "tutor": ("population", 0.3, "population"),
+    # agriculture_advisory: checked against agricultural workers with a tolerance from the global defaults.
 }
+
+# Types where the volume can be "everyone eligible" rather than service users; very low usage is flagged.
+POPULATION_TYPES = ("citizen_assistant", "agriculture_advisory", "tutor")
+LOW_USAGE_REQUESTS_PER_DAY = 100
+DATA_MIN_YEAR_AGRI = 2015
 
 
 def reference_sizes(country: dict) -> dict:
@@ -90,11 +128,26 @@ def reference_sizes(country: dict) -> dict:
     cs = country.get("civil_servants")
     if not cs and country.get("labour_force") and country.get("public_employment_share"):
         cs = country["labour_force"] * (1 - country.get("unemployment_share", 0)) * country["public_employment_share"]
+    agri, agri_year = country.get("agri_workers_est"), None
+    if agri:
+        import re
+        yrs = re.findall(r"\b(19\d\d|20\d\d)\b", country.get("_sources", {}).get("agri_workers_est", ""))
+        agri_year = int(yrs[-1]) if yrs else None
+        if agri_year is None or agri_year < DATA_MIN_YEAR_AGRI:
+            agri = None   # unknown: missing or older than 2015, no check
     return {"population": pop, "civil_servants": cs or (0.02 * pop if pop else None),
-            "civil_servants_estimated": not country.get("civil_servants")}
+            "civil_servants_estimated": not country.get("civil_servants"),
+            "agri_workers": agri, "agri_year": agri_year}
 
 
-def volume_warning(app: dict, country: dict, archetypes: dict) -> str | None:
+def volume_warning(app: dict, country: dict, archetypes: dict, agri_tolerance: float = 1.5) -> str | None:
+    if app["type"] == "agriculture_advisory":
+        ref = reference_sizes(country)
+        n, vol = ref["agri_workers"], float(app.get("volume") or 0)
+        if not n or vol <= agri_tolerance * n:
+            return None
+        return (f'This is about {vol / n:.0f}× the estimated number of agricultural workers in '
+                f'{country.get("name", "this country")} (~{n:,.0f}, ILO modeled, {ref["agri_year"]}). Check the figure.')
     lim = VOLUME_LIMITS.get(app["type"])
     if not lim:
         return None
@@ -108,3 +161,101 @@ def volume_warning(app: dict, country: dict, archetypes: dict) -> str | None:
         return (f'{vol:,.0f} {unit} is {vol / ref:.1%} of {label} ({ref:,.0f}); '
                 f'the plausible maximum for this type is about {share:.0%}. Check the number.')
     return None
+
+
+def low_usage_note(app: dict, archetypes: dict, ambition: str = "Base") -> str | None:
+    """Information only: population-based types with very few requests per day."""
+    if app["type"] not in POPULATION_TYPES:
+        return None
+    t = archetypes[app["type"]]
+    r = app.get("rate_override") or rate_for(app, t)[{"Low": "low", "Base": "base", "High": "high"}.get(ambition, "base")]
+    per_day = float(app.get("volume") or 0) * r
+    if per_day < LOW_USAGE_REQUESTS_PER_DAY:
+        return (f'{app["name"]}: about {per_day:,.0f} requests per day. Very low usage: check whether the volume '
+                'is the whole eligible population or service users.')
+    return None
+
+
+# ---------------------------------------------------------------- custom application types (uploaded CSV)
+CUSTOM_TEMPLATE = Path(__file__).resolve().parent.parent / "data" / "templates" / "custom_application_types.csv"
+CONF = ("High", "Medium", "Low")
+BASIS = ("observed", "derived", "assumption", "uncalibrated", "client")
+_LLM_NUM = ("rate_low", "rate_base", "rate_high", "active_days_per_year", "isl", "system_prompt_tokens", "osl",
+            "reasoning_tokens", "agent_steps", "retry", "cache_hit", "peak_share", "peak_window_h", "burst",
+            "sla_headroom", "seasonal")
+_NT_NUM = ("gpu_seconds_per_unit", "peak_share", "peak_window_h", "burst")
+
+
+def parse_custom_types(text: str, existing: dict | None = None) -> tuple[dict, list]:
+    """Read custom application types from the CSV template. Returns ({id: archetype}, [errors]).
+
+    One row per type. kind = llm (token-based) or other (GPU-seconds per unit). Rows with errors are skipped and
+    reported; nothing is guessed. Ids get the prefix custom_ so they never replace a catalogue type.
+    """
+    import csv
+    import io
+    out, errs = {}, []
+    rows = [r for r in csv.DictReader(io.StringIO(text.lstrip("﻿"))) if any((v or "").strip() for v in r.values())]
+    if not rows:
+        return {}, ["The file has no rows. Use the template: one row per application type."]
+    for n, r in enumerate(rows, start=2):
+        r = {k.strip(): (v or "").strip() for k, v in r.items() if k}
+        where = f"Row {n} ({r.get('label') or r.get('id') or '?'})"
+        try:
+            kind = r.get("kind", "").lower()
+            if kind not in ("llm", "other"):
+                raise ValueError("kind must be llm or other")
+            if not r.get("id") or not r.get("label") or not r.get("unit_label"):
+                raise ValueError("id, label and unit_label are required")
+            tid = "custom_" + "".join(ch if ch.isalnum() else "_" for ch in r["id"].lower()).strip("_")
+            if tid in out or (existing and tid in existing):
+                raise ValueError(f"id {r['id']} is used twice")
+            num = {}
+            for f in (_LLM_NUM if kind == "llm" else _NT_NUM):
+                if not r.get(f):
+                    raise ValueError(f"{f} is required for kind={kind}")
+                num[f] = float(r[f])
+                if num[f] < 0:
+                    raise ValueError(f"{f} must not be negative")
+            dc = int(r.get("data_class") or 0)
+            if dc not in (1, 2, 3, 4):
+                raise ValueError("data_class must be 1, 2, 3 or 4")
+            cv, cs = r.get("confidence_volume", "Low").capitalize(), r.get("confidence_size", "Low").capitalize()
+            if cv not in CONF or cs not in CONF:
+                raise ValueError("confidence must be High, Medium or Low")
+            br, bs = r.get("basis_rate", "assumption").lower(), r.get("basis_size", "assumption").lower()
+            if br not in BASIS or bs not in BASIS:
+                raise ValueError(f"basis must be one of {', '.join(BASIS)}")
+            ev = {k: r[f"evidence_{k}"] for k in ("rate", "size", "gpu") if r.get(f"evidence_{k}")}
+            ev = ev or {"rate": "Custom type uploaded by the user: no evidence given."}
+            common = dict(id=tid, label=r["label"] + " (custom)", unit_label=r["unit_label"], data_class=dc,
+                          peak_share=num["peak_share"], peak_window_h=num["peak_window_h"], burst=num["burst"],
+                          confidence={"volume": cv, "tokens": cs}, evidence=ev, custom=True)
+            if not 0 < num["peak_share"] <= 1 or not 0 < num["peak_window_h"] <= 24:
+                raise ValueError("peak_share must be in (0, 1] and peak_window_h in (0, 24]")
+            if kind == "llm":
+                if r.get("unit") not in ("users", "items"):
+                    raise ValueError("unit must be users or items")
+                if r.get("model_class") not in ("S", "M", "L"):
+                    raise ValueError("model_class must be S, M or L")
+                if not 1 <= num["active_days_per_year"] <= 366 or num["agent_steps"] < 1 or num["retry"] < 1 or num["cache_hit"] > 1:
+                    raise ValueError("check active_days_per_year (1-366), agent_steps (>= 1), retry (>= 1), cache_hit (0-1)")
+                if not num["rate_low"] <= num["rate_base"] <= num["rate_high"]:
+                    raise ValueError("rates must satisfy low <= base <= high")
+                out[tid] = dict(common, group="Custom (uploaded)", unit=r["unit"], model_class=r["model_class"],
+                                rate={"low": num["rate_low"], "base": num["rate_base"], "high": num["rate_high"]},
+                                active_days_per_year=int(num["active_days_per_year"]),
+                                isl=int(num["isl"]), system_prompt_tokens=int(num["system_prompt_tokens"]),
+                                osl=int(num["osl"]), reasoning_tokens=int(num["reasoning_tokens"]),
+                                agent_steps=int(num["agent_steps"]), retry=num["retry"], cache_hit=num["cache_hit"],
+                                sla_headroom=num["sla_headroom"], seasonal=num["seasonal"],
+                                basis={"rate": br, "size": bs})
+            else:
+                mode = r.get("mode", "Batch").capitalize()
+                if mode not in ("Batch", "Interactive"):
+                    raise ValueError("mode must be Batch or Interactive")
+                out[tid] = dict(common, group="Custom (uploaded)", unit="items", mode=mode,
+                                gpu_seconds_per_unit=num["gpu_seconds_per_unit"], basis={"gpu": bs})
+        except (ValueError, TypeError) as e:
+            errs.append(f"{where}: {e}")
+    return out, errs

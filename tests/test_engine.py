@@ -398,3 +398,132 @@ def test_snapshot_units_are_sane():
         assert "IC.ELC.OUTG.ZS" not in c.get("_sources", {}).get("outages_per_month", ""), iso
         s = c.get("public_employment_share")
         assert s is None or 0.005 < s < 0.6, (iso, s)
+
+
+# ---------------------------------------------------------------- agriculture advisory (v0.7)
+import json  # noqa: E402
+
+from engine.archetypes import low_usage_note, normalize_app, volume_warning  # noqa: E402
+from sync.worldbank import check_metadata, derive_agri, store  # noqa: E402
+
+SNAP = json.loads((Path(__file__).resolve().parent.parent / "data/snapshots/countries.json").read_text())
+TOL = D["agri_volume_tolerance"]["value"]
+
+
+def _est(share=0.03, year=2025):
+    """Estonia: synced labour force and unemployment; ILO agriculture share supplied here (~3%) so the test
+    does not depend on the next sync."""
+    c = json.loads(json.dumps(SNAP["EST"]))
+    if share is not None:
+        c["agri_employment_share"] = share
+        c["_sources"]["agri_employment_share"] = f"World Bank API SL.AGR.EMPL.ZS, {year}"
+    derive_agri(c)
+    return c
+
+
+def _agri(volume, basis=None):
+    a = dict(uid="g", name="Agri", type="agriculture_advisory", volume=volume, data_class=2)
+    if basis:
+        a["population_basis"] = basis
+    return a
+
+
+def test_sync_agri_parse_store_and_unknown():
+    meta = [{"page": 1}, [{"id": "SL.AGR.EMPL.ZS", "name": "Employment in agriculture (% of total employment) (modeled ILO estimate)",
+                           "source": {"id": "2", "value": "World Development Indicators"}}]]
+    m = check_metadata("SL.AGR.EMPL.ZS", meta, r"^employment in agriculture \(% of total employment\)")
+    assert m["source_id"] == 2 and "modeled ILO" in m["name"]
+    with pytest.raises(ValueError):   # code renamed or repurposed: stop
+        check_metadata("SL.AGR.EMPL.ZS", [{}, [{"id": "SL.AGR.EMPL.ZS", "name": "Something else", "source": {"id": "2", "value": ""}}]],
+                       r"^employment in agriculture")
+    with pytest.raises(ValueError):   # missing
+        check_metadata("SL.AGR.EMPL.ZS", [{"message": "not found"}], r".")
+    data = {"EST": {"_sources": {}}}
+    store(data, "agri_employment_share", "SL.AGR.EMPL.ZS", {"EST": (3.0, "2025")}, lambda v: v / 100)
+    assert data["EST"]["agri_employment_share"] == pytest.approx(0.03)
+    assert data["EST"]["_sources"]["agri_employment_share"] == "World Bank API SL.AGR.EMPL.ZS, 2025"
+    assert "agri_workers_est" not in _est(share=None)          # missing: unknown
+    assert "agri_workers_est" not in _est(year=2012)           # older than 2015: unknown
+
+
+def test_estonia_150k_farmers_warns():
+    c = _est()
+    assert 15000 < c["agri_workers_est"] < 25000
+    w = volume_warning(_agri(150000), c, ARCH, TOL)
+    assert w and "7×" in w and "Estonia" in w and "ILO modeled" in w
+
+
+def test_estonia_15k_farmers_no_warning():
+    assert volume_warning(_agri(15000), _est(), ARCH, TOL) is None
+
+
+def test_unknown_agri_data_no_warning():
+    assert volume_warning(_agri(150000), _est(share=None), ARCH, TOL) is None
+    assert volume_warning(_agri(150000), {"name": "Nowhere"}, ARCH, TOL) is None
+
+
+def test_population_basis_rates():
+    c = default_profile("XEX").country
+    req = lambda a: run(build_profile(c, "Base", [a], ARCH, dict(D["class_to_tier"])), CAT, D)["demand"][0]["sessions"]
+    assert req(_agri(150000, "eligible")) == pytest.approx(75)
+    assert req(_agri(150000, "users")) == pytest.approx(15000)
+
+
+def test_old_scenario_loads_as_eligible():
+    old = _agri(150000)                       # saved before v0.7: no population_basis
+    assert normalize_app(old)["population_basis"] == "eligible"
+    c = default_profile("XEX").country
+    r = lambda a: run(build_profile(c, "Base", [a], ARCH, dict(D["class_to_tier"])), CAT, D)["totals"]
+    assert r(old) == r(normalize_app(old)) == r(_agri(150000, "eligible"))
+
+
+def test_low_usage_note():
+    assert low_usage_note(_agri(150000, "eligible"), ARCH, "Base")
+    assert low_usage_note(_agri(150000, "users"), ARCH, "Base") is None
+    assert low_usage_note(dict(COP), ARCH, "Base") is None    # not a population type
+
+
+def test_owned_pv_breakdown_adds_up():
+    r = one([COP], shared_sovereign_site=False, local_gpu_provider=False)
+    for v in r["tiers"].values():
+        own = v["detail"]["base"].get("Owned")
+        if own and own["gpus"]:
+            tot = v["tco"]["base"].get("Owned")
+            pv = own["pv_breakdown"]
+            assert all(x >= 0 for x in pv.values())
+            assert pv["gpu_servers"] > 0 and pv["facility_build"] > 0
+            if tot:
+                assert sum(pv.values()) == pytest.approx(tot)
+
+
+# ---------------------------------------------------------------- custom types, save links (v0.7)
+from engine.archetypes import CUSTOM_TEMPLATE, parse_custom_types  # noqa: E402
+
+
+def test_custom_template_parses_and_runs():
+    types, errs = parse_custom_types(CUSTOM_TEMPLATE.read_text(), ARCH)
+    assert not errs and len(types) == 2 and all(k.startswith("custom_") for k in types)
+    arch = {**ARCH, **types}
+    apps = [dict(uid="c1", name="Proc", type="custom_procurement_assistant", volume=1000, data_class=3),
+            dict(uid="c2", name="Plates", type="custom_plate_recognition", volume=100000, data_class=3)]
+    p = build_profile(default_profile("XEX").country, "Base", apps, arch, dict(D["class_to_tier"]))
+    r = run(p, CAT, D)
+    assert r["demand"][0]["sessions"] == pytest.approx(1500) and r["nontoken"]
+
+
+def test_custom_template_rejects_bad_rows():
+    bad = CUSTOM_TEMPLATE.read_text().splitlines()
+    bad[1] = bad[1].replace(",M,", ",XL,")        # invalid model size
+    types, errs = parse_custom_types("\n".join(bad), ARCH)
+    assert len(types) == 1 and len(errs) == 1 and "model_class" in errs[0]
+
+
+def test_save_link_round_trip():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("app_mod", Path(__file__).resolve().parent.parent / "app.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    sc = {"iso": "GHA", "apps": [_agri(150000, "users")], "custom_types": parse_custom_types(CUSTOM_TEMPLATE.read_text())[0]}
+    txt = mod.encode_state(sc)
+    assert all(ch.isalnum() or ch in "-_" for ch in txt)
+    assert mod.decode_state(txt) == json.loads(json.dumps(sc))

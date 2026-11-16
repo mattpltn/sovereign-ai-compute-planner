@@ -58,3 +58,4 @@ tiers:
   T2: {name: "Cloud with in-country or regional residency", api: true, gpuaas: true, owned: true}
   T3: {name: "Sovereign local, privately operated", api: false, gpuaas: true, owned: true}
   T4: {name: "Government enclave, state-operated", api: false, gpuaas: false, owned: true}
+agri_volume_tolerance: {value: 1.5, source: "assumption (confidence Low)", note: "Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service)"}

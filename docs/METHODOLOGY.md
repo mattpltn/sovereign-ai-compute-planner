@@ -76,15 +76,22 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 | Finance | Setup | Discount rate (default 8%), demand growth and market price decline (default 0%). |
 | Placement rules | Setup | Which tier each data class may use. Set once per country from its data protection law. |
 | Client quotes (optional) | Setup | GPU rental price, GPU server cost, data centre build cost. A quote replaces the default range. |
-| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. |
+| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
+| Custom application types (optional) | Applications | Uploaded from a CSV template when no type fits (Section 9). |
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
 
 **Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]: employed labour force × public sector share of employment. This counts all public sector employees, including teachers and health workers, so it is an upper bound for office staff; it is shown on the Setup country line; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
 
+**Agriculture advisory check.** The volume is compared with the estimated number of agricultural workers: employed labour force × ILO modeled share of employment in agriculture [S68], synced from the World Bank API with its indicator code and year. The tool warns when the volume exceeds 1.5 times that estimate (`agri_volume_tolerance`, assumption, in the global defaults). Agricultural employment counts **workers, not holdings or households**; in smallholder countries several household members may use one service, hence the tolerance. If the share is missing or older than 2015, the estimate is treated as unknown and no check is run. The ILO share is a share of employment, so it is applied to the employed labour force (labour force × (1 − unemployment)), not to the whole labour force.
+
+**Who are these farmers?** Agriculture advisory has two usage rates, chosen per application. *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. The citizen assistant will get the same choice later.
+
+**Very low usage note.** For citizen assistant, agriculture advisory and tutor, the tool shows an information note (not a warning, no effect on results) when an application makes fewer than 100 requests per day: the volume may be the whole eligible population rather than service users.
+
 ### 3.2 What the tool provides
 
-Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages) is synced weekly from the World Bank API; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
+Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
 
 ## 4. Layer 0: requests per day
 
@@ -276,7 +283,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 | Research agent (multi-agent, e.g. legal or policy analysis) | Analysts with access | 1 / 2 / 4 | 250 | uncalibrated / derived | 8,000 + 1,500 / 1,000 / 2,000 | 4 x retry 1.1 | L | 80% / 8 | 1.5 / 1.1 / 1 | 3 | Low / Medium |
 | Clinical safety net (runs automatically on every patient visit) | Patient visits per clinic day | 1 / 1 / 1 | 300 | client / derived | 2,000 + 1,000 / 200 / 0 | 3 x retry 1.05 | M | 70% / 10 | 1.5 / 1.1 / 1.3 | 4 | High / Low |
 | Teacher assistant (lesson planning, differentiated materials) | Teachers with access | 0.34 / 1 / 2 | 190 | derived / assumption | 2,000 + 1,000 / 600 / 0 | 1 x retry 1.1 | M | 70% / 10 | 2 / 1.1 / 1.2 | 2 | Medium / Medium |
-| Agriculture advisory for farmers (chat or voice) | Farmers in the target population | 0.00015 / 0.0005 / 0.002 | 365 | observed (Low), assumption (Base, High) / derived | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Medium / Medium |
+| Agriculture advisory for farmers (chat or voice) | Farmers in the target population | 0.00015 / 0.0005 / 0.002 | 365 | eligible: observed (Low), assumption (Base, High); users: assumption / derived | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 2 | 1 | Medium / Medium |
 | Voice agent for public services (phone line, real time) | Calls per working day | 1 / 1 / 1 | 250 | client / derived | 1,500 + 800 / 80 / 0 | 6 x retry 1.05 | M | 70% / 10 | 2 / 1.3 / 1.3 | 3 | High / Low |
 
 ### Other AI types (non-LLM)
@@ -296,37 +303,37 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Staff copilot (drafting, summarising, Q&A)**
 
-- *rate*: Requests per person with access per WORKING day (250 per year). Base 1.4 is a scenario estimate derived from survey frequency categories and an assumed adjustment for adoption; it is not an observed requests-per-licence rate. UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is multiplied by 0.8, the share of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias. DWP's later trial (3,500+ licences) also found most users engaged daily or weekly (S67). Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate.
-- *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two.
-- *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34).
-- *burst*: Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption.
+- *rate*: Requests per person with access per WORKING day (250 per year). Base 1.4 is a scenario estimate derived from survey frequency categories and an assumed adjustment for adoption; it is not an observed requests-per-licence rate. UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week ([S36](#src-s36)). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is multiplied by 0.8, the share of licence holders active in the last 30 days (usage data, [S36](#src-s36)): 1.78 x 0.8 = 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias. DWP's later trial (3,500+ licences) also found most users engaged daily or weekly ([S67](#src-s67)). Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents ([S37](#src-s37)), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users ([S39](#src-s39)), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users ([S38](#src-s38)); the period is not published, so it is not used to set the rate.
+- *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) ([S31](#src-s31)); OpenRouter average >6,000 in / ~400 out by late 2025 ([S32](#src-s32)). Work copilots attach documents, so input sits between the two.
+- *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% ([S34](#src-s34)).
+- *burst*: Burst 2.0: production LLM traffic is bursty ([S33](#src-s33)). Peak share and window: office-hours assumption.
 
 **Citizen assistant (chat or voice)**
 
-- *rate*: Queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 (S40). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption.
-- *tokens*: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out (S31); OpenRouter average completion ~400 (S32).
+- *rate*: Queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 ([S40](#src-s40)). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption.
+- *tokens*: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out ([S31](#src-s31)); OpenRouter average completion ~400 ([S32](#src-s32)).
 - *seasonal*: 1.3 for deadline or benefit-payment peaks: assumption.
 
 **Learning tutor (students)**
 
-- *rate*: Per student with access per SCHOOL day (190 per year, assumption). Base 0.27: Khanmigo averages ~269,000 interactions on weekdays (S58) for nearly 1 million students with access (S59). Only ~15% of students with access engage with it (S58). Khan Academy does not define an interaction; it is treated as one message. Low 0.1: about a third of Base, for schools without classroom integration. High 1.5 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, S39) x 7/5 to concentrate a calendar-day rate on school days.
-- *tokens*: As citizen assistant (S31, S32).
+- *rate*: Per student with access per SCHOOL day (190 per year, assumption). Base 0.27: Khanmigo averages ~269,000 interactions on weekdays ([S58](#src-s58)) for nearly 1 million students with access ([S59](#src-s59)). Only ~15% of students with access engage with it ([S58](#src-s58)). Khan Academy does not define an interaction; it is treated as one message. Low 0.1: about a third of Base, for schools without classroom integration. High 1.5 = 30% of students active weekly x 3.6 messages per weekly active user per day (ChatGPT, [S39](#src-s39)) x 7/5 to concentrate a calendar-day rate on school days.
+- *tokens*: As citizen assistant ([S31](#src-s31), [S32](#src-s32)).
 
 **Clinical decision support (frontline health workers)**
 
-- *rate*: Queries per health worker WITH ACCESS per calendar day (clinics run most days, so 365). Anchor: OpenEvidence, a clinical information platform: 952,008 US clinicians submitted 271 million queries over 2.5 years; physicians averaged 37.1 queries per active user-month, nurse practitioners and physician assistants 44.5 (S62), i.e. ~1.2-1.5 per calendar day for an ACTIVE user. Base 1 per worker with access assumes most workers are active; Low 0.3 for partial adoption; High 3 for a tool embedded in protocols. Caveats: US clinicians, voluntary use, and three authors had roles at OpenEvidence, which supplied the data. One query per consultation (3-20 per worker per day, the earlier default) is an intensive scenario to enter as an override, not a default. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, S57).
-- *tokens*: Chat shape (S31, S32) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question (S43).
+- *rate*: Queries per health worker WITH ACCESS per calendar day (clinics run most days, so 365). Anchor: OpenEvidence, a clinical information platform: 952,008 US clinicians submitted 271 million queries over 2.5 years; physicians averaged 37.1 queries per active user-month, nurse practitioners and physician assistants 44.5 ([S62](#src-s62)), i.e. ~1.2-1.5 per calendar day for an ACTIVE user. Base 1 per worker with access assumes most workers are active; Low 0.3 for partial adoption; High 3 for a tool embedded in protocols. Caveats: US clinicians, voluntary use, and three authors had roles at OpenEvidence, which supplied the data. One query per consultation (3-20 per worker per day, the earlier default) is an intensive scenario to enter as an override, not a default. For a tool that runs automatically on every visit, use the Clinical safety net type instead (Penda Health model, [S57](#src-s57)).
+- *tokens*: Chat shape ([S31](#src-s31), [S32](#src-s32)) plus 1,000 reasoning tokens per call: current reasoning models use ~0.2k-2.5k per question ([S43](#src-s43)).
 - *seasonal*: 1.5 for epidemic peaks: assumption.
 
 **Developer coding assistant**
 
 - *rate*: UNCALIBRATED. Requests per developer per working day: assumption. Completions, chat and agents differ by orders of magnitude in requests and tokens; this type models completions plus some chat. Calibrate with the client's own usage metrics (GitHub Copilot and similar tools report completions, chat turns and active users per day); model agentic coding as a process agent.
-- *tokens*: Azure production coding median 1,500 in / 13 out for completions (S31); chat answers are longer, so 100. Agentic coding is far heavier (inputs ~294x outputs, mostly cached) (S42): model it as a process agent if planned.
+- *tokens*: Azure production coding median 1,500 in / 13 out for completions ([S31](#src-s31)); chat answers are longer, so 100. Agentic coding is far heavier (inputs ~294x outputs, mostly cached) ([S42](#src-s42)): model it as a process agent if planned.
 
 **Document intake and extraction**
 
 - *rate*: One request per document. Volume comes from the client (registry, permit office).
-- *tokens*: Input 4,000 (3-4 page form) + system 500, output 400. OpenRouter API traffic averages >6,000 in / ~400 out (S32); Anthropic API data shows output grows much slower than input (S41). Assumes text is already digitised: add OCR for scans.
+- *tokens*: Input 4,000 (3-4 page form) + system 500, output 400. OpenRouter API traffic averages >6,000 in / ~400 out ([S32](#src-s32)); Anthropic API data shows output grows much slower than input ([S41](#src-s41)). Assumes text is already digitised: add OCR for scans.
 
 **Translation**
 
@@ -341,27 +348,27 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 **Process agent (single agent, e.g. tax or customs risk check)**
 
 - *rate*: One task per case. Volume comes from the client.
-- *tokens*: About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43).
+- *tokens*: About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat ([S35](#src-s35)). Reasoning 1,000 per call ([S43](#src-s43)).
 
 **Research agent (multi-agent, e.g. legal or policy analysis)**
 
 - *rate*: UNCALIBRATED. Research tasks per analyst per working day: assumption. Replace with pilot data.
-- *tokens*: About 15x a copilot request: ≈55,000 vs ≈3,740 tokens per task (14.7x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈3,400. Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43).
+- *tokens*: About 15x a copilot request: ≈55,000 vs ≈3,740 tokens per task (14.7x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈3,400. Anthropic: multi-agent systems use ~15x the tokens of chat ([S35](#src-s35)). Reasoning 2,000 per call ([S43](#src-s43)).
 
 **Clinical safety net (runs automatically on every patient visit)**
 
-- *rate*: One task per visit, triggered automatically. Visits per day come from the ministry of health. Penda Health's AI Consult runs in the background of every visit at key decision points and alerts the clinician only when it detects a possible error; studied on 39,849 visits in 15 Nairobi clinics (S57).
-- *tokens*: 3 model calls per visit (history, diagnosis, treatment checkpoints), each ~2,000 tokens of visit notes + 1,000 system, 200 out: assumption informed by the AI Consult design (S57).
+- *rate*: One task per visit, triggered automatically. Visits per day come from the ministry of health. Penda Health's AI Consult runs in the background of every visit at key decision points and alerts the clinician only when it detects a possible error; studied on 39,849 visits in 15 Nairobi clinics ([S57](#src-s57)).
+- *tokens*: 3 model calls per visit (history, diagnosis, treatment checkpoints), each ~2,000 tokens of visit notes + 1,000 system, 200 out: assumption informed by the AI Consult design ([S57](#src-s57)).
 
 **Teacher assistant (lesson planning, differentiated materials)**
 
-- *rate*: Requests per teacher with access per SCHOOL day (190 per year, assumption). Activity anchor: EEF/NFER randomised trial, 259 science teachers in 68 English schools over ten weeks in 2024; teachers used ChatGPT to prepare about a third of their Year 7-8 lessons, usually for one activity per lesson (S63). That is ~1.7 AI-assisted preparations per week, ~0.34 per school day. Requests per preparation 1 / 3 / 6 (assumption) give 0.34 / 1 / 2 per school day (about 0.24 / 0.73 / 1.46 per calendar day). Confidence: Medium for the activity, Low-Medium for requests per preparation. Often a more realistic first step than student tutors.
+- *rate*: Requests per teacher with access per SCHOOL day (190 per year, assumption). Activity anchor: EEF/NFER randomised trial, 259 science teachers in 68 English schools over ten weeks in 2024; teachers used ChatGPT to prepare about a third of their Year 7-8 lessons, usually for one activity per lesson ([S63](#src-s63)). That is ~1.7 AI-assisted preparations per week, ~0.34 per school day. Requests per preparation 1 / 3 / 6 (assumption) give 0.34 / 1 / 2 per school day (about 0.24 / 0.73 / 1.46 per calendar day). Confidence: Medium for the activity, Low-Medium for requests per preparation. Often a more realistic first step than student tutors.
 - *tokens*: Copilot shape with longer outputs (lesson plans, worksheets): 600 output tokens.
 
 **Agriculture advisory for farmers (chat or voice)**
 
-- *rate*: Queries per farmer in the target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40): Low = 0.00015, the midpoint. Base and High (~3x, ~13x) are assumptions for services built around advisory rather than grievances. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate.
-- *tokens*: Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels.
+- *rate*: Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries ([S40](#src-s40)); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here ([S61](#src-s61)). If the client knows registered users and their frequency, override the rate.
+- *tokens*: Chat shape ([S31](#src-s31), [S32](#src-s32)). Pair with Speech-to-text and Text-to-speech for voice channels.
 - *seasonal*: 2.0 for planting season: assumption.
 
 **Voice agent for public services (phone line, real time)**
@@ -371,15 +378,15 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Speech-to-text**
 
-- *gpu*: 12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node (S55); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45).
+- *gpu*: 12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node ([S55](#src-s55)); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) ([S56](#src-s56)): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper ([S45](#src-s45)).
 
 **OCR and layout extraction**
 
-- *gpu*: 0.75 GPU-seconds per page, provisional. PaddleOCR PP-OCRv5 server pipeline: 0.74 s per image on an NVIDIA A10 (Intel 8350C host), 1.17 s on a T4; lightweight pipeline 0.31 s on A10 (S64). These are wall times including reading the image from disk, so they overstate pure GPU time; derated 0.6 on top, and newer GPUs are faster, so the default is conservative. Layout analysis and table extraction are separate models: calibrate them separately if in scope.
+- *gpu*: 0.75 GPU-seconds per page, provisional. PaddleOCR PP-OCRv5 server pipeline: 0.74 s per image on an NVIDIA A10 (Intel 8350C host), 1.17 s on a T4; lightweight pipeline 0.31 s on A10 ([S64](#src-s64)). These are wall times including reading the image from disk, so they overstate pure GPU time; derated 0.6 on top, and newer GPUs are faster, so the default is conservative. Layout analysis and table extraction are separate models: calibrate them separately if in scope.
 
 **Face verification (1:1 authentication)**
 
-- *gpu*: 0.02 GPU-seconds (20 ms) per verification, for face detection plus one ArcFace embedding, unbatched. Embedding alone: ArcFace ResNet-100 takes 2.6 ms per face at batch 1 and ~0.9 ms per face at batch 64 with TensorRT on an RTX 2080 Super (S65); a reviewer-provided 17 ms per cropped face is a slower, unoptimised figure. Excludes liveness / presentation-attack detection, which can cost more than matching. Many deployments run 1:1 matching on CPU; check with the vendor.
+- *gpu*: 0.02 GPU-seconds (20 ms) per verification, for face detection plus one ArcFace embedding, unbatched. Embedding alone: ArcFace ResNet-100 takes 2.6 ms per face at batch 1 and ~0.9 ms per face at batch 64 with TensorRT on an RTX 2080 Super ([S65](#src-s65)); a reviewer-provided 17 ms per cropped face is a slower, unoptimised figure. Excludes liveness / presentation-attack detection, which can cost more than matching. Many deployments run 1:1 matching on CPU; check with the vendor.
 
 **Biometric deduplication (1:N at enrolment)**
 
@@ -387,20 +394,28 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Satellite or image analysis**
 
-- *gpu*: UNCALIBRATED PLACEHOLDER. The unit is one model-specific image chip (for example 512 x 512 pixels at the model resolution): convert scenes to chips (scene area / chip area, plus overlap) before entering the volume. Calibrate with the chosen model on the target GPU, or with MLPerf vision results (S08).
+- *gpu*: UNCALIBRATED PLACEHOLDER. The unit is one model-specific image chip (for example 512 x 512 pixels at the model resolution): convert scenes to chips (scene area / chip area, plus overlap) before entering the volume. Calibrate with the chosen model on the target GPU, or with MLPerf vision results ([S08](#src-s08)).
 
 **Model fine-tuning and evaluation**
 
-- *gpu*: Enter the training budget directly in GPU-hours per year; it runs in idle GPU time first (S03).
+- *gpu*: Enter the training budget directly in GPU-hours per year; it runs in idle GPU time first ([S03](#src-s03)).
 
 **Text-to-speech (voice replies)**
 
-- *gpu*: 40 GPU-seconds per generated audio hour (~90x real time), for a small fast model such as Kokoro-82M. Kokoro is reported at close to 100x real time on a GPU and a real-time factor of ~0.03 for single short clips (S66), i.e. ~36-110 GPU-seconds per audio hour. A reviewer-provided A10G figure of 40 is consistent but not independently verified. Larger expressive or voice-cloning models are several times slower: use 100 or 180 as a scenario envelope. Needed for any voice service.
+- *gpu*: 40 GPU-seconds per generated audio hour (~90x real time), for a small fast model such as Kokoro-82M. Kokoro is reported at close to 100x real time on a GPU and a real-time factor of ~0.03 for single short clips ([S66](#src-s66)), i.e. ~36-110 GPU-seconds per audio hour. A reviewer-provided A10G figure of 40 is consistent but not independently verified. Larger expressive or voice-cloning models are several times slower: use 100 or 180 as a scenario envelope. Needed for any voice service.
 
 **Retrieval indexing (embeddings for document search)**
 
 - *gpu*: PLACEHOLDER 0.01 GPU-seconds per 500-token chunk with a small embedding model. Count chunks AFTER overlap: a ~500-token page split with 20% overlap is ~1.25 chunks. Almost every assistant depends on an index; size it from the chunks in scope divided by the re-indexing period, plus new chunks per day.
 
+
+### Custom application types
+
+When no type fits, the user downloads a CSV template (one row per type), fills it and uploads it on the Applications page. `kind` = `llm` for language-model applications (usage rates, active days, token sizes, calls per task, retry, cache hit, model size, peak pattern) or `other` for other AI (GPU-seconds per unit, batch or interactive, peak pattern). Each row also states its data class, confidence (High / Medium / Low), basis (observed, derived, assumption, uncalibrated, client) and evidence. Rows with a missing or out-of-range value are skipped and listed; nothing is guessed. Custom types are marked "(custom)", appear under "Custom (uploaded)", and are saved with the scenario.
+
+### Saving and resuming work
+
+Each save creates a new link with a timestamp, so several versions can be kept. The link carries the whole scenario (setup, applications, custom types, quotes) in compressed form after the `#` of the address; nothing is stored on a server, and anyone with the link can open that scenario. Saved versions are listed in the browser where they were saved, with open, copy and remove. The JSON file save and load remain available.
 
 ### How the agent sizes were checked
 
@@ -464,14 +479,20 @@ Owned:
                                                                      Confidential + Restricted share one site by default;
                                                                      1 FTE per ~100 GPUs)
 present value                  = Σ discount(y) × cost(y)
+  breakdown (shown per site)   = GPU servers incl. refresh · GPU software + maintenance · facility build + maintenance
+                                 · energy · staff
 $ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
 ```
+
+**GPU part versus facility.** For owned capacity the results split the 10-year present value into GPU servers (including refresh), GPU software and maintenance, facility build and its maintenance, energy and staff. A client using colocation or an existing server room can drop the facility line and add its colocation rent or room costs, which the tool does not model; energy and staff usually remain unless the colocation fee bundles power. The same breakdown is in the raw CSV export.
 
 **Cached input is priced, not free.** Providers charge cached input tokens at a discount: 10% of the normal input price at Anthropic [S46], up to 50% at OpenAI [S47]. The tool uses 10% / 25% / 50% (Low / Base / High). On owned or rented GPUs cached tokens skip the prefill computation, so they do not add GPU load.
 
 **Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
 
 **The results page** is organised around three client questions (see the summary at the top): the 10-year cost under three adoption scenarios, the capacity to build or buy per destination, and the cost per application. Detailed tables (every option Low – Base – High, tiers and hardware, rent or own per tier, demand) are collapsed below. The raw CSV export is unrounded, for analysts.
+
+**Why moving a small application to the sovereign site barely changes its cost.** The site is sized by the largest workloads, usually the staff copilot. A small application placed on the same site uses spare capacity on servers that are bought anyway, so its share of the cost is small, and it may be close to its API cost. Its cost only jumps if it is the only workload on a site, or if it pushes the site to another server. The results therefore show cost per application two ways: **share of site** (fixed costs spread by GPU need, as in the charts; removing the application would not save this amount) and **extra cost if added last** (10-year total with all applications minus the total without this one). When placement rules move applications above their default tier, the warning states what the move changes versus the default placement: servers added and the change in 10-year cost, which can be negative when API spending is replaced by spare capacity. Each owned site card also shows the **headroom at the busiest hour** (1 − GPU need at peak ÷ GPUs bought), and the scenario table notes when the high end of the price range needs an extra server, which explains a lopsided range.
 
 **Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
 
@@ -550,6 +571,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | fte_per_owned_tier | 4 | analyst | Used only in flat mode (v0.1 parity) |
 | cost_per_fte_usd | 60000 | analyst | Local market; override if known |
 | gpu_refresh_years | 5 | S03 |  |
+| agri_volume_tolerance | 1.5 | assumption (confidence Low) | Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service) |
 
 **Cost ranges (replaced by client quotes when entered)**
 
@@ -595,6 +617,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | Population, internet use, labour force, unemployment | World Bank API (WDI) [S29, S15] | Weekly, GitHub Actions (`sync/worldbank.py`) |
 | Public employment share | World Bank Worldwide Bureaucracy Indicators [S18] | Weekly (API source 64) |
 | Electrical outages per month; share of firms with outages (fallback) | World Bank Enterprise Surveys [S19] | Weekly; the per-month indicator moved in 2026 and is found by name |
+| Employment in agriculture (% of employment, ILO modeled), labour force, rural population | World Bank WDI [S68] | Weekly; codes confirmed against API metadata at each sync |
 | API prices per model size | OpenRouter model list [S21] | Weekly (`sync/openrouter.py`), median of reference models |
 | EGDI | UN E-Government Survey [S17] | Curated `data/egdi.csv`, every two years |
 | Electricity tariff | Utility tariff sheets, GlobalPetrolPrices [S20] | Curated `data/electricity.csv` |
@@ -700,72 +723,73 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 
 | ID | Source | Publisher | Used for | Link |
 |---|---|---|---|---|
-| S01 | AI Tokenomics: forecasting worksheet (base demand, workload multipliers, operational shaping) | NVIDIA | Layers 1-3 structure | https://www.nvidia.com/en-us/solutions/ai/tokenomics-guide/ |
-| S02 | Rethinking AI TCO: Why Cost per Token Is the Only Metric That Matters (Apr 2026) | NVIDIA | Tokens/s per GPU and per MW, $/GPU-hour, cost per token formula | https://blogs.nvidia.com/blog/lowest-token-cost-ai-factories/ |
-| S03 | LLM Inference Benchmarking: How Much Does Your LLM Inference Cost? | NVIDIA | Instances = peak / throughput at latency target; TCO structure, licensing, depreciation | https://developer.nvidia.com/blog/llm-inference-benchmarking-how-much-does-your-llm-inference-cost/ |
-| S04 | AIConfigurator | NVIDIA ai-dynamo (open source) | Workload + SLA -> configuration and minimum GPUs | https://github.com/ai-dynamo/aiconfigurator |
-| S05 | Lightning-Fast Configuration Optimization for Multi-Framework LLM Inference | arXiv | Method behind AIConfigurator | https://arxiv.org/html/2601.06288v1 |
-| S06 | GenAI-Perf documentation | NVIDIA | Measured throughput and latency; derating calibration | https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/genai-perf-README.html |
-| S07 | Right-sizing and auto-scaling an inference system | AWS Prescriptive Guidance | Keep input and output lengths separate; benchmark real workload shapes | https://docs.aws.amazon.com/prescriptive-guidance/latest/gen-ai-inference-architecture-and-best-practices-on-aws/right-sizing-and-auto-scaling.html |
-| S08 | MLPerf Inference (datacenter results) | MLCommons | Non-token throughput (vision, Whisper speech) | https://mlcommons.org/benchmarks/inference-datacenter/ |
-| S09 | MLCommons Power working group | MLCommons | Power measurement method; idle power | https://mlcommons.org/working-groups/benchmarks/power/ |
-| S10 | DGX H100/H200 User Guide: system power 10.2 kW max | NVIDIA | Server power for P1 | https://docs.nvidia.com/dgx/dgxh100-user-guide/introduction-to-dgxh100.html |
-| S11 | MLPerf Inference numbers vs production throughput; GPU rental rates | GMI Cloud | Production derating rationale; $/GPU-hour | https://www.gmicloud.ai/en/blog/mlperf-inference-vs-production-throughput |
-| S12 | Cost Estimation of AI Workloads | FinOps Foundation | TCO structure | https://www.finops.org/wg/cost-estimation-of-ai-workloads/ |
-| S13 | Government Migration to Cloud Ecosystems: Multiple Options, Significant Benefits, Manageable Risks | World Bank (2022) | Hybrid as default; tier logic | https://www.worldbank.org/en/topic/digital/publication/government-migration-to-cloud-ecosystems-multiple-options-significant-benefits-manageable-risks |
-| S14 | Data Classification Matrix and Cloud Assessment Framework | World Bank (2023) | Data class -> security requirements -> tier | https://openknowledge.worldbank.org/entities/publication/876f86a8-5ed0-4f44-8ea4-ab49695521e8/full |
-| S15 | Individuals using the Internet (% of population), IT.NET.USER.ZS | World Bank / ITU | Country!B6 | https://data.worldbank.org/indicator/IT.NET.USER.ZS |
-| S16 | ITU ICT statistics | ITU | Connectivity cross-check | https://www.itu.int/en/ITU-D/Statistics/pages/stat/default.aspx |
-| S17 | UN E-Government Survey, data centre (EGDI) | UN DESA | Country!B8:B9 | https://publicadministration.un.org/egovkb/en-us/Data-Center |
-| S18 | Worldwide Bureaucracy Indicators | World Bank | Country!B7 | https://www.worldbank.org/en/data/interactive/2019/05/21/worldwide-bureaucracy-indicators-dashboard |
-| S19 | Enterprise Surveys: infrastructure (electrical outages) | World Bank | Country!B12 | https://www.enterprisesurveys.org/en/data/exploretopics/infrastructure |
-| S20 | Electricity prices | GlobalPetrolPrices | Country!B11 | https://www.globalpetrolprices.com/electricity_prices/ |
-| S21 | Model list and prices | OpenRouter | API prices | https://openrouter.ai/models |
-| S22 | Global Data Center Survey (PUE) | Uptime Institute | Country!B14 | https://uptimeinstitute.com/resources/research-and-reports |
-| S23 | Data Center Development Cost Guide | Cushman & Wakefield | Facility capex per MW | https://www.cushmanwakefield.com/en/united-states/insights/data-center-development-cost-guide |
-| S24 | How many digital workers could OpenAI deploy? | Epoch AI | ~240k tokens per human per day sanity ceiling | https://epochai.substack.com/p/how-many-digital-workers-could-openai |
-| S25 | Agentic workloads use 4-15x more tokens than chat (Signal65 research) | MeriTalk | Agent multipliers | https://www.meritalk.com/?p=209235 |
-| S26 | The Army promised unlimited AI tokens; it ran dry in weeks | DEV Community | Real public-sector consumption anchor (200k tokens/user/month) | https://dev.to/jahanzaibai/the-army-promised-unlimited-ai-tokens-it-ran-dry-in-weeks-50g |
-| S27 | A blueprint for building national compute capacity for AI | OECD (2023) | Policy framing | https://www.oecd.org/en/publications/a-blueprint-for-building-national-compute-capacity-for-artificial-intelligence_876367e3-en.html |
-| S28 | 7 learnings about compute strategy (KIRA Compute Report 2025) | Philip Fox / KIRA Center | Bottom-up national demand method | https://foxphilip.substack.com/p/7-learnings-about-compute-strategy |
-| S29 | Population, total (SP.POP.TOTL) | World Bank WDI | Country!B5 | https://data.worldbank.org/indicator/SP.POP.TOTL |
-| S30 | Why federal leaders must reclaim the economics of AI (CPU inference at US Census) | FedScoop | Classical ML on CPU; ~90% of government AI is inference | https://fedscoop.com/ai-infrastructure-economics-public-sector/ |
-| S31 | Splitwise: Efficient generative LLM inference using phase splitting (Azure LLM inference trace 2023) | Microsoft / ISCA 2024 | Production token shapes: chat median 1,020 in / 129 out; coding median 1,500 in / 13 out | https://arxiv.org/abs/2311.18677 |
-| S32 | State of AI: An Empirical 100 Trillion Token Study with OpenRouter | OpenRouter / a16z (2025) | Average prompt grew ~1.5k to >6k, completion ~150 to ~400; reasoning models >50% of tokens | https://openrouter.ai/state-of-ai |
-| S33 | BurstGPT: A Real-World Workload Dataset to Optimize LLM Serving Systems | HKUST(GZ) et al., Azure OpenAI traces | Burstiness of LLM traffic; API burstier than chat | https://arxiv.org/abs/2401.17644 |
-| S34 | Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving (Kimi) | Moonshot AI / Tsinghua | Prefix cache hit up to ~50% in production trace | https://arxiv.org/abs/2407.00079 |
-| S35 | How we built our multi-agent research system | Anthropic Engineering (2025) | Agents ~4x chat tokens; multi-agent ~15x | https://www.anthropic.com/engineering/multi-agent-research-system |
-| S36 | Microsoft 365 Copilot Experiment: Cross-Government Findings Report | UK Government Digital Service (June 2025) | ~80% of licensed civil servants active monthly; 39% use several times a day | https://www.gov.uk/government/publications/microsoft-365-copilot-experiment-cross-government-findings-report |
-| S37 | Evaluation of the whole-of-government trial of Microsoft 365 Copilot | Australian Digital Transformation Agency (2024) | 1 in 3 trial participants used Copilot daily | https://www.digital.gov.au/initiatives/copilot-trial/summary-evaluation-findings/cts-evaluation-findings |
-| S38 | Pair (Singapore public-service LLM assistant): usage statistics | GovTech / Open Government Products; Straits Times (May 2025); GovInsider | ~50,000 regular users of ~150,000 public officers | https://www.developer.tech.gov.sg/products/categories/productivity-tools/pair/overview |
-| S39 | How People Use ChatGPT (NBER Working Paper 34255) | OpenAI / Harvard, NBER (Sept 2025) | ~700M weekly users, ~2.5-2.6B messages/day (≈3.6 per weekly user per day) | https://www.nber.org/papers/w34255 |
-| S40 | Kisan e-Mitra usage (Lok Sabha reply Dec 2025, PIB) and PM-KISAN 22nd instalment beneficiaries (PIB, March 2026) | Government of India | 8,000-20,000 chatbot queries/day for ~93 million beneficiaries | https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/mar/doc2026319829701.pdf |
-| S41 | Anthropic Economic Index report, September 2025 (with API dataset) | Anthropic | Per-task input/output token indices; output grows slower than input | https://www.anthropic.com/research/anthropic-economic-index-september-2025-report |
-| S42 | TraceLab: Characterizing Coding Agent Workloads for LLM Serving | University of Washington (2026) | Agentic coding: inputs outnumber outputs ~294x, mostly cached | https://syfi.cs.washington.edu/blog/2026-06-25-tracelab/ |
-| S43 | EpiQAL: Benchmarking LLMs in Epidemiological QA and Reasoning (token usage appendix) | arXiv 2601.03471 | Reasoning tokens per question ~0.2k-2.5k for current reasoning models | https://arxiv.org/pdf/2601.03471 |
-| S44 | InferenceX (formerly InferenceMAX): open, continuous inference benchmarks; chip comparisons and performance per dollar | SemiAnalysis (2025-2026) | Tokens/s per GPU at fixed interactivity (H200, B200, GB300; DeepSeek R1, Llama 3.3 70B); tokens per MW; ownership cost per chip-hour | https://inferencex.semianalysis.com/compare/deepseek-r1-gb300-vs-h200 |
-| S45 | NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1) | NVIDIA, results audited by MLCommons (Sept 2025) | GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1 | https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut |
-| S46 | Prompt caching (pricing: cache reads at 10% of the base input price) | Anthropic documentation | Cached input price share, low end | https://docs.claude.com/en/docs/build-with-claude/prompt-caching |
-| S47 | Prompt caching guide (cached input tokens billed at a discount) | OpenAI documentation | Cached input price share, up to 50% of input price | https://platform.openai.com/docs/guides/prompt-caching |
-| S48 | TradeOff Tools: Data center capital cost calculator; Data center efficiency and PUE calculator | Schneider Electric | Site-specific facility $/W and PUE (client calibration) | https://www.se.com/ww/en/work/solutions/for-business/data-centers-and-networks/trade-off-tools |
-| S49 | Which regions have the most energy efficient data centers? (Global Data Center Survey 2020) | Uptime Institute | Regional PUE averages: Europe 1.46, Africa and Middle East 1.79 | https://journal.uptimeinstitute.com/datacenter-energy-efficiency-by-region/ |
-| S50 | Mapping PUE trends by data center region, age and size (Global Data Center Survey 2025) | Uptime Institute (Oct 2025) | Share of facilities below PUE 1.5 by region; newer and larger sites lower | https://intelligence.uptimeinstitute.com/resource/mapping-pue-trends-data-center-region-age-and-size |
-| S51 | Quantifying data center PUE when introducing liquid cooling (ASME paper with NVIDIA) | Vertiv / NVIDIA | Liquid cooling: -18.1% facility power, -10.2% total power, -7% IT power (fans) | https://www.vertiv.com/en-us/about/news-and-events/articles/blog-posts/quantifying-data-center-pue-when-introducing-liquid-cooling/ |
-| S52 | Data Centre Construction Cost Index 2026-2027 (African and lowest-cost markets) | Turner & Townsend, via Engineering News (Oct 2026) | Construction cost per watt: Lagos, Johannesburg, Nairobi, Mumbai, Shanghai, Ho Chi Minh City, Bogota, UAE; 7-10% liquid-cooled premium | https://www.engineeringnews.co.za/article/study-shows-african-countries-competitive-for-data-centre-construction-2026-10-27 |
-| S53 | Data Centre Construction Cost Index 2025-2026 | Turner & Townsend (Nov 2025) | Construction cost per watt: Jakarta, Malaysia, Saudi Arabia, Singapore, Tokyo; 7-10% liquid-cooled premium (US) | https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2025/data-centre-cost-trends |
-| S54 | White Paper 282: Capital Cost Analysis of Immersive Liquid-Cooled vs. Air-Cooled Large Data Centers | Schneider Electric | Liquid vs air capex equal at 10 kW/rack; 10% / 14% lower at 20 / 40 kW/rack | https://www.se.com/ww/en/download/document/SPD_WP282_EN |
-| S55 | The fastest Whisper transcription (2,400x real time large-v3-turbo, 1,800x large-v3 on H100) | Baseten | Batched speech-to-text GPU-seconds per audio hour | https://www.baseten.co/blog/the-fastest-transcription-with-streaming-and-diarization/ |
-| S56 | Best GPU for Whisper (real-time factor by GPU) | Runpod (Sept 2026) | Unbatched Whisper ~25-60x real time per GPU | https://www.runpod.io/articles/guides/best-gpu-for-whisper |
-| S57 | AI-based clinical decision support for primary care: a real-world study (AI Consult, 39,849 visits) | Penda Health / OpenAI (arXiv 2507.16947, 2025) | Background clinical safety net on every visit, activated at key decision points | https://arxiv.org/abs/2507.16947 |
-| S58 | Learning in the Open: What AI Is (and Isn't) Changing | Khan Academy (2026) | Khanmigo: ~269,000 weekday interactions; ~15% of students with access engage | https://blog.khanacademy.org/learning-in-the-open-what-ai-is-and-isnt-changing/ |
-| S59 | Sal Khan: AI tutors need human input | McGraw Prize in Education | Khanmigo reach: nearly 1 million students | https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input |
-| S60 | NVIDIA DGX B200 datasheet (system power ~14.3 kW max, 8x B200) | NVIDIA | B200 power per GPU | https://www.nvidia.com/en-us/data-center/dgx-b200/ |
-| S61 | Digital Green Farmer.Chat Study, Kenya (Lean Data, 450 farmers, July-August 2025) | 60 Decibels | 61% meaningful users (impact metric, not usage frequency) | https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf |
-| S62 | Patel VR et al. Clinician Use of an Artificial Intelligence-Enabled Clinical Information Platform. JAMA, 15 October 2026. doi:10.1001/jama.2026.21868 | JAMA (Harvard Medical School authors; data from OpenEvidence) | Clinical decision support rate (37.1 queries per active physician-month; 44.5 for NPs and PAs; 952,008 clinicians, 271M queries) | https://doi.org/10.1001/jama.2026.21868 |
-| S63 | ChatGPT in lesson preparation - a Teacher Choices trial (259 teachers, 68 schools, 2024) | Education Endowment Foundation / NFER | Teacher assistant activity (about a third of lessons prepared with AI) | https://www.nfer.ac.uk/publications/chatgpt-in-lesson-preparation-a-teacher-choices-trial/ |
-| S64 | PP-OCRv5 inference benchmark (A10, T4) | PaddlePaddle / PaddleOCR | OCR GPU-seconds per page (0.74 s server pipeline on A10, wall time) | https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html |
-| S65 | InsightFace-REST model benchmarks (ArcFace R100, TensorRT, RTX 2080 Super) | SthPhoenix (open source) | Face embedding time per face (2.6 ms at batch 1, ~0.9 ms at batch 64) | https://github.com/SthPhoenix/InsightFace-REST |
-| S66 | Open-source TTS latency benchmarks (Kokoro-82M real-time factor ~0.03 on GPU) | GigaGPU | Text-to-speech GPU-seconds per audio hour | https://gigagpu.com/tts-latency-benchmarks |
-| S67 | An Evaluation of DWP's Microsoft 365 Copilot Trial (published 29 January 2026) | UK Department for Work and Pensions | Copilot usage frequency (most users daily or weekly), qualitative cross-check | https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial |
+| <a id="src-s01"></a>S01 | AI Tokenomics: forecasting worksheet (base demand, workload multipliers, operational shaping) | NVIDIA | Layers 1-3 structure | https://www.nvidia.com/en-us/solutions/ai/tokenomics-guide/ |
+| <a id="src-s02"></a>S02 | Rethinking AI TCO: Why Cost per Token Is the Only Metric That Matters (Apr 2026) | NVIDIA | Tokens/s per GPU and per MW, $/GPU-hour, cost per token formula | https://blogs.nvidia.com/blog/lowest-token-cost-ai-factories/ |
+| <a id="src-s03"></a>S03 | LLM Inference Benchmarking: How Much Does Your LLM Inference Cost? | NVIDIA | Instances = peak / throughput at latency target; TCO structure, licensing, depreciation | https://developer.nvidia.com/blog/llm-inference-benchmarking-how-much-does-your-llm-inference-cost/ |
+| <a id="src-s04"></a>S04 | AIConfigurator | NVIDIA ai-dynamo (open source) | Workload + SLA -> configuration and minimum GPUs | https://github.com/ai-dynamo/aiconfigurator |
+| <a id="src-s05"></a>S05 | Lightning-Fast Configuration Optimization for Multi-Framework LLM Inference | arXiv | Method behind AIConfigurator | https://arxiv.org/html/2601.06288v1 |
+| <a id="src-s06"></a>S06 | GenAI-Perf documentation | NVIDIA | Measured throughput and latency; derating calibration | https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/perf_benchmark/genai-perf-README.html |
+| <a id="src-s07"></a>S07 | Right-sizing and auto-scaling an inference system | AWS Prescriptive Guidance | Keep input and output lengths separate; benchmark real workload shapes | https://docs.aws.amazon.com/prescriptive-guidance/latest/gen-ai-inference-architecture-and-best-practices-on-aws/right-sizing-and-auto-scaling.html |
+| <a id="src-s08"></a>S08 | MLPerf Inference (datacenter results) | MLCommons | Non-token throughput (vision, Whisper speech) | https://mlcommons.org/benchmarks/inference-datacenter/ |
+| <a id="src-s09"></a>S09 | MLCommons Power working group | MLCommons | Power measurement method; idle power | https://mlcommons.org/working-groups/benchmarks/power/ |
+| <a id="src-s10"></a>S10 | DGX H100/H200 User Guide: system power 10.2 kW max | NVIDIA | Server power for P1 | https://docs.nvidia.com/dgx/dgxh100-user-guide/introduction-to-dgxh100.html |
+| <a id="src-s11"></a>S11 | MLPerf Inference numbers vs production throughput; GPU rental rates | GMI Cloud | Production derating rationale; $/GPU-hour | https://www.gmicloud.ai/en/blog/mlperf-inference-vs-production-throughput |
+| <a id="src-s12"></a>S12 | Cost Estimation of AI Workloads | FinOps Foundation | TCO structure | https://www.finops.org/wg/cost-estimation-of-ai-workloads/ |
+| <a id="src-s13"></a>S13 | Government Migration to Cloud Ecosystems: Multiple Options, Significant Benefits, Manageable Risks | World Bank (2022) | Hybrid as default; tier logic | https://www.worldbank.org/en/topic/digital/publication/government-migration-to-cloud-ecosystems-multiple-options-significant-benefits-manageable-risks |
+| <a id="src-s14"></a>S14 | Data Classification Matrix and Cloud Assessment Framework | World Bank (2023) | Data class -> security requirements -> tier | https://openknowledge.worldbank.org/entities/publication/876f86a8-5ed0-4f44-8ea4-ab49695521e8/full |
+| <a id="src-s15"></a>S15 | Individuals using the Internet (% of population), IT.NET.USER.ZS | World Bank / ITU | Country!B6 | https://data.worldbank.org/indicator/IT.NET.USER.ZS |
+| <a id="src-s16"></a>S16 | ITU ICT statistics | ITU | Connectivity cross-check | https://www.itu.int/en/ITU-D/Statistics/pages/stat/default.aspx |
+| <a id="src-s17"></a>S17 | UN E-Government Survey, data centre (EGDI) | UN DESA | Country!B8:B9 | https://publicadministration.un.org/egovkb/en-us/Data-Center |
+| <a id="src-s18"></a>S18 | Worldwide Bureaucracy Indicators | World Bank | Country!B7 | https://www.worldbank.org/en/data/interactive/2019/05/21/worldwide-bureaucracy-indicators-dashboard |
+| <a id="src-s19"></a>S19 | Enterprise Surveys: infrastructure (electrical outages) | World Bank | Country!B12 | https://www.enterprisesurveys.org/en/data/exploretopics/infrastructure |
+| <a id="src-s20"></a>S20 | Electricity prices | GlobalPetrolPrices | Country!B11 | https://www.globalpetrolprices.com/electricity_prices/ |
+| <a id="src-s21"></a>S21 | Model list and prices | OpenRouter | API prices | https://openrouter.ai/models |
+| <a id="src-s22"></a>S22 | Global Data Center Survey (PUE) | Uptime Institute | Country!B14 | https://uptimeinstitute.com/resources/research-and-reports |
+| <a id="src-s23"></a>S23 | Data Center Development Cost Guide | Cushman & Wakefield | Facility capex per MW | https://www.cushmanwakefield.com/en/united-states/insights/data-center-development-cost-guide |
+| <a id="src-s24"></a>S24 | How many digital workers could OpenAI deploy? | Epoch AI | ~240k tokens per human per day sanity ceiling | https://epochai.substack.com/p/how-many-digital-workers-could-openai |
+| <a id="src-s25"></a>S25 | Agentic workloads use 4-15x more tokens than chat (Signal65 research) | MeriTalk | Agent multipliers | https://www.meritalk.com/?p=209235 |
+| <a id="src-s26"></a>S26 | The Army promised unlimited AI tokens; it ran dry in weeks | DEV Community | Real public-sector consumption anchor (200k tokens/user/month) | https://dev.to/jahanzaibai/the-army-promised-unlimited-ai-tokens-it-ran-dry-in-weeks-50g |
+| <a id="src-s27"></a>S27 | A blueprint for building national compute capacity for AI | OECD (2023) | Policy framing | https://www.oecd.org/en/publications/a-blueprint-for-building-national-compute-capacity-for-artificial-intelligence_876367e3-en.html |
+| <a id="src-s28"></a>S28 | 7 learnings about compute strategy (KIRA Compute Report 2025) | Philip Fox / KIRA Center | Bottom-up national demand method | https://foxphilip.substack.com/p/7-learnings-about-compute-strategy |
+| <a id="src-s29"></a>S29 | Population, total (SP.POP.TOTL) | World Bank WDI | Country!B5 | https://data.worldbank.org/indicator/SP.POP.TOTL |
+| <a id="src-s30"></a>S30 | Why federal leaders must reclaim the economics of AI (CPU inference at US Census) | FedScoop | Classical ML on CPU; ~90% of government AI is inference | https://fedscoop.com/ai-infrastructure-economics-public-sector/ |
+| <a id="src-s31"></a>S31 | Splitwise: Efficient generative LLM inference using phase splitting (Azure LLM inference trace 2023) | Microsoft / ISCA 2024 | Production token shapes: chat median 1,020 in / 129 out; coding median 1,500 in / 13 out | https://arxiv.org/abs/2311.18677 |
+| <a id="src-s32"></a>S32 | State of AI: An Empirical 100 Trillion Token Study with OpenRouter | OpenRouter / a16z (2025) | Average prompt grew ~1.5k to >6k, completion ~150 to ~400; reasoning models >50% of tokens | https://openrouter.ai/state-of-ai |
+| <a id="src-s33"></a>S33 | BurstGPT: A Real-World Workload Dataset to Optimize LLM Serving Systems | HKUST(GZ) et al., Azure OpenAI traces | Burstiness of LLM traffic; API burstier than chat | https://arxiv.org/abs/2401.17644 |
+| <a id="src-s34"></a>S34 | Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving (Kimi) | Moonshot AI / Tsinghua | Prefix cache hit up to ~50% in production trace | https://arxiv.org/abs/2407.00079 |
+| <a id="src-s35"></a>S35 | How we built our multi-agent research system | Anthropic Engineering (2025) | Agents ~4x chat tokens; multi-agent ~15x | https://www.anthropic.com/engineering/multi-agent-research-system |
+| <a id="src-s36"></a>S36 | Microsoft 365 Copilot Experiment: Cross-Government Findings Report | UK Government Digital Service (June 2025) | ~80% of licensed civil servants active monthly; 39% use several times a day | https://www.gov.uk/government/publications/microsoft-365-copilot-experiment-cross-government-findings-report |
+| <a id="src-s37"></a>S37 | Evaluation of the whole-of-government trial of Microsoft 365 Copilot | Australian Digital Transformation Agency (2024) | 1 in 3 trial participants used Copilot daily | https://www.digital.gov.au/initiatives/copilot-trial/summary-evaluation-findings/cts-evaluation-findings |
+| <a id="src-s38"></a>S38 | Pair (Singapore public-service LLM assistant): usage statistics | GovTech / Open Government Products; Straits Times (May 2025); GovInsider | ~50,000 regular users of ~150,000 public officers | https://www.developer.tech.gov.sg/products/categories/productivity-tools/pair/overview |
+| <a id="src-s39"></a>S39 | How People Use ChatGPT (NBER Working Paper 34255) | OpenAI / Harvard, NBER (Sept 2025) | ~700M weekly users, ~2.5-2.6B messages/day (≈3.6 per weekly user per day) | https://www.nber.org/papers/w34255 |
+| <a id="src-s40"></a>S40 | Kisan e-Mitra usage (Lok Sabha reply Dec 2025, PIB) and PM-KISAN 22nd instalment beneficiaries (PIB, March 2026) | Government of India | 8,000-20,000 chatbot queries/day for ~93 million beneficiaries | https://static.pib.gov.in/WriteReadData/specificdocs/documents/2026/mar/doc2026319829701.pdf |
+| <a id="src-s41"></a>S41 | Anthropic Economic Index report, September 2025 (with API dataset) | Anthropic | Per-task input/output token indices; output grows slower than input | https://www.anthropic.com/research/anthropic-economic-index-september-2025-report |
+| <a id="src-s42"></a>S42 | TraceLab: Characterizing Coding Agent Workloads for LLM Serving | University of Washington (2026) | Agentic coding: inputs outnumber outputs ~294x, mostly cached | https://syfi.cs.washington.edu/blog/2026-06-25-tracelab/ |
+| <a id="src-s43"></a>S43 | EpiQAL: Benchmarking LLMs in Epidemiological QA and Reasoning (token usage appendix) | arXiv 2601.03471 | Reasoning tokens per question ~0.2k-2.5k for current reasoning models | https://arxiv.org/pdf/2601.03471 |
+| <a id="src-s44"></a>S44 | InferenceX (formerly InferenceMAX): open, continuous inference benchmarks; chip comparisons and performance per dollar | SemiAnalysis (2025-2026) | Tokens/s per GPU at fixed interactivity (H200, B200, GB300; DeepSeek R1, Llama 3.3 70B); tokens per MW; ownership cost per chip-hour | https://inferencex.semianalysis.com/compare/deepseek-r1-gb300-vs-h200 |
+| <a id="src-s45"></a>S45 | NVIDIA Blackwell Ultra sets new inference records in MLPerf debut (MLPerf Inference v5.1) | NVIDIA, results audited by MLCommons (Sept 2025) | GB300 per-GPU throughput: DeepSeek R1 server 2,907, Llama 3.1 8B server 16,099 tok/s; ~5x Hopper on DeepSeek R1 | https://developer.nvidia.com/blog/nvidia-blackwell-ultra-sets-new-inference-records-in-mlperf-debut |
+| <a id="src-s46"></a>S46 | Prompt caching (pricing: cache reads at 10% of the base input price) | Anthropic documentation | Cached input price share, low end | https://docs.claude.com/en/docs/build-with-claude/prompt-caching |
+| <a id="src-s47"></a>S47 | Prompt caching guide (cached input tokens billed at a discount) | OpenAI documentation | Cached input price share, up to 50% of input price | https://platform.openai.com/docs/guides/prompt-caching |
+| <a id="src-s48"></a>S48 | TradeOff Tools: Data center capital cost calculator; Data center efficiency and PUE calculator | Schneider Electric | Site-specific facility $/W and PUE (client calibration) | https://www.se.com/ww/en/work/solutions/for-business/data-centers-and-networks/trade-off-tools |
+| <a id="src-s49"></a>S49 | Which regions have the most energy efficient data centers? (Global Data Center Survey 2020) | Uptime Institute | Regional PUE averages: Europe 1.46, Africa and Middle East 1.79 | https://journal.uptimeinstitute.com/datacenter-energy-efficiency-by-region/ |
+| <a id="src-s50"></a>S50 | Mapping PUE trends by data center region, age and size (Global Data Center Survey 2025) | Uptime Institute (Oct 2025) | Share of facilities below PUE 1.5 by region; newer and larger sites lower | https://intelligence.uptimeinstitute.com/resource/mapping-pue-trends-data-center-region-age-and-size |
+| <a id="src-s51"></a>S51 | Quantifying data center PUE when introducing liquid cooling (ASME paper with NVIDIA) | Vertiv / NVIDIA | Liquid cooling: -18.1% facility power, -10.2% total power, -7% IT power (fans) | https://www.vertiv.com/en-us/about/news-and-events/articles/blog-posts/quantifying-data-center-pue-when-introducing-liquid-cooling/ |
+| <a id="src-s52"></a>S52 | Data Centre Construction Cost Index 2026-2027 (African and lowest-cost markets) | Turner & Townsend, via Engineering News (Oct 2026) | Construction cost per watt: Lagos, Johannesburg, Nairobi, Mumbai, Shanghai, Ho Chi Minh City, Bogota, UAE; 7-10% liquid-cooled premium | https://www.engineeringnews.co.za/article/study-shows-african-countries-competitive-for-data-centre-construction-2026-10-27 |
+| <a id="src-s53"></a>S53 | Data Centre Construction Cost Index 2025-2026 | Turner & Townsend (Nov 2025) | Construction cost per watt: Jakarta, Malaysia, Saudi Arabia, Singapore, Tokyo; 7-10% liquid-cooled premium (US) | https://reports.turnerandtownsend.com/data-centre-construction-cost-index-2025/data-centre-cost-trends |
+| <a id="src-s54"></a>S54 | White Paper 282: Capital Cost Analysis of Immersive Liquid-Cooled vs. Air-Cooled Large Data Centers | Schneider Electric | Liquid vs air capex equal at 10 kW/rack; 10% / 14% lower at 20 / 40 kW/rack | https://www.se.com/ww/en/download/document/SPD_WP282_EN |
+| <a id="src-s55"></a>S55 | The fastest Whisper transcription (2,400x real time large-v3-turbo, 1,800x large-v3 on H100) | Baseten | Batched speech-to-text GPU-seconds per audio hour | https://www.baseten.co/blog/the-fastest-transcription-with-streaming-and-diarization/ |
+| <a id="src-s56"></a>S56 | Best GPU for Whisper (real-time factor by GPU) | Runpod (Sept 2026) | Unbatched Whisper ~25-60x real time per GPU | https://www.runpod.io/articles/guides/best-gpu-for-whisper |
+| <a id="src-s57"></a>S57 | AI-based clinical decision support for primary care: a real-world study (AI Consult, 39,849 visits) | Penda Health / OpenAI (arXiv 2507.16947, 2025) | Background clinical safety net on every visit, activated at key decision points | https://arxiv.org/abs/2507.16947 |
+| <a id="src-s58"></a>S58 | Learning in the Open: What AI Is (and Isn't) Changing | Khan Academy (2026) | Khanmigo: ~269,000 weekday interactions; ~15% of students with access engage | https://blog.khanacademy.org/learning-in-the-open-what-ai-is-and-isnt-changing/ |
+| <a id="src-s59"></a>S59 | Sal Khan: AI tutors need human input | McGraw Prize in Education | Khanmigo reach: nearly 1 million students | https://mcgrawprize.com/news-events/sal-khan-ai-tutors-need-human-input |
+| <a id="src-s60"></a>S60 | NVIDIA DGX B200 datasheet (system power ~14.3 kW max, 8x B200) | NVIDIA | B200 power per GPU | https://www.nvidia.com/en-us/data-center/dgx-b200/ |
+| <a id="src-s61"></a>S61 | Digital Green Farmer.Chat Study, Kenya (Lean Data, 450 farmers, July-August 2025) | 60 Decibels | 61% meaningful users (impact metric, not usage frequency) | https://60decibels.com/wp-content/uploads/2025/11/25.11.03_Digital-Green-Farmer.Chat_Report_Final_Updated.pdf |
+| <a id="src-s62"></a>S62 | Patel VR et al. Clinician Use of an Artificial Intelligence-Enabled Clinical Information Platform. JAMA, 15 October 2026. doi:10.1001/jama.2026.21868 | JAMA (Harvard Medical School authors; data from OpenEvidence) | Clinical decision support rate (37.1 queries per active physician-month; 44.5 for NPs and PAs; 952,008 clinicians, 271M queries) | https://doi.org/10.1001/jama.2026.21868 |
+| <a id="src-s63"></a>S63 | ChatGPT in lesson preparation - a Teacher Choices trial (259 teachers, 68 schools, 2024) | Education Endowment Foundation / NFER | Teacher assistant activity (about a third of lessons prepared with AI) | https://www.nfer.ac.uk/publications/chatgpt-in-lesson-preparation-a-teacher-choices-trial/ |
+| <a id="src-s64"></a>S64 | PP-OCRv5 inference benchmark (A10, T4) | PaddlePaddle / PaddleOCR | OCR GPU-seconds per page (0.74 s server pipeline on A10, wall time) | https://www.paddleocr.ai/latest/en/version3.x/algorithm/PP-OCRv5/PP-OCRv5.html |
+| <a id="src-s65"></a>S65 | InsightFace-REST model benchmarks (ArcFace R100, TensorRT, RTX 2080 Super) | SthPhoenix (open source) | Face embedding time per face (2.6 ms at batch 1, ~0.9 ms at batch 64) | https://github.com/SthPhoenix/InsightFace-REST |
+| <a id="src-s66"></a>S66 | Open-source TTS latency benchmarks (Kokoro-82M real-time factor ~0.03 on GPU) | GigaGPU | Text-to-speech GPU-seconds per audio hour | https://gigagpu.com/tts-latency-benchmarks |
+| <a id="src-s67"></a>S67 | An Evaluation of DWP's Microsoft 365 Copilot Trial (published 29 January 2026) | UK Department for Work and Pensions | Copilot usage frequency (most users daily or weekly), qualitative cross-check | https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial |
+| <a id="src-s68"></a>S68 | Employment in agriculture (% of total employment) (modeled ILO estimate), SL.AGR.EMPL.ZS; Labor force, total, SL.TLF.TOTL.IN; Rural population, SP.RUR.TOTL | World Bank, World Development Indicators (ILO modelled estimates, ILOSTAT) | Estimated agricultural workers for the agriculture advisory volume check | https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

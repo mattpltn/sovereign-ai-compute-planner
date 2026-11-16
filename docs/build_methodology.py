@@ -49,7 +49,7 @@ def gen_types(arch) -> str:
     ev = []
     for a in arch.values():
         ev.append(f'**{a["label"]}**\n')
-        ev += [f"- *{k}*: {v}" for k, v in a["evidence"].items()]
+        ev += [f"- *{k}*: {link_sources(v)}" for k, v in a["evidence"].items()]
         ev.append("")
     return ("### Generative AI types\n\n" + t1 + "\n\n### Other AI types (non-LLM)\n\n" + t2 +
             "\n\n### Evidence for each type\n\n" + "\n".join(ev))
@@ -107,9 +107,16 @@ def gen_facility(d) -> str:
     return t1 + "\n\n" + t2 + "\n\n" + t3
 
 
+def link_sources(text: str) -> str:
+    """S36 -> [S36](#src-s36): internal link to the row in the Sources table."""
+    import re
+    return re.sub(r"\b(S\d{2,3})\b", lambda m: f"[{m.group(1)}](#src-{m.group(1).lower()})", str(text))
+
+
 def gen_sources(cat) -> str:
     return table(["ID", "Source", "Publisher", "Used for", "Link"],
-                 [[s["id"], s["title"], s["publisher"], s["used_for"], s["url"]] for s in cat["sources"]])
+                 [[f'<a id="src-{s["id"].lower()}"></a>{s["id"]}', s["title"], s["publisher"], s["used_for"], s["url"]]
+                  for s in cat["sources"]])
 
 
 def gen_example(cat, d, arch) -> str:

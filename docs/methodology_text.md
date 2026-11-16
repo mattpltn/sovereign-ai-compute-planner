@@ -74,15 +74,22 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 | Finance | Setup | Discount rate (default 8%), demand growth and market price decline (default 0%). |
 | Placement rules | Setup | Which tier each data class may use. Set once per country from its data protection law. |
 | Client quotes (optional) | Setup | GPU rental price, GPU server cost, data centre build cost. A quote replaces the default range. |
-| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. |
+| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
+| Custom application types (optional) | Applications | Uploaded from a CSV template when no type fits (Section 9). |
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
 
 **Volume check at entry.** The tool compares each volume with a country reference and warns when it is implausible: staff copilot above the number of civil servants; coding assistant above 2% and research agent above 1% of civil servants; frontline health above 0.5% of population; tutor above 30% and citizen assistant above 100% of population. Civil servants come from the World Bank Worldwide Bureaucracy Indicators [S18]: employed labour force × public sector share of employment. This counts all public sector employees, including teachers and health workers, so it is an upper bound for office staff; it is shown on the Setup country line; if missing, a rough 2% of population is used and labelled as an estimate. The limits are assumptions meant to catch input errors (e.g. 20,000 analysts in a country of 400,000 civil servants).
 
+**Agriculture advisory check.** The volume is compared with the estimated number of agricultural workers: employed labour force × ILO modeled share of employment in agriculture [S68], synced from the World Bank API with its indicator code and year. The tool warns when the volume exceeds 1.5 times that estimate (`agri_volume_tolerance`, assumption, in the global defaults). Agricultural employment counts **workers, not holdings or households**; in smallholder countries several household members may use one service, hence the tolerance. If the share is missing or older than 2015, the estimate is treated as unknown and no check is run. The ILO share is a share of employment, so it is applied to the employed labour force (labour force × (1 − unemployment)), not to the whole labour force.
+
+**Who are these farmers?** Agriculture advisory has two usage rates, chosen per application. *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. The citizen assistant will get the same choice later.
+
+**Very low usage note.** For citizen assistant, agriculture advisory and tutor, the tool shows an information note (not a warning, no effect on results) when an application makes fewer than 100 requests per day: the volume may be the whole eligible population rather than service users.
+
 ### 3.2 What the tool provides
 
-Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages) is synced weekly from the World Bank API; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
+Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
 
 ## 4. Layer 0: requests per day
 
@@ -260,6 +267,14 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 {{TYPES}}
 
+### Custom application types
+
+When no type fits, the user downloads a CSV template (one row per type), fills it and uploads it on the Applications page. `kind` = `llm` for language-model applications (usage rates, active days, token sizes, calls per task, retry, cache hit, model size, peak pattern) or `other` for other AI (GPU-seconds per unit, batch or interactive, peak pattern). Each row also states its data class, confidence (High / Medium / Low), basis (observed, derived, assumption, uncalibrated, client) and evidence. Rows with a missing or out-of-range value are skipped and listed; nothing is guessed. Custom types are marked "(custom)", appear under "Custom (uploaded)", and are saved with the scenario.
+
+### Saving and resuming work
+
+Each save creates a new link with a timestamp, so several versions can be kept. The link carries the whole scenario (setup, applications, custom types, quotes) in compressed form after the `#` of the address; nothing is stored on a server, and anyone with the link can open that scenario. Saved versions are listed in the browser where they were saved, with open, copy and remove. The JSON file save and load remain available.
+
 ### How the agent sizes were checked
 
 Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request and the research agent at 14.7 times. Per task, the copilot uses ≈3,740 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈3,400, ≈16,500 and ≈50,000. The ratios are the same either way. The test suite enforces both ranges.
@@ -318,14 +333,20 @@ Owned:
                                                                      Confidential + Restricted share one site by default;
                                                                      1 FTE per ~100 GPUs)
 present value                  = Σ discount(y) × cost(y)
+  breakdown (shown per site)   = GPU servers incl. refresh · GPU software + maintenance · facility build + maintenance
+                                 · energy · staff
 $ per million tokens           = present value / Σ discount(y) × annual equivalent tokens × growth(y)
 ```
+
+**GPU part versus facility.** For owned capacity the results split the 10-year present value into GPU servers (including refresh), GPU software and maintenance, facility build and its maintenance, energy and staff. A client using colocation or an existing server room can drop the facility line and add its colocation rent or room costs, which the tool does not model; energy and staff usually remain unless the colocation fee bundles power. The same breakdown is in the raw CSV export.
 
 **Cached input is priced, not free.** Providers charge cached input tokens at a discount: 10% of the normal input price at Anthropic [S46], up to 50% at OpenAI [S47]. The tool uses 10% / 25% / 50% (Low / Base / High). On owned or rented GPUs cached tokens skip the prefill computation, so they do not add GPU load.
 
 **Rent or own, side by side.** The results show, per tier, what the client would actually pay: API cost per year, GPU rental per year, and for owning the upfront capex (facility + first GPUs), the annual running cost (energy, staff, software, maintenance) and the GPU refresh. The cheapest option is marked, but the decision is the client's: renting has no upfront cost and can scale down; owning needs sustained utilisation.
 
 **The results page** is organised around three client questions (see the summary at the top): the 10-year cost under three adoption scenarios, the capacity to build or buy per destination, and the cost per application. Detailed tables (every option Low – Base – High, tiers and hardware, rent or own per tier, demand) are collapsed below. The raw CSV export is unrounded, for analysts.
+
+**Why moving a small application to the sovereign site barely changes its cost.** The site is sized by the largest workloads, usually the staff copilot. A small application placed on the same site uses spare capacity on servers that are bought anyway, so its share of the cost is small, and it may be close to its API cost. Its cost only jumps if it is the only workload on a site, or if it pushes the site to another server. The results therefore show cost per application two ways: **share of site** (fixed costs spread by GPU need, as in the charts; removing the application would not save this amount) and **extra cost if added last** (10-year total with all applications minus the total without this one). When placement rules move applications above their default tier, the warning states what the move changes versus the default placement: servers added and the change in 10-year cost, which can be negative when API spending is replaced by spare capacity. Each owned site card also shows the **headroom at the busiest hour** (1 − GPU need at peak ÷ GPUs bought), and the scenario table notes when the high end of the price range needs an extra server, which explains a lopsided range.
 
 **Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
 
@@ -369,6 +390,7 @@ Triggers to move up a step: a confidential or restricted application reaches pro
 | Population, internet use, labour force, unemployment | World Bank API (WDI) [S29, S15] | Weekly, GitHub Actions (`sync/worldbank.py`) |
 | Public employment share | World Bank Worldwide Bureaucracy Indicators [S18] | Weekly (API source 64) |
 | Electrical outages per month; share of firms with outages (fallback) | World Bank Enterprise Surveys [S19] | Weekly; the per-month indicator moved in 2026 and is found by name |
+| Employment in agriculture (% of employment, ILO modeled), labour force, rural population | World Bank WDI [S68] | Weekly; codes confirmed against API metadata at each sync |
 | API prices per model size | OpenRouter model list [S21] | Weekly (`sync/openrouter.py`), median of reference models |
 | EGDI | UN E-Government Survey [S17] | Curated `data/egdi.csv`, every two years |
 | Electricity tariff | Utility tariff sheets, GlobalPetrolPrices [S20] | Curated `data/electricity.csv` |

@@ -310,12 +310,16 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
         it_mw_max = _server_round(max(gpus.values()), hw) * hw["kw_per_gpu"] / 1000
         fac_capex = it_mw_max * cp["fac"]
         total = fac_capex  # facility built in year 1, sized for the last year
+        # Present-value breakdown, so a client using colocation or an existing room can see the GPU part alone.
+        pv = {"gpu_servers": 0.0, "facility_build": fac_capex, "energy": 0.0, "staff": 0.0,
+              "software": 0.0, "maintenance_gpu": 0.0, "maintenance_facility": 0.0}
         opex_y1 = None
         purchases = []
         for c in range(math.ceil(H / R)):
             start, end = 1 + c * R, min(H, (c + 1) * R)
             owned = _server_round(gpus[end], hw)                 # whole servers, for demand at the end of the cycle
             total += disc[start] * owned * capex_gpu * price[start]
+            pv["gpu_servers"] += disc[start] * owned * capex_gpu * price[start]
             purchases.append((start, owned * capex_gpu * price[start]))
             for y in range(start, end + 1):
                 util = min(1.0, sz["utilisation"] * sz["gpus"] * grow[y] / owned) if owned else 0.0
@@ -324,6 +328,11 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
                         + staff_fte(owned, d) * d["cost_per_fte_usd"]["value"]
                         + d["maintenance_share"]["value"] * (owned * capex_gpu + fac_capex))
                 total += disc[y] * opex
+                pv["energy"] += disc[y] * energy_mwh * 1000 * cp["kwh"]
+                pv["software"] += disc[y] * owned * hw["software_per_gpu_year_usd"]
+                pv["staff"] += disc[y] * staff_fte(owned, d) * d["cost_per_fte_usd"]["value"]
+                pv["maintenance_gpu"] += disc[y] * d["maintenance_share"]["value"] * owned * capex_gpu
+                pv["maintenance_facility"] += disc[y] * d["maintenance_share"]["value"] * fac_capex
                 if opex_y1 is None:
                     opex_y1 = opex
         out["Owned"] = total
@@ -333,7 +342,7 @@ def tco_tier(sz: dict, dem: list, hw: dict, api_prices: dict, p: Profile, d: dic
                                racks=_roundup(n1 * hw["kw_per_gpu"] / hw["rack_kw"]) if n1 else 0,
                                upfront=fac_capex + purchases[0][1], facility_capex=fac_capex,
                                gpu_capex_y1=purchases[0][1], refresh=[(y, v) for y, v in purchases[1:]],
-                               annual_opex_y1=opex_y1 or 0.0, pue=pue, capex_per_mw=cp["fac"])
+                               annual_opex_y1=opex_y1 or 0.0, pue=pue, capex_per_mw=cp["fac"], pv_breakdown=pv)
     tokens_pv = sum(disc[y] * sz["annual_eq_m"] * grow[y] for y in years)
     return {"modes": out, "detail": detail, "tokens_pv_m": tokens_pv}
 
