@@ -1,6 +1,3152 @@
 {
-  "_meta": {"note": "Populated by sync/worldbank.py (GitHub Actions). XEX is a fictional example country used in tests.", "synced_at": null},
-  "XEX": {"name": "Example country (fictional)", "population": 20000000, "internet_share": 0.45, "civil_servants": 400000,
-          "egdi": 0.5, "outages_per_month": 5, "electricity_usd_kwh": 0.15,
-          "_sources": {"all": "fictional example matching the Excel v0.1"}}
+ "_meta": {
+  "synced_at": "2026-11-16",
+  "log": [
+   "population (SP.POP.TOTL): 262 countries",
+   "internet_share (IT.NET.USER.ZS): 242 countries",
+   "outages_per_month (IC.ELC.OUTG): FAILED no data for country/all/indicator/IC.ELC.OUTG: [{'message': [{'id': '175', 'key': 'Invalid format', 'value': 'The indicator was not found. It may have been deleted or archived.'}]}]",
+   "labour_force (SL.TLF.TOTL.IN): 232 countries",
+   "unemployment_share (SL.UEM.TOTL.ZS): 232 countries",
+   "public_employment_share (BI.EMP.TOTL.PB.ZS): FAILED HTTPSConnectionPool(host='api.worldbank.org', port=443): Read timed out. (read timeout=60)"
+  ]
+ },
+ "ABW": {
+  "name": "Aruba",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 108785,
+  "internet_share": 0.9717
+ },
+ "AFG": {
+  "name": "Afghanistan",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 43844111,
+  "internet_share": 0.1609499931,
+  "labour_force": 9433041,
+  "unemployment_share": 0.13351000000000002
+ },
+ "AGO": {
+  "name": "Angola",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 39040039,
+  "internet_share": 0.4070479965,
+  "labour_force": 16321277,
+  "unemployment_share": 0.14108
+ },
+ "ALB": {
+  "name": "Albania",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2349580,
+  "internet_share": 0.8586389923,
+  "labour_force": 1259172,
+  "unemployment_share": 0.10926
+ },
+ "AND": {
+  "name": "Andorra",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 82904,
+  "internet_share": 0.9439759827
+ },
+ "ARE": {
+  "name": "United Arab Emirates",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11513149,
+  "internet_share": 1.0,
+  "labour_force": 7602907,
+  "unemployment_share": 0.02174
+ },
+ "ARG": {
+  "name": "Argentina",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 45851378,
+  "internet_share": 0.8966715228,
+  "labour_force": 22422031,
+  "unemployment_share": 0.07145
+ },
+ "ARM": {
+  "name": "Armenia",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3086700,
+  "internet_share": 0.8133930206,
+  "labour_force": 1485063,
+  "unemployment_share": 0.12871
+ },
+ "ASM": {
+  "name": "American Samoa",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 1990"
+  },
+  "population": 46029,
+  "internet_share": 0.0
+ },
+ "ATG": {
+  "name": "Antigua and Barbuda",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 94209,
+  "internet_share": 0.7273040009
+ },
+ "AUS": {
+  "name": "Australia",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 27614411,
+  "internet_share": 0.9613140106,
+  "labour_force": 15125385,
+  "unemployment_share": 0.0409
+ },
+ "AUT": {
+  "name": "Austria",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 9208163,
+  "internet_share": 0.9192573373,
+  "labour_force": 4753079,
+  "unemployment_share": 0.05582
+ },
+ "AZE": {
+  "name": "Azerbaijan",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10246996,
+  "internet_share": 0.9080000181,
+  "labour_force": 5110243,
+  "unemployment_share": 0.05457
+ },
+ "BDI": {
+  "name": "Burundi",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 14390003,
+  "internet_share": 0.08595999718,
+  "labour_force": 6308213,
+  "unemployment_share": 0.00922
+ },
+ "BEL": {
+  "name": "Belgium",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11941781,
+  "internet_share": 0.9577579144,
+  "labour_force": 5463472,
+  "unemployment_share": 0.059059999999999994
+ },
+ "BEN": {
+  "name": "Benin",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 14814460,
+  "internet_share": 0.3398379898,
+  "labour_force": 6644562,
+  "unemployment_share": 0.01589
+ },
+ "BFA": {
+  "name": "Burkina Faso",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 24074580,
+  "internet_share": 0.2825270081,
+  "labour_force": 9914873,
+  "unemployment_share": 0.034769999999999995
+ },
+ "BGD": {
+  "name": "Bangladesh",
+  "region": "South Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 175686899,
+  "internet_share": 0.5342171316000001,
+  "labour_force": 74739682,
+  "unemployment_share": 0.03778
+ },
+ "BGR": {
+  "name": "Bulgaria",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6433302,
+  "internet_share": 0.82438955,
+  "labour_force": 3090210,
+  "unemployment_share": 0.03536
+ },
+ "BHR": {
+  "name": "Bahrain",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1600366,
+  "internet_share": 1.0,
+  "labour_force": 919501,
+  "unemployment_share": 0.01102
+ },
+ "BHS": {
+  "name": "Bahamas, The",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 403033,
+  "internet_share": 0.9247270203,
+  "labour_force": 245159,
+  "unemployment_share": 0.09207000000000001
+ },
+ "BIH": {
+  "name": "Bosnia and Herzegovina",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3140095,
+  "internet_share": 0.8610091103,
+  "labour_force": 1340707,
+  "unemployment_share": 0.11037000000000001
+ },
+ "BLR": {
+  "name": "Belarus",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 9085991,
+  "internet_share": 0.9426182128,
+  "labour_force": 4795335,
+  "unemployment_share": 0.0338
+ },
+ "BLZ": {
+  "name": "Belize",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 422924,
+  "internet_share": 0.8000582262,
+  "labour_force": 184286,
+  "unemployment_share": 0.08856
+ },
+ "BMU": {
+  "name": "Bermuda",
+  "region": "North America",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 64555,
+  "internet_share": 0.9837
+ },
+ "BOL": {
+  "name": "Bolivia",
+  "region": "Latin America & Caribbean ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 12581843,
+  "internet_share": 0.7970469666,
+  "labour_force": 6980187,
+  "unemployment_share": 0.029670000000000002
+ },
+ "BRA": {
+  "name": "Brazil",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 212812405,
+  "internet_share": 0.8446347227,
+  "labour_force": 108318282,
+  "unemployment_share": 0.059699999999999996
+ },
+ "BRB": {
+  "name": "Barbados",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 282623,
+  "internet_share": 0.7036470032,
+  "labour_force": 151620,
+  "unemployment_share": 0.06524
+ },
+ "BRN": {
+  "name": "Brunei Darussalam",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 466330,
+  "internet_share": 0.9629828800999999,
+  "labour_force": 237763,
+  "unemployment_share": 0.052770000000000004
+ },
+ "BTN": {
+  "name": "Bhutan",
+  "region": "South Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 796682,
+  "internet_share": 0.9127739716000001,
+  "labour_force": 411263,
+  "unemployment_share": 0.03227
+ },
+ "BWA": {
+  "name": "Botswana",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2562122,
+  "internet_share": 0.5745950036,
+  "labour_force": 1199393,
+  "unemployment_share": 0.24477000000000002
+ },
+ "CAF": {
+  "name": "Central African Republic",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5513282,
+  "internet_share": 0.1378250027,
+  "labour_force": 2076374,
+  "unemployment_share": 0.06251000000000001
+ },
+ "CAN": {
+  "name": "Canada",
+  "region": "North America",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 41651653,
+  "internet_share": 0.94353302,
+  "labour_force": 22846475,
+  "unemployment_share": 0.06907
+ },
+ "CHE": {
+  "name": "Switzerland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 9092436,
+  "internet_share": 0.9732103854999999,
+  "labour_force": 5165662,
+  "unemployment_share": 0.04873
+ },
+ "CHI": {
+  "name": "Channel Islands",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 168466,
+  "labour_force": 81617,
+  "unemployment_share": 0.061689999999999995
+ },
+ "CHL": {
+  "name": "Chile",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 19859921,
+  "internet_share": 0.95590243,
+  "labour_force": 10326077,
+  "unemployment_share": 0.08974
+ },
+ "CHN": {
+  "name": "China",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1406585000,
+  "internet_share": 0.9159999999999999,
+  "labour_force": 768071923,
+  "unemployment_share": 0.046150000000000004
+ },
+ "CIV": {
+  "name": "Cote d'Ivoire",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 32711547,
+  "internet_share": 0.4143219902,
+  "labour_force": 13067763,
+  "unemployment_share": 0.02323
+ },
+ "CMR": {
+  "name": "Cameroon",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 29879337,
+  "internet_share": 0.4625880051,
+  "labour_force": 11466010,
+  "unemployment_share": 0.036019999999999996
+ },
+ "COD": {
+  "name": "Congo, Dem. Rep.",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 112832473,
+  "internet_share": 0.1967350006,
+  "labour_force": 39217778,
+  "unemployment_share": 0.044340000000000004
+ },
+ "COG": {
+  "name": "Congo, Rep.",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6484437,
+  "internet_share": 0.4725159836,
+  "labour_force": 2641346,
+  "unemployment_share": 0.19876000000000002
+ },
+ "COL": {
+  "name": "Colombia",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 53425635,
+  "internet_share": 0.7934543299000001,
+  "labour_force": 27099025,
+  "unemployment_share": 0.08289999999999999
+ },
+ "COM": {
+  "name": "Comoros",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 882847,
+  "internet_share": 0.3251750183,
+  "labour_force": 310841,
+  "unemployment_share": 0.03819
+ },
+ "CPV": {
+  "name": "Cabo Verde",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 527326,
+  "internet_share": 0.7473519896999999,
+  "labour_force": 226448,
+  "unemployment_share": 0.11939
+ },
+ "CRI": {
+  "name": "Costa Rica",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5152950,
+  "internet_share": 0.8717019653,
+  "labour_force": 2427166,
+  "unemployment_share": 0.06843
+ },
+ "CUB": {
+  "name": "Cuba",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10937203,
+  "internet_share": 0.7047699738,
+  "labour_force": 4855941,
+  "unemployment_share": 0.01746
+ },
+ "CUW": {
+  "name": "Curacao",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 156263,
+  "internet_share": 0.681272162511339
+ },
+ "CYM": {
+  "name": "Cayman Islands",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 75844,
+  "internet_share": 0.8106769325081611
+ },
+ "CYP": {
+  "name": "Cyprus",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1370754,
+  "internet_share": 0.8960099246,
+  "labour_force": 770268,
+  "unemployment_share": 0.049240000000000006
+ },
+ "CZE": {
+  "name": "Czechia",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10886878,
+  "internet_share": 0.8768776013999999,
+  "labour_force": 5578235,
+  "unemployment_share": 0.02825
+ },
+ "DEU": {
+  "name": "Germany",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 83491249,
+  "internet_share": 0.9349999579,
+  "labour_force": 43549178,
+  "unemployment_share": 0.03711
+ },
+ "DJI": {
+  "name": "Djibouti",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1184076,
+  "internet_share": 0.6529889679,
+  "labour_force": 267610,
+  "unemployment_share": 0.26015
+ },
+ "DMA": {
+  "name": "Dominica",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 65871,
+  "internet_share": 0.8204689788999999
+ },
+ "DNK": {
+  "name": "Denmark",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6009169,
+  "internet_share": 0.9976915157,
+  "labour_force": 3294817,
+  "unemployment_share": 0.05529
+ },
+ "DOM": {
+  "name": "Dominican Republic",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11520487,
+  "internet_share": 0.9100224459999999,
+  "labour_force": 5512758,
+  "unemployment_share": 0.05091999999999999
+ },
+ "DZA": {
+  "name": "Algeria",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 47435312,
+  "internet_share": 0.774178009,
+  "labour_force": 13556625,
+  "unemployment_share": 0.11632999999999999
+ },
+ "ECU": {
+  "name": "Ecuador",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 18289896,
+  "internet_share": 0.7717273115000001,
+  "labour_force": 8977208,
+  "unemployment_share": 0.03308
+ },
+ "EGY": {
+  "name": "Egypt, Arab Rep.",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 118365995,
+  "internet_share": 0.7464839935,
+  "labour_force": 36106369,
+  "unemployment_share": 0.06781
+ },
+ "ERI": {
+  "name": "Eritrea",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2020",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3607003,
+  "internet_share": 0.1434939957,
+  "labour_force": 1763700,
+  "unemployment_share": 0.05978
+ },
+ "ESP": {
+  "name": "Spain",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 49355143,
+  "internet_share": 0.957574516,
+  "labour_force": 24759183,
+  "unemployment_share": 0.10375999999999999
+ },
+ "EST": {
+  "name": "Estonia",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1366475,
+  "internet_share": 0.9223796204,
+  "labour_force": 754206,
+  "unemployment_share": 0.08313000000000001
+ },
+ "ETH": {
+  "name": "Ethiopia",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 135472051,
+  "internet_share": 0.2194129944,
+  "labour_force": 56779061,
+  "unemployment_share": 0.03323
+ },
+ "FIN": {
+  "name": "Finland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5646436,
+  "internet_share": 0.9372405196,
+  "labour_force": 2886946,
+  "unemployment_share": 0.09461
+ },
+ "FJI": {
+  "name": "Fiji",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 933154,
+  "internet_share": 0.7470520019999999,
+  "labour_force": 390290,
+  "unemployment_share": 0.053470000000000004
+ },
+ "FRA": {
+  "name": "France",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 68720337,
+  "internet_share": 0.8865381638,
+  "labour_force": 31862995,
+  "unemployment_share": 0.07542
+ },
+ "FRO": {
+  "name": "Faroe Islands",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 54900,
+  "internet_share": 0.975819589384468
+ },
+ "FSM": {
+  "name": "Micronesia, Fed. Sts.",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 113683,
+  "internet_share": 0.3952360153
+ },
+ "GAB": {
+  "name": "Gabon",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2593130,
+  "internet_share": 0.6872090149000001,
+  "labour_force": 844145,
+  "unemployment_share": 0.20154
+ },
+ "GBR": {
+  "name": "United Kingdom",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 69487000,
+  "internet_share": 0.954720993,
+  "labour_force": 35409108,
+  "unemployment_share": 0.04746
+ },
+ "GEO": {
+  "name": "Georgia",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3935766,
+  "internet_share": 0.8379855689,
+  "labour_force": 2012582,
+  "unemployment_share": 0.12097
+ },
+ "GHA": {
+  "name": "Ghana",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 35064272,
+  "internet_share": 0.7217569733000001,
+  "labour_force": 13250486,
+  "unemployment_share": 0.02979
+ },
+ "GIB": {
+  "name": "Gibraltar",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2016"
+  },
+  "population": 40126,
+  "internet_share": 0.9444447158181509
+ },
+ "GIN": {
+  "name": "Guinea",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 15099727,
+  "internet_share": 0.3330469894,
+  "labour_force": 4722818,
+  "unemployment_share": 0.05163
+ },
+ "GMB": {
+  "name": "Gambia, The",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2822093,
+  "internet_share": 0.4949430084,
+  "labour_force": 807275,
+  "unemployment_share": 0.06521
+ },
+ "GNB": {
+  "name": "Guinea-Bissau",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2249515,
+  "internet_share": 0.2977739906,
+  "labour_force": 899220,
+  "unemployment_share": 0.02673
+ },
+ "GNQ": {
+  "name": "Equatorial Guinea",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1938431,
+  "internet_share": 0.6329930115,
+  "labour_force": 737977,
+  "unemployment_share": 0.08337
+ },
+ "GRC": {
+  "name": "Greece",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10413962,
+  "internet_share": 0.8626968886,
+  "labour_force": 4715509,
+  "unemployment_share": 0.08539999999999999
+ },
+ "GRD": {
+  "name": "Grenada",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 117303,
+  "internet_share": 0.7016159821
+ },
+ "GRL": {
+  "name": "Greenland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 56831,
+  "internet_share": 0.694824617821988
+ },
+ "GTM": {
+  "name": "Guatemala",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 18687881,
+  "internet_share": 0.6022140121,
+  "labour_force": 7684762,
+  "unemployment_share": 0.02604
+ },
+ "GUM": {
+  "name": "Guam",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 168999,
+  "internet_share": 0.805054655600831,
+  "labour_force": 78007,
+  "unemployment_share": 0.055689999999999996
+ },
+ "GUY": {
+  "name": "Guyana",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 835986,
+  "internet_share": 0.8300080109,
+  "labour_force": 326682,
+  "unemployment_share": 0.11962
+ },
+ "HKG": {
+  "name": "Hong Kong SAR, China",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7498900,
+  "internet_share": 0.9575536970999999,
+  "labour_force": 3790314,
+  "unemployment_share": 0.02799
+ },
+ "HND": {
+  "name": "Honduras",
+  "region": "Latin America & Caribbean ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11005850,
+  "internet_share": 0.5862269974000001,
+  "labour_force": 4340779,
+  "unemployment_share": 0.0492
+ },
+ "HRV": {
+  "name": "Croatia",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3876200,
+  "internet_share": 0.8363240029000001,
+  "labour_force": 1744218,
+  "unemployment_share": 0.050019999999999995
+ },
+ "HTI": {
+  "name": "Haiti",
+  "region": "Latin America & Caribbean ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11906095,
+  "internet_share": 0.47861400600000004,
+  "labour_force": 5268189,
+  "unemployment_share": 0.14944000000000002
+ },
+ "HUN": {
+  "name": "Hungary",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 9514251,
+  "internet_share": 0.9377898628,
+  "labour_force": 4936333,
+  "unemployment_share": 0.04521
+ },
+ "IDN": {
+  "name": "Indonesia",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 285721236,
+  "internet_share": 0.7278075543999999,
+  "labour_force": 147104597,
+  "unemployment_share": 0.03237
+ },
+ "IMN": {
+  "name": "Isle of Man",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025"
+  },
+  "population": 84118
+ },
+ "IND": {
+  "name": "India",
+  "region": "South Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1463865525,
+  "internet_share": 0.7,
+  "labour_force": 617625336,
+  "unemployment_share": 0.042190000000000005
+ },
+ "IRL": {
+  "name": "Ireland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5484367,
+  "internet_share": 0.9718769836,
+  "labour_force": 2912741,
+  "unemployment_share": 0.04632
+ },
+ "IRN": {
+  "name": "Iran, Islamic Rep.",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 92417681,
+  "internet_share": 0.8534040070000001,
+  "labour_force": 29521716,
+  "unemployment_share": 0.08301
+ },
+ "IRQ": {
+  "name": "Iraq",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 47020774,
+  "internet_share": 0.8147450256000001,
+  "labour_force": 12493376,
+  "unemployment_share": 0.15485
+ },
+ "ISL": {
+  "name": "Iceland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 392404,
+  "internet_share": 0.98209198,
+  "labour_force": 242507,
+  "unemployment_share": 0.03625
+ },
+ "ISR": {
+  "name": "Israel",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10122800,
+  "internet_share": 0.8818242225,
+  "labour_force": 4828536,
+  "unemployment_share": 0.03489
+ },
+ "ITA": {
+  "name": "Italy",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 58915656,
+  "internet_share": 0.892207202,
+  "labour_force": 25660587,
+  "unemployment_share": 0.06391
+ },
+ "JAM": {
+  "name": "Jamaica",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2837077,
+  "internet_share": 0.9010870361000001,
+  "labour_force": 1612761,
+  "unemployment_share": 0.03286
+ },
+ "JOR": {
+  "name": "Jordan",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 11520684,
+  "internet_share": 0.9562244984999999,
+  "labour_force": 3220931,
+  "unemployment_share": 0.16535
+ },
+ "JPN": {
+  "name": "Japan",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 123366734,
+  "internet_share": 0.8554153081,
+  "labour_force": 69477012,
+  "unemployment_share": 0.02451
+ },
+ "KAZ": {
+  "name": "Kazakhstan",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 20843754,
+  "internet_share": 0.9339167254,
+  "labour_force": 10009918,
+  "unemployment_share": 0.04771
+ },
+ "KEN": {
+  "name": "Kenya",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 57532493,
+  "internet_share": 0.34976225130000005,
+  "labour_force": 24711751,
+  "unemployment_share": 0.05449
+ },
+ "KGZ": {
+  "name": "Kyrgyz Republic",
+  "region": "Europe & Central Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7343064,
+  "internet_share": 0.920286026,
+  "labour_force": 2868314,
+  "unemployment_share": 0.03526
+ },
+ "KHM": {
+  "name": "Cambodia",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 17847982,
+  "internet_share": 0.6847530365,
+  "labour_force": 10367640,
+  "unemployment_share": 0.00263
+ },
+ "KIR": {
+  "name": "Kiribati",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 136488,
+  "internet_share": 0.8944029999
+ },
+ "KNA": {
+  "name": "St. Kitts and Nevis",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 46922,
+  "internet_share": 0.7688400269
+ },
+ "KOR": {
+  "name": "Korea, Rep.",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 51684564,
+  "internet_share": 0.9789563776999999,
+  "labour_force": 29865575,
+  "unemployment_share": 0.02683
+ },
+ "KWT": {
+  "name": "Kuwait",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 4865298,
+  "internet_share": 1.0,
+  "labour_force": 2927890,
+  "unemployment_share": 0.02181
+ },
+ "LAO": {
+  "name": "Lao PDR",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7873046,
+  "internet_share": 0.6559269714,
+  "labour_force": 3650484,
+  "unemployment_share": 0.01187
+ },
+ "LBN": {
+  "name": "Lebanon",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2023",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2023"
+  },
+  "population": 5849421,
+  "internet_share": 0.8063400269000001,
+  "labour_force": 1837294,
+  "unemployment_share": 0.10984999999999999
+ },
+ "LBR": {
+  "name": "Liberia",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5731206,
+  "internet_share": 0.32233600619999997,
+  "labour_force": 2673807,
+  "unemployment_share": 0.028839999999999998
+ },
+ "LBY": {
+  "name": "Libya",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7458555,
+  "internet_share": 0.8195449829,
+  "labour_force": 2616929,
+  "unemployment_share": 0.18758
+ },
+ "LCA": {
+  "name": "St. Lucia",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 180149,
+  "internet_share": 0.6820500183,
+  "labour_force": 101771,
+  "unemployment_share": 0.09451999999999999
+ },
+ "LIE": {
+  "name": "Liechtenstein",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 41024,
+  "internet_share": 0.982641983
+ },
+ "LKA": {
+  "name": "Sri Lanka",
+  "region": "South Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 21756000,
+  "internet_share": 0.5459,
+  "labour_force": 8264760,
+  "unemployment_share": 0.04005
+ },
+ "LSO": {
+  "name": "Lesotho",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2363325,
+  "internet_share": 0.5179660034,
+  "labour_force": 889530,
+  "unemployment_share": 0.16315000000000002
+ },
+ "LTU": {
+  "name": "Lithuania",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2888774,
+  "internet_share": 0.8916116293,
+  "labour_force": 1553918,
+  "unemployment_share": 0.06731
+ },
+ "LUX": {
+  "name": "Luxembourg",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 686970,
+  "internet_share": 0.9912902211,
+  "labour_force": 355974,
+  "unemployment_share": 0.06343
+ },
+ "LVA": {
+  "name": "Latvia",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1847785,
+  "internet_share": 0.9270757011,
+  "labour_force": 948428,
+  "unemployment_share": 0.06568
+ },
+ "MAC": {
+  "name": "Macao SAR, China",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 685900,
+  "internet_share": 0.8982640076,
+  "labour_force": 401572,
+  "unemployment_share": 0.02347
+ },
+ "MAF": {
+  "name": "St. Martin (French part)",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025"
+  },
+  "population": 24941
+ },
+ "MAR": {
+  "name": "Morocco",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 38430770,
+  "internet_share": 0.912,
+  "labour_force": 12631464,
+  "unemployment_share": 0.09
+ },
+ "MCO": {
+  "name": "Monaco",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 38341,
+  "internet_share": 0.9904489899
+ },
+ "MDA": {
+  "name": "Moldova",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2360527,
+  "internet_share": 0.7736879729999999,
+  "labour_force": 1373086,
+  "unemployment_share": 0.01505
+ },
+ "MDG": {
+  "name": "Madagascar",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 32740678,
+  "internet_share": 0.18677900309999998,
+  "labour_force": 17092352,
+  "unemployment_share": 0.03041
+ },
+ "MDV": {
+  "name": "Maldives",
+  "region": "South Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 529676,
+  "internet_share": 0.8523999786,
+  "labour_force": 272320,
+  "unemployment_share": 0.04514
+ },
+ "MEX": {
+  "name": "Mexico",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 131946900,
+  "internet_share": 0.8312233799000001,
+  "labour_force": 61707262,
+  "unemployment_share": 0.02673
+ },
+ "MHL": {
+  "name": "Marshall Islands",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 36282,
+  "internet_share": 0.65915802
+ },
+ "MKD": {
+  "name": "North Macedonia",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1820909,
+  "internet_share": 0.9309999999999999,
+  "labour_force": 789369,
+  "unemployment_share": 0.12256
+ },
+ "MLI": {
+  "name": "Mali",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 25198821,
+  "internet_share": 0.3680149841,
+  "labour_force": 9156646,
+  "unemployment_share": 0.02831
+ },
+ "MLT": {
+  "name": "Malta",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 579704,
+  "internet_share": 0.9386029816,
+  "labour_force": 323052,
+  "unemployment_share": 0.02896
+ },
+ "MMR": {
+  "name": "Myanmar",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2020",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 54850648,
+  "internet_share": 0.45447700500000004,
+  "labour_force": 22940495,
+  "unemployment_share": 0.03047
+ },
+ "MNE": {
+  "name": "Montenegro",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 623129,
+  "internet_share": 0.8888258428,
+  "labour_force": 296618,
+  "unemployment_share": 0.13571999999999998
+ },
+ "MNG": {
+  "name": "Mongolia",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3568978,
+  "internet_share": 0.8512349700999999,
+  "labour_force": 1457964,
+  "unemployment_share": 0.052329999999999995
+ },
+ "MNP": {
+  "name": "Northern Mariana Islands",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 1990"
+  },
+  "population": 43541,
+  "internet_share": 0.0
+ },
+ "MOZ": {
+  "name": "Mozambique",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 35631653,
+  "internet_share": 0.20527299880000002,
+  "labour_force": 15658114,
+  "unemployment_share": 0.06628
+ },
+ "MRT": {
+  "name": "Mauritania",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5315065,
+  "internet_share": 0.4577939987,
+  "labour_force": 1248560,
+  "unemployment_share": 0.10319
+ },
+ "MUS": {
+  "name": "Mauritius",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1243741,
+  "internet_share": 0.7330793533000001,
+  "labour_force": 622328,
+  "unemployment_share": 0.05635
+ },
+ "MWI": {
+  "name": "Malawi",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 22216120,
+  "internet_share": 0.1896159935,
+  "labour_force": 8323726,
+  "unemployment_share": 0.05072
+ },
+ "MYS": {
+  "name": "Malaysia",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 35977838,
+  "internet_share": 0.980206059,
+  "labour_force": 18719406,
+  "unemployment_share": 0.03764
+ },
+ "NAM": {
+  "name": "Namibia",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3092816,
+  "internet_share": 0.6487460327,
+  "labour_force": 1152801,
+  "unemployment_share": 0.19291
+ },
+ "NCL": {
+  "name": "New Caledonia",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 295333,
+  "internet_share": 0.8200584080351859,
+  "labour_force": 131488,
+  "unemployment_share": 0.11173999999999999
+ },
+ "NER": {
+  "name": "Niger",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 27917831,
+  "internet_share": 0.1555760002,
+  "labour_force": 11971064,
+  "unemployment_share": 0.00394
+ },
+ "NGA": {
+  "name": "Nigeria",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 237527782,
+  "internet_share": 0.4121139908,
+  "labour_force": 116581818,
+  "unemployment_share": 0.03064
+ },
+ "NIC": {
+  "name": "Nicaragua",
+  "region": "Latin America & Caribbean ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7007502,
+  "internet_share": 0.6139550018,
+  "labour_force": 3319222,
+  "unemployment_share": 0.0504
+ },
+ "NLD": {
+  "name": "Netherlands",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 18087633,
+  "internet_share": 0.9700679778999999,
+  "labour_force": 10347056,
+  "unemployment_share": 0.038740000000000004
+ },
+ "NOR": {
+  "name": "Norway",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5610870,
+  "internet_share": 0.99,
+  "labour_force": 3094897,
+  "unemployment_share": 0.046369999999999995
+ },
+ "NPL": {
+  "name": "Nepal",
+  "region": "South Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 29618118,
+  "internet_share": 0.4632189941,
+  "labour_force": 8362760,
+  "unemployment_share": 0.10464999999999999
+ },
+ "NRU": {
+  "name": "Naoero",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 12025,
+  "internet_share": 0.8301170349
+ },
+ "NZL": {
+  "name": "New Zealand",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5324700,
+  "internet_share": 0.9351930237,
+  "labour_force": 3076335,
+  "unemployment_share": 0.05076
+ },
+ "OMN": {
+  "name": "Oman",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5494691,
+  "internet_share": 0.9525174678,
+  "labour_force": 2843365,
+  "unemployment_share": 0.03251
+ },
+ "PAK": {
+  "name": "Pakistan",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 255219554,
+  "internet_share": 0.57253,
+  "labour_force": 85158214,
+  "unemployment_share": 0.0542
+ },
+ "PAN": {
+  "name": "Panama",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 4571189,
+  "internet_share": 0.7277149962999999,
+  "labour_force": 2287522,
+  "unemployment_share": 0.0836
+ },
+ "PER": {
+  "name": "Peru",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 34576665,
+  "internet_share": 0.8195705992000001,
+  "labour_force": 19242514,
+  "unemployment_share": 0.05117
+ },
+ "PHL": {
+  "name": "Philippines",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 116786962,
+  "internet_share": 0.6726300914,
+  "labour_force": 52204133,
+  "unemployment_share": 0.02235
+ },
+ "PLW": {
+  "name": "Palau",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 17663,
+  "internet_share": 0.8392549896
+ },
+ "PNG": {
+  "name": "Papua New Guinea",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10762817,
+  "internet_share": 0.1881159973,
+  "labour_force": 3746653,
+  "unemployment_share": 0.02571
+ },
+ "POL": {
+  "name": "Poland",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 36435861,
+  "internet_share": 0.8858496366999999,
+  "labour_force": 18174157,
+  "unemployment_share": 0.029759999999999998
+ },
+ "PRI": {
+  "name": "Puerto Rico (US)",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2022",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3184835,
+  "internet_share": 0.8729178106000001,
+  "labour_force": 1209307,
+  "unemployment_share": 0.05991
+ },
+ "PRK": {
+  "name": "Korea, Dem. People's Rep.",
+  "region": "East Asia & Pacific",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2004",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 26571036,
+  "internet_share": 0.0,
+  "labour_force": 17696854,
+  "unemployment_share": 0.03545
+ },
+ "PRT": {
+  "name": "Portugal",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10804871,
+  "internet_share": 0.8848704454,
+  "labour_force": 5485246,
+  "unemployment_share": 0.06164
+ },
+ "PRY": {
+  "name": "Paraguay",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7013078,
+  "internet_share": 0.8157806793,
+  "labour_force": 3528777,
+  "unemployment_share": 0.048029999999999996
+ },
+ "PSE": {
+  "name": "West Bank and Gaza",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2023",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2022",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2022"
+  },
+  "population": 5413596,
+  "internet_share": 0.8663765334,
+  "labour_force": 1391230,
+  "unemployment_share": 0.24420000000000003
+ },
+ "PYF": {
+  "name": "French Polynesia",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 282465,
+  "internet_share": 0.727038953132942,
+  "labour_force": 120628,
+  "unemployment_share": 0.11662
+ },
+ "QAT": {
+  "name": "Qatar",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2972215,
+  "internet_share": 0.9808540344,
+  "labour_force": 2198274,
+  "unemployment_share": 0.0013
+ },
+ "ROU": {
+  "name": "Romania",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 19020271,
+  "internet_share": 0.9129048551,
+  "labour_force": 8244587,
+  "unemployment_share": 0.05992
+ },
+ "RUS": {
+  "name": "Russian Federation",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 143513328,
+  "internet_share": 0.9436495368,
+  "labour_force": 72771294,
+  "unemployment_share": 0.021330000000000002
+ },
+ "RWA": {
+  "name": "Rwanda",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 14569341,
+  "internet_share": 0.3170330048,
+  "labour_force": 5843274,
+  "unemployment_share": 0.11363
+ },
+ "SAU": {
+  "name": "Saudi Arabia",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 36973555,
+  "internet_share": 1.0,
+  "labour_force": 18383677,
+  "unemployment_share": 0.030379999999999997
+ },
+ "SDN": {
+  "name": "Sudan",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2022",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2022"
+  },
+  "population": 51662147,
+  "internet_share": 0.1860000038,
+  "labour_force": 10949089,
+  "unemployment_share": 0.0753
+ },
+ "SEN": {
+  "name": "Senegal",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 18931966,
+  "internet_share": 0.6011780167,
+  "labour_force": 6131225,
+  "unemployment_share": 0.02735
+ },
+ "SGP": {
+  "name": "Singapore",
+  "region": "East Asia & Pacific",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6111175,
+  "internet_share": 0.9437757177999999,
+  "labour_force": 3760133,
+  "unemployment_share": 0.02818
+ },
+ "SLB": {
+  "name": "Solomon Islands",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 838645,
+  "internet_share": 0.2904070091,
+  "labour_force": 448502,
+  "unemployment_share": 0.01431
+ },
+ "SLE": {
+  "name": "Sierra Leone",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 8819794,
+  "internet_share": 0.2510499954,
+  "labour_force": 2934968,
+  "unemployment_share": 0.0315
+ },
+ "SLV": {
+  "name": "El Salvador",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6365503,
+  "internet_share": 0.6647769927999999,
+  "labour_force": 2989409,
+  "unemployment_share": 0.03303
+ },
+ "SMR": {
+  "name": "San Marino",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 34109,
+  "internet_share": 0.9735220337
+ },
+ "SOM": {
+  "name": "Somalia, Fed. Rep.",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 19654739,
+  "internet_share": 0.2794020081,
+  "labour_force": 3555419,
+  "unemployment_share": 0.18948
+ },
+ "SRB": {
+  "name": "Serbia",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 6549143,
+  "internet_share": 0.8769071293999999,
+  "labour_force": 3321043,
+  "unemployment_share": 0.07123
+ },
+ "SSD": {
+  "name": "South Sudan",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2019",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2023",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2023"
+  },
+  "population": 12188788,
+  "internet_share": 0.06671000004,
+  "labour_force": 5070344,
+  "unemployment_share": 0.12374
+ },
+ "STP": {
+  "name": "Sao Tome and Principe",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 240254,
+  "internet_share": 0.5911759949000001,
+  "labour_force": 35075,
+  "unemployment_share": 0.09132
+ },
+ "SUR": {
+  "name": "Suriname",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2023",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 639850,
+  "internet_share": 0.8740000000000001,
+  "labour_force": 257128,
+  "unemployment_share": 0.07833999999999999
+ },
+ "SVK": {
+  "name": "Slovak Republic",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 5413813,
+  "internet_share": 0.8982507032,
+  "labour_force": 2761816,
+  "unemployment_share": 0.05359
+ },
+ "SVN": {
+  "name": "Slovenia",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 2130986,
+  "internet_share": 0.9076355487,
+  "labour_force": 1049047,
+  "unemployment_share": 0.03175
+ },
+ "SWE": {
+  "name": "Sweden",
+  "region": "Europe & Central Asia",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10596620,
+  "internet_share": 0.9576629783,
+  "labour_force": 5701347,
+  "unemployment_share": 0.08694
+ },
+ "SWZ": {
+  "name": "Eswatini",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1256174,
+  "internet_share": 0.6340309906,
+  "labour_force": 430869,
+  "unemployment_share": 0.34202
+ },
+ "SXM": {
+  "name": "Sint Maarten (Dutch part)",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025"
+  },
+  "population": 43923
+ },
+ "SYC": {
+  "name": "Seychelles",
+  "region": "Sub-Saharan Africa ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024"
+  },
+  "population": 122730,
+  "internet_share": 0.8781800079
+ },
+ "SYR": {
+  "name": "Syrian Arab Republic",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2018",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 25620427,
+  "internet_share": 0.3377000046,
+  "labour_force": 6764801,
+  "unemployment_share": 0.13569
+ },
+ "TCA": {
+  "name": "Turks and Caicos Islands",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 1990"
+  },
+  "population": 46855,
+  "internet_share": 0.0
+ },
+ "TCD": {
+  "name": "Chad",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 21003705,
+  "internet_share": 0.1262689972,
+  "labour_force": 6746477,
+  "unemployment_share": 0.01057
+ },
+ "TGO": {
+  "name": "Togo",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 8591626,
+  "internet_share": 0.3948320007,
+  "labour_force": 2960760,
+  "unemployment_share": 0.019950000000000002
+ },
+ "THA": {
+  "name": "Thailand",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 71619863,
+  "internet_share": 0.9086718789,
+  "labour_force": 40871242,
+  "unemployment_share": 0.00781
+ },
+ "TJK": {
+  "name": "Tajikistan",
+  "region": "Europe & Central Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 10786734,
+  "internet_share": 0.5579339981,
+  "labour_force": 2647875,
+  "unemployment_share": 0.06931
+ },
+ "TKM": {
+  "name": "Turkmenistan",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2016",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 7618847,
+  "internet_share": 0.1799029922,
+  "labour_force": 2202574,
+  "unemployment_share": 0.04267000000000001
+ },
+ "TLS": {
+  "name": "Timor-Leste",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2021",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1418517,
+  "internet_share": 0.3504199982,
+  "labour_force": 635489,
+  "unemployment_share": 0.01592
+ },
+ "TON": {
+  "name": "Tonga",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 103742,
+  "internet_share": 0.674417038,
+  "labour_force": 33628,
+  "unemployment_share": 0.02008
+ },
+ "TTO": {
+  "name": "Trinidad and Tobago",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 1367764,
+  "internet_share": 0.8215989684999999,
+  "labour_force": 651715,
+  "unemployment_share": 0.03329
+ },
+ "TUN": {
+  "name": "Tunisia",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 12348573,
+  "internet_share": 0.765,
+  "labour_force": 4268286,
+  "unemployment_share": 0.15108
+ },
+ "TUR": {
+  "name": "Turkiye",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2025",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 85878556,
+  "internet_share": 0.8977024002999999,
+  "labour_force": 36882225,
+  "unemployment_share": 0.0852
+ },
+ "TUV": {
+  "name": "Tuvalu",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 9492,
+  "internet_share": 0.3520000076
+ },
+ "TZA": {
+  "name": "Tanzania",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 70545865,
+  "internet_share": 0.3116209984,
+  "labour_force": 34052654,
+  "unemployment_share": 0.01572
+ },
+ "UGA": {
+  "name": "Uganda",
+  "region": "Sub-Saharan Africa ",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 51384894,
+  "internet_share": 0.08949831060999999,
+  "labour_force": 23393999,
+  "unemployment_share": 0.02746
+ },
+ "UKR": {
+  "name": "Ukraine",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2021",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2021"
+  },
+  "population": 38980376,
+  "internet_share": 0.8247489928999999,
+  "labour_force": 20538715,
+  "unemployment_share": 0.09834
+ },
+ "URY": {
+  "name": "Uruguay",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 3384688,
+  "internet_share": 0.9199109007,
+  "labour_force": 1806025,
+  "unemployment_share": 0.07516
+ },
+ "USA": {
+  "name": "United States",
+  "region": "North America",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 341784857,
+  "internet_share": 0.9469380188,
+  "labour_force": 174833917,
+  "unemployment_share": 0.04198
+ },
+ "UZB": {
+  "name": "Uzbekistan",
+  "region": "Europe & Central Asia",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 37053428,
+  "internet_share": 0.8950550079,
+  "labour_force": 14638807,
+  "unemployment_share": 0.04622
+ },
+ "VCT": {
+  "name": "St. Vincent and the Grenadines",
+  "region": "Latin America & Caribbean ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 99924,
+  "internet_share": 0.7619010162,
+  "labour_force": 53688,
+  "unemployment_share": 0.18003
+ },
+ "VEN": {
+  "name": "Venezuela, RB",
+  "region": "Latin America & Caribbean ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 28516896,
+  "internet_share": 0.7667890167,
+  "labour_force": 11118416,
+  "unemployment_share": 0.053070000000000006
+ },
+ "VGB": {
+  "name": "British Virgin Islands",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017"
+  },
+  "population": 39732,
+  "internet_share": 0.777042682926829
+ },
+ "VIR": {
+  "name": "Virgin Islands (U.S.)",
+  "region": "Latin America & Caribbean ",
+  "income": "High income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2017",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 103792,
+  "internet_share": 0.643774942980087,
+  "labour_force": 47132,
+  "unemployment_share": 0.11442999999999999
+ },
+ "VNM": {
+  "name": "Viet Nam",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 101598527,
+  "internet_share": 0.8415,
+  "labour_force": 57041323,
+  "unemployment_share": 0.015229999999999999
+ },
+ "VUT": {
+  "name": "Vanuatu",
+  "region": "East Asia & Pacific",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2015",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 335169,
+  "internet_share": 0.2235140038,
+  "labour_force": 120833,
+  "unemployment_share": 0.050730000000000004
+ },
+ "WSM": {
+  "name": "Samoa",
+  "region": "East Asia & Pacific",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2014",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 219306,
+  "internet_share": 0.2120000076,
+  "labour_force": 57776,
+  "unemployment_share": 0.049960000000000004
+ },
+ "XEX": {
+  "name": "Example country (fictional)",
+  "population": 20000000,
+  "internet_share": 0.45,
+  "civil_servants": 400000,
+  "egdi": 0.5,
+  "outages_per_month": 5,
+  "electricity_usd_kwh": 0.15,
+  "_sources": {
+   "all": "fictional example matching the Excel v0.1"
+  }
+ },
+ "XKX": {
+  "name": "Kosovo",
+  "region": "Europe & Central Asia",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2018"
+  },
+  "population": 1576876,
+  "internet_share": 0.8944303197348791
+ },
+ "YEM": {
+  "name": "Yemen, Rep.",
+  "region": "Middle East, North Africa, Afghanistan & Pakistan",
+  "income": "Low income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2019",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 41773878,
+  "internet_share": 0.1749099922,
+  "labour_force": 8155939,
+  "unemployment_share": 0.17321999999999999
+ },
+ "ZAF": {
+  "name": "South Africa",
+  "region": "Sub-Saharan Africa ",
+  "income": "Upper middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 64747319,
+  "internet_share": 0.7835759735000001,
+  "labour_force": 26731522,
+  "unemployment_share": 0.32391
+ },
+ "ZMB": {
+  "name": "Zambia",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 21913874,
+  "internet_share": 0.1710099983,
+  "labour_force": 8011366,
+  "unemployment_share": 0.05918
+ },
+ "ZWE": {
+  "name": "Zimbabwe",
+  "region": "Sub-Saharan Africa ",
+  "income": "Lower middle income",
+  "_sources": {
+   "population": "World Bank API SP.POP.TOTL, 2025",
+   "internet_share": "World Bank API IT.NET.USER.ZS, 2024",
+   "labour_force": "World Bank API SL.TLF.TOTL.IN, 2025",
+   "unemployment_share": "World Bank API SL.UEM.TOTL.ZS, 2025"
+  },
+  "population": 16950795,
+  "internet_share": 0.4164279938,
+  "labour_force": 6854692,
+  "unemployment_share": 0.09293
+ }
 }

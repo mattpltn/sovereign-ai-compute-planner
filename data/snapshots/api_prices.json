@@ -1,1 +1,28 @@
-{"_meta": {"note": "Populated by sync/openrouter.py", "synced_at": null}}
+{
+ "_meta": {
+  "synced_at": "2026-11-16",
+  "source": "S21 OpenRouter /api/v1/models",
+  "models": {
+   "meta-llama/llama-3.1-8b-instruct": {
+    "input": 0.02,
+    "output": 0.04
+   },
+   "meta-llama/llama-3.3-70b-instruct": {
+    "input": 0.71,
+    "output": 0.71
+   },
+   "qwen/qwen-2.5-72b-instruct": {
+    "input": 0.36,
+    "output": 0.39999999999999997
+   }
+  }
+ },
+ "S": {
+  "input": 0.02,
+  "output": 0.04
+ },
+ "M": {
+  "input": 0.5349999999999999,
+  "output": 0.5549999999999999
+ }
+}
