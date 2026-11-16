@@ -89,14 +89,17 @@ Each application type carries defaults for usage rate, request size, peak patter
 For each application:
 
 ```
-requests per day = volume × rate(scenario)
+requests per active day = volume × rate(scenario)
+annual requests         = requests per active day × active days per year
 ```
 
-- For types measured in **people** (staff copilot, citizen assistant, tutor, health, coding, research agent), `rate` is requests per person with access per day. It already includes the fact that most people with access are not active every day.
-- For types measured in **items** (documents, texts, calls, cases), `rate` = 1: each item is one request.
+- Every rate is per **active day**: a working day for office tools (250 per year), a school day for education (190), a clinic day for patient visits (300), and a calendar day for always-on services (365). Each type states its active days.
+- **Peak sizing uses the active-day rate**, because the busiest day is an active day. **Annual tokens and API cost use active days per year.** A working-day rate is never multiplied by 365.
+- For types measured in **people** (staff copilot, citizen assistant, tutor, health, coding, research agent, teacher, farmer), `rate` is requests per person with access per active day. It already includes the fact that most people with access are not active every day.
+- For types measured in **items** (documents, texts, calls, cases, visits), `rate` = 1: each item is one request, and the client gives the volume per active day.
 - The user can override `rate` per application under Advanced.
 
-Example: the staff copilot rate of 1.4 comes from the UK cross-government trial [S36]. Among survey respondents, 39% used Copilot several times a day and 43% several times a week: 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is scaled by the 80% of licence holders who were active in the last 30 days: 1.78 × 0.8 ≈ 1.4 per person with access.
+Example: the staff copilot rate of 1.4 per working day is a **scenario estimate**, not an observed requests-per-licence rate. It is derived from the UK cross-government trial [S36]: among survey respondents, 39% used Copilot several times a day and 43% several times a week, so 0.39 × 4 + 0.43 × 0.5 = 1.78 requests per respondent per day. Respondents over-represent active users, so the figure is multiplied by 0.8, the share of licence holders active in the last 30 days: 1.78 × 0.8 ≈ 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias.
 
 ## 5. Layers 1-2: tokens per request
 
@@ -245,11 +248,19 @@ The user can force a profile in Setup.
 
 Each default below has a source or is marked as an assumption. Confidence: **High** = direct measurement or client data, **Medium** = indirect evidence or a derivation, **Low** = assumption to replace with client data.
 
+Each type also states the **basis** of its rate and size, so a reader can tell measurement from estimate:
+
+- **observed**: a measured usage figure or benchmark, used with its stated denominator and hardware.
+- **derived**: computed from observed data with stated assumptions (for example a survey frequency turned into a daily rate, or a benchmark on one GPU applied to another).
+- **assumption**: a planning value with no direct measurement.
+- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, biometric deduplication, satellite and image analysis).
+- **client**: the volume comes from the client and the rate is 1 per item.
+
 {{TYPES}}
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request (≈18.2k vs ≈3.7k tokens) and the research agent at 14.7 times (≈55k). The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request and the research agent at 14.7 times. Per task, the copilot uses ≈3,740 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈3,400, ≈16,500 and ≈50,000. The ratios are the same either way. The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 
@@ -257,7 +268,15 @@ India's Kisan e-Mitra chatbot answers 8,000-20,000 queries per day for about 93 
 
 ### Units used for usage rates
 
-All rates are **requests per person with access per day**, averaged over every day of the week. When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). ChatGPT's 3.6 is messages per *weekly* active user per day [S39].
+All rates are **requests per person with access per active day**, with the active days per year stated for each type (Section 4). When a source gives messages per *active* user, the rate is that figure multiplied by the share of people with access who are active (stated in each type's evidence). When a source gives a calendar-day rate for a working-day tool, it is converted to the active day (× 365 / active days), never the reverse. ChatGPT's 3.6 is messages per *weekly* active user per calendar day [S39].
+
+Non-LLM units are stated explicitly: OCR per page; face verification per verification (detection plus one embedding, liveness excluded); retrieval indexing per 500-token chunk counted after overlap; image analysis per model-specific image chip (for example 512 × 512 pixels), so scenes must be converted to chips first.
+
+### How the newer rates were checked
+
+- **Clinical decision support** [S62]: on OpenEvidence, US physicians averaged 37.1 queries per active user-month, and nurse practitioners and physician assistants 44.5. That is about 1.2-1.5 per calendar day for an active user. The default is 0.3 / 1 / 3 per worker with access per calendar day. One query per consultation (3-20 per day) is an intensive scenario, entered as an override. Caveat: US clinicians, voluntary use, and the data came from the platform operator.
+- **Teacher assistant** [S63]: in the EEF/NFER trial, teachers prepared about a third of their lessons with ChatGPT, about 1.7 preparations per week, or 0.34 per school day. With 1 / 3 / 6 requests per preparation (assumption) the rate is 0.34 / 1 / 2 per school day, equivalent to 0.24 / 0.73 / 1.46 per calendar day.
+- **OCR** [S64]: PP-OCRv5 server pipeline, 0.74 s per image on an A10 (wall time, including image reading). Default 0.75 GPU-seconds per page, provisional; layout and table models need separate calibration.
 
 ## 10. Hardware profiles
 
@@ -356,7 +375,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 
 ## 16. Limitations
 
-- **Usage rates for several types are assumptions** (marked Low). They should be replaced with client data or pilot logs.
+- **Usage rates for several types are assumptions** (marked Low, basis "assumption" or "uncalibrated"). They should be replaced with client data or pilot logs.
 - **Pilot calibration is the next step.** Public data gives starting values, not a forecast for a specific client. A pilot's gateway or tracing export can replace measurable values: requests per day, model mix and token sizes from timestamps and token counts; active users from stable user IDs; calls per task from session or trace IDs. Adoption still needs the number of eligible users from the client, and task success needs outcome labels.
 - **Hardware throughput** for small models, the GB300 medium-model figure and **GPU-seconds for non-LLM workloads** are derived or placeholders until calibrated (AIConfigurator, MLPerf [S08]). Benchmarks run one model per GPU pool; real deployments mixing several models will do somewhat worse, which the derating partly covers.
 - **Backup fuel on weak grids**: facility construction costs include UPS and generators, but diesel and fuel logistics are not costed; the tool flags weak or unknown grids.

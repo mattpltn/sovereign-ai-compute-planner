@@ -278,7 +278,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel,
     title="Sovereign AI Compute Planner",
     header=ui.tags.style(CSS),
-    footer=ui.div("v0.5 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.6 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -901,8 +901,8 @@ def server(input, output, session):
         blocks = []
         for t in ARCH.values():
             if is_llm(t):
-                facts = (f'{t["unit_label"]} × {t["rate"]["low"]:g} / {t["rate"]["base"]:g} / {t["rate"]["high"]:g} requests per day '
-                         f'(Low / Base / High) · per call {t["isl"]:,} in + {t["system_prompt_tokens"]:,} system, '
+                facts = (f'{t["unit_label"]} × {t["rate"]["low"]:g} / {t["rate"]["base"]:g} / {t["rate"]["high"]:g} requests per active day '
+                         f'(Low / Base / High), {t.get("active_days_per_year", 365)} active days per year · per call {t["isl"]:,} in + {t["system_prompt_tokens"]:,} system, '
                          f'{t["osl"]:,} out, {t["reasoning_tokens"]:,} reasoning · {t["agent_steps"]} call(s) per task · '
                          f'model {t["model_class"]}')
             else:
@@ -910,7 +910,8 @@ def server(input, output, session):
             blocks.append(ui.div(
                 ui.tags.b(t["label"]), " ",
                 ui.span(f'volume {t["confidence"]["volume"]}', class_=f'hint conf-{t["confidence"]["volume"]}'), " · ",
-                ui.span(f'size {t["confidence"]["tokens"]}', class_=f'hint conf-{t["confidence"]["tokens"]}'),
+                ui.span(f'size {t["confidence"]["tokens"]}', class_=f'hint conf-{t["confidence"]["tokens"]}'), " · ",
+                ui.span("basis: " + ", ".join(f"{k} {v}" for k, v in t.get("basis", {}).items()), class_="hint"),
                 ui.p(facts, class_="hint", style="margin:2px 0"),
                 ui.tags.ul(*[ui.tags.li(ui.tags.i(k), ": ", v) for k, v in t["evidence"].items()], class_="hint"),
                 style="padding:8px 0;border-bottom:1px solid #e5e7eb"))

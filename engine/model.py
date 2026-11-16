@@ -65,6 +65,7 @@ def app_demand(app: dict, country: dict, ambition: str, d: dict) -> dict:
     out_task = (app["osl"] + app["reasoning_tokens"]) * k
     d_in, d_cached, d_out = sessions * in_task, sessions * cached_task, sessions * out_task
     eq = d_out + (d_in - d_cached) * d["prefill_weight"]["value"]
+    days = float(app.get("active_days_per_year") or 365)   # rates are per active (working / school) day
     peak = eq * app["peak_share"] / (app["peak_window_h"] * 3600) * app["burst"] * app["sla_headroom"] * app["seasonal"]
     tpud = (d_in + d_out) / u if u else 0.0
     return dict(
@@ -72,10 +73,10 @@ def app_demand(app: dict, country: dict, ambition: str, d: dict) -> dict:
         daily_input=d_in, daily_cached=d_cached, daily_output=d_out, daily_eq=eq,
         tokens_per_user_day=tpud,
         above_ceiling=tpud > d["tokens_per_user_day_ceiling"]["value"],
-        avg_eq_tps=eq / 86400, peak_eq_tps=peak, model_class=app["model_class"],
-        annual_uncached_input_m=(d_in - d_cached) * 365 / 1e6,
-        annual_cached_input_m=d_cached * 365 / 1e6,
-        annual_output_m=d_out * 365 / 1e6, annual_eq_m=eq * 365 / 1e6,
+        avg_eq_tps=eq * days / 365 / 86400, peak_eq_tps=peak, model_class=app["model_class"], active_days=days,
+        annual_uncached_input_m=(d_in - d_cached) * days / 1e6,
+        annual_cached_input_m=d_cached * days / 1e6,
+        annual_output_m=d_out * days / 1e6, annual_eq_m=eq * days / 1e6,
     )
 
 
