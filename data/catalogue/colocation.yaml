@@ -1,0 +1,34 @@
+# Colocation price per kW of committed IT load per month (USD), excluding metered energy.
+# Wholesale asking rates for 250-500 kW requirements, Tier III / N+1 (CBRE, H2 2025 - Q1 2026).
+# Energy is paid on top at the facility PUE and the electricity tariff.
+# Every value has a source ID from sources.yaml or is marked as an assumption with a confidence level.
+
+wholesale_by_country:          # ISO3 -> market used
+  USA: {value: 196, market: "North America primary markets average", source: S69, confidence: High}
+  GBR: {value: 213, market: "London (195-230)", source: S70, confidence: High}
+  DEU: {value: 250, market: "Frankfurt (235-265)", source: S69, confidence: High}
+  FRA: {value: 190, market: "Paris (175-205)", source: S70, confidence: High}
+  NLD: {value: 180, market: "Amsterdam (165-195)", source: S70, confidence: High}
+  JPN: {value: 280, market: "Tokyo (average)", source: S69, confidence: High}
+  SGP: {value: 403, market: "Singapore (330-475)", source: S69, confidence: High}
+  AUS: {value: 188, market: "Sydney (average)", source: S69, confidence: High}
+  HKG: {value: 295, market: "Hong Kong (average)", source: S69, confidence: High}
+  BRA: {value: 160, market: "Sao Paulo (130-190)", source: S69, confidence: High}
+  MEX: {value: 260, market: "Queretaro (250-270)", source: S69, confidence: High}
+  CHL: {value: 200, market: "Santiago (190-210)", source: S69, confidence: High}
+  COL: {value: 190, market: "Bogota (150-230)", source: S69, confidence: High}
+
+wholesale_by_region:           # World Bank region -> proxy when the country has no published market
+  "North America": {value: 196, note: "CBRE North America average", source: S69, confidence: High}
+  "Europe & Central Asia": {value: 208, note: "Mean of London, Frankfurt, Paris, Amsterdam", source: "S69, S70", confidence: Medium}
+  "Latin America & Caribbean": {value: 202, note: "Mean of Sao Paulo, Queretaro, Santiago, Bogota", source: S69, confidence: Medium}
+  "East Asia & Pacific": {value: 200, note: "Assumption between Sydney (188) and Tokyo (280); Singapore (403) excluded as a supply-constrained outlier", source: "assumption, S69", confidence: Low}
+  "South Asia": {value: 200, note: "Assumption; Indian retail power charges of INR 12,000-25,000 per kW per month (~$140-290) are consistent", source: "assumption, S72", confidence: Low}
+  "Middle East, North Africa, Afghanistan & Pakistan": {value: 230, note: "Assumption: no public wholesale benchmark found", source: assumption, confidence: Low}
+  "Sub-Saharan Africa": {value: 250, note: "Assumption: no public wholesale benchmark found. Retail power above the rack allowance is $500 per kW per month in Nairobi, Dar es Salaam and Lagos (S73), consistent with this value x the small-deployment factor", source: "assumption, S73", confidence: Low}
+wholesale_default: {value: 210, note: "Global fallback, close to the CBRE weighted global average", source: S69, confidence: Low}
+
+# Deployments below the wholesale band pay retail rates per kW.
+small_deployment_kw: {value: 250, source: S69, note: "Wholesale benchmarks are for 250-500 kW requirements"}
+small_deployment_factor: {value: 1.8, source: "S71, S69", confidence: Medium, note: "Published US cabinet prices work out at a median $364 per kW per month (Watt & Rack, Oct 2026) against the $196 wholesale average: about 1.86x"}
+price_range: {low: 0.8, base: 1.0, high: 1.3, source: assumption, confidence: Low, note: "Low / Base / High cost cases: negotiation, contract term, GPU-density premiums (racks of 30-100 kW often carry a premium)"}

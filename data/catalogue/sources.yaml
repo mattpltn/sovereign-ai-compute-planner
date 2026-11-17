@@ -407,3 +407,33 @@
   url: https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS
   used_for: Estimated agricultural workers for the agriculture advisory volume check
   type: Data
+- id: S69
+  title: Global Data Center Trends 2026 (colocation rental rates, 250-500 kW requirements, Q1 2026)
+  publisher: CBRE Research
+  url: https://www.cbre.com/insights/reports/global-data-center-trends-2026
+  used_for: Colocation price per kW for North America, Frankfurt, Latin America and Asia-Pacific markets
+  type: Market report
+- id: S70
+  title: "The Colocation Price Index (wholesale $/kW per month by market, compiled from CBRE 2026 reports)"
+  publisher: Coloprice
+  url: https://coloprice.com/index/
+  used_for: London, Paris and Amsterdam colocation ranges (CBRE Global 2026, Fig. 5)
+  type: Compilation of market reports
+- id: S71
+  title: Colocation pricing, as published (77 rate-card prices from 42 operators, Oct 2026)
+  publisher: Watt & Rack
+  url: https://wattandrack.com/colocation/pricing/
+  used_for: Retail price per kW for small deployments (median $364 per kW per month, US cabinets)
+  type: Compilation of published prices
+- id: S72
+  title: Colocation hosting pricing across Indian data center providers
+  publisher: Cyfuture Cloud (knowledge base)
+  url: https://cyfuture.cloud/kb/colocation/colocation-hosting-pricing-across-indian-data-center-providers
+  used_for: India retail power charges, INR 12,000-25,000 per kW per month (cross-check for South Asia)
+  type: Vendor price guide
+- id: S73
+  title: Colocation in Nairobi, Dar es Salaam and Lagos (published rate card)
+  publisher: Lineserve
+  url: https://www.lineserve.net/colocation
+  used_for: "Africa retail cross-check: power above the rack allowance at $500 per kW per month"
+  type: Vendor rate card

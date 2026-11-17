@@ -5,6 +5,30 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-17
+### Added
+- Each application has a start year (1-10) and a growth rate per year. Demand is zero before the start year and grows from it.
+- Results compare four delivery options over 10 years: API, GPU rental (GPU-as-a-service), owning servers in a commercial colocation data centre, and owning servers in the government's own data centre. Shown for each application (priced on its own) and for the whole portfolio.
+- Portfolio capacity is sized year by year on the combined, pooled load: servers are bought as the combined need grows, replaced after five years and never sold, so spare capacity is shared and not added up. The table shows the saving against buying each application alone.
+- Colocation price per kW of IT per month by country or region (CBRE 2026 wholesale benchmarks, regional assumptions where none exist, x1.8 below 250 kW), with sources S69-S73 and a client-quote override.
+- Owned options: servers by year chart and a breakdown of where the money goes (GPU servers, software, maintenance, staff, energy, colocation fee or facility build).
+- Note on every results page: hosting and data regulation are not assessed; the client must check which options its rules allow for each application.
+- Setup: "existing facility has spare power and cooling" removes the build cost from the own-data-centre option.
+### Changed
+- Data class, traffic split, placement rules and the in-country capability questions are no longer asked; placement remains in the engine (and Excel parity tests) but not in the results.
+- The global demand growth setting is replaced by per-application growth; older saved scenarios apply their global rate to every application.
+- Results CSV now lists each application and the portfolio under each option, Low / Base / High.
+
+## [0.8.0] - 2026-11-16
+### Added
+- Setup: "In-country capability" questions. GPU provider (moved here); cloud with acceptable data residency (in-country, regional, none: with none, Internal data stays in-country); can a government data centre host GPU servers (ready: no facility build cost; fit-out or none: cost included); commercial colocation in-country (Confidential servers in colocation, Step 2 wording). Saved with the scenario; defaults keep earlier results.
+### Changed
+- One vocabulary for locations everywhere: Offshore cloud (API), Cloud with data residency (API or rented), In-country GPU provider (rented), Government data centre, Government-owned servers in private colocation. "Sovereign site" is no longer used. Site cards are titled by location and the data classes they serve.
+- Tier names: T1 Offshore cloud or API; T2 Cloud with data residency; T3 In-country, private provider (government data centre if none); T4 Government data centre.
+- Warnings explain when there is no in-country GPU provider (Confidential data on government-owned servers) and when Internal data is kept in-country.
+- Step 1 and Step 2 wording follow the government data centre and colocation answers.
+- Raw CSV adds the location.
+
 ## [0.7.1] - 2026-11-16
 ### Fixed
 - Data sync failed at its test step: two agriculture tests read the freshly synced Estonia share instead of their own fixture. The sync itself had worked (all three agriculture indicator codes confirmed against API metadata; outages per month found for 145 countries).

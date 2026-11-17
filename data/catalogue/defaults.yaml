@@ -54,8 +54,8 @@ api_reference_models:
 # Default mapping data class -> tier (World Bank data classification approach, S14). Users can change it per country.
 class_to_tier: {1: T1, 2: T2, 3: T3, 4: T4}
 tiers:
-  T1: {name: "Public cloud / API, offshore permitted", api: true, gpuaas: true, owned: true}
-  T2: {name: "Cloud with in-country or regional residency", api: true, gpuaas: true, owned: true}
-  T3: {name: "Sovereign local, privately operated", api: false, gpuaas: true, owned: true}
-  T4: {name: "Government enclave, state-operated", api: false, gpuaas: false, owned: true}
+  T1: {name: "Offshore cloud or API", api: true, gpuaas: true, owned: true}
+  T2: {name: "Cloud with data residency (in-country or regional)", api: true, gpuaas: true, owned: true}
+  T3: {name: "In-country, private provider (government data centre if none)", api: false, gpuaas: true, owned: true}
+  T4: {name: "Government data centre", api: false, gpuaas: false, owned: true}
 agri_volume_tolerance: {value: 1.5, source: "assumption (confidence Low)", note: "Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service)"}

@@ -14,6 +14,8 @@ import pandas as pd
 from shiny import App, reactive, render, ui
 
 from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
+from engine.model import cost_params
+from engine.options import OPTIONS, colo_price, compare, with_no_placement
 from engine.archetypes import (EXAMPLE_PORTFOLIO, POPULATION_BASIS, basis_label, build_profile, is_llm,
                                load_archetypes, low_usage_note, normalize_app, parse_custom_types, rate_for,
                                reference_sizes, volume_warning, CUSTOM_TEMPLATE)
@@ -28,6 +30,7 @@ ARCH = load_archetypes()
 COUNTRIES = load_countries()
 API_PRICES, API_PROV = load_api_prices(D)
 SRC = {s["id"]: s for s in CAT["sources"]}
+D_GPS = {h["id"]: h.get("gpus_per_server", 1) for h in CAT["hardware"]}
 
 
 def cite(text: str) -> list:
@@ -205,9 +208,6 @@ setup_panel = ui.nav_panel(
             ui.card_header("Country"),
             ui.input_selectize("iso", None, iso_choices, selected="XEX"),
             ui.output_ui("country_facts"),
-            ui.input_radio_buttons("provider", "Is there an in-country GPU cloud provider?",
-                                   {"no": "No / not sure", "yes": "Yes"}, selected="no", inline=True),
-            ui.input_checkbox("shared", "Confidential and Restricted data share one secure site", value=True),
             ui.input_radio_buttons("grid", "Grid reliability",
                                    {"auto": "From data", "reliable": "Reliable", "weak": "Weak (frequent outages)"},
                                    selected="auto", inline=True),
@@ -216,6 +216,14 @@ setup_panel = ui.nav_panel(
             ui.p("Leave empty to use the regional value. For a specific site, run the Schneider Electric "
                  "Data center efficiency and PUE calculator [S48] and enter its PUE here.", class_="hint"),
             ui.p("Leave empty to use the country value, or the default range if none.", class_="hint"),
+        ),
+        ui.card(
+            ui.card_header("Owning the servers"),
+            ui.p("Two owned options are compared: servers in a commercial colocation data centre (price per kW, by "
+                 "country), and servers in a data centre the government builds or already has.", class_="hint"),
+            ui.input_checkbox("own_dc_existing", "Own data centre: an existing facility has spare power and cooling "
+                              "(no build cost; energy, staff and maintenance still counted)", value=False),
+            ui.output_ui("colo_facts"),
         ),
         ui.card(
             ui.card_header("Adoption scenario"),
@@ -236,22 +244,13 @@ setup_panel = ui.nav_panel(
         ui.card_header("Finance"),
         ui.layout_columns(
             ui.input_numeric("disc", "Discount rate (%/year)", value=round(D["discount_rate"]["value"] * 100, 1), min=0, max=20, step=0.5),
-            ui.input_numeric("growth", "Demand growth (%/year)", value=round(D["demand_growth"]["value"] * 100, 1), min=-50, max=200, step=5),
             ui.input_numeric("decline", "Market price decline (%/year)", value=round(D["price_decline"]["value"] * 100, 1), min=0, max=80, step=5),
-            col_widths=[4, 4, 4]),
-        ui.p("Costs are shown as present value over 10 years. Price decline applies to API tokens, GPU rental and GPU purchases at refresh.",
+            col_widths=[6, 6]),
+        ui.p("Costs are shown as present value over 10 years. Growth is set per application. Price decline applies to API "
+             "tokens, GPU rental and GPU purchases.",
              class_="hint"),
     ),
     ui.accordion(
-        ui.accordion_panel(
-            "Placement rules: data class → where it may run",
-            ui.p("Set once per country from its data protection law. Each application runs in the tier of its data class. "
-                 "Default follows the World Bank data classification approach [S14].", class_="hint"),
-            ui.layout_columns(*[ui.input_select(f"map{c}", CLASS_LABELS[c],
-                                                {t: f'{t} · {D["tiers"][t]["name"]}' for t in TIERS},
-                                                selected=D["class_to_tier"][c]) for c in (1, 2, 3, 4)],
-                              col_widths=[3, 3, 3, 3]),
-        ),
         ui.accordion_panel(
             "Client quotes (optional)",
             ui.p("Leave empty to use the default cost range. A quote replaces the range.", class_="hint"),
@@ -259,7 +258,8 @@ setup_panel = ui.nav_panel(
                 ui.input_numeric("q_gpu_hour", "GPU rental ($/GPU-hour)", None),
                 ui.input_numeric("q_gpu_capex", "GPU server cost ($/GPU)", None),
                 ui.input_numeric("q_fac", "Data centre build ($/MW IT)", None),
-                col_widths=[4, 4, 4]),
+                ui.input_numeric("q_colo", "Colocation ($/kW IT/month)", None),
+                col_widths=[3, 3, 3, 3]),
         ),
         open=False,
     ),
@@ -280,15 +280,15 @@ apps_panel = ui.nav_panel(
                     "users": "Farmers using the advisory service (onboarded through extension, cooperatives, or app users)"},
                     selected="eligible"),
             ),
-            ui.input_select("a_class", "Data class", {str(k): v for k, v in CLASS_LABELS.items()}, selected="3"),
+            ui.layout_columns(
+                ui.input_select("a_start", "Start year", {str(y): f"Year {y}" for y in range(1, 11)}, selected="1"),
+                ui.input_numeric("a_growth", "Growth per year (%)", value=0, min=-50, max=200, step=5),
+                col_widths=[6, 6]),
             ui.accordion(ui.accordion_panel(
                 "Advanced",
                 ui.input_numeric("a_rate", "Requests per person per day (leave empty for type default)", value=None, min=0),
                 ui.input_select("a_model", "Model size", {"": "Type default", "S": "Small (~8B)",
                                                            "M": "Medium (~70B)", "L": "Large reasoning (~600B MoE)"}),
-                ui.input_text("a_split", "Split traffic by data class (optional)", placeholder="e.g. 2:0.9, 3:0.1"),
-                ui.p("Use a split when sensitive requests are routed separately. Default: everything goes to the "
-                     "application's data class.", class_="hint"),
             ), open=False),
             ui.output_ui("a_type_hint"),
             ui.input_action_button("add", "Add application", class_="btn-primary w-100"),
@@ -318,34 +318,34 @@ results_panel = ui.nav_panel(
     "3 · Results",
     ui.output_ui("warnings"),
     ui.output_ui("answer"),
-    ui.h4("1 · How much will it cost?", class_="sec"),
+    ui.h4("1 · 10-year cost of the portfolio, four ways", class_="sec"),
     ui.layout_columns(
-        ui.card(ui.card_header("10-year cost by adoption scenario (present value, stacked by data class; whisker = price range)"),
-                ui.output_plot("chart_scen", height="300px")),
-        ui.card(ui.card_header("The same numbers"), ui.output_table("scen_table"), ui.output_ui("range_note"),
-                ui.p("Adoption scenario: how much people use the applications. Price range: low and high costs for "
-                     "hardware, cloud and API prices, and GPU efficiency. All figures rounded.", class_="hint")),
-        col_widths=[7, 5]),
-    ui.h4("2 · What needs to be built or bought?", class_="sec"),
-    ui.output_ui("capacity_cards"),
-    ui.h4("3 · Where does the cost come from?", class_="sec"),
-    ui.layout_columns(
-        ui.card(ui.card_header("10-year cost by application (present value)"), ui.output_plot("chart_app", height="360px")),
-        ui.card(ui.card_header("By application"), ui.output_table("app_table"),
-                ui.p("Share of site: each application carries part of the site's fixed costs (servers, facility, staff) in "
-                     "proportion to its GPU need. Removing it would not save that amount. Extra cost if added last: what "
-                     "this application adds on top of all the others (often close to zero when it fits in spare capacity).",
+        ui.card(ui.card_header("10-year cost by option (present value; whisker = price range)"),
+                ui.output_plot("chart_opts", height="300px")),
+        ui.card(ui.card_header("The same numbers"), ui.output_ui("opt_table"),
+                ui.p("All applications together, with their start years and growth. Capacity is sized each year on the "
+                     "combined load, so spare capacity of one application serves the others. Price range: low and high "
+                     "costs for hardware, cloud, API and colocation prices, and GPU efficiency. All figures rounded.",
                      class_="hint")),
+        col_widths=[7, 5]),
+    ui.h4("2 · Cost per application", class_="sec"),
+    ui.card(ui.card_header("10-year cost of each application if bought on its own, by option (present value)"),
+            ui.output_ui("app_opts"),
+            ui.p("Each row prices the application alone, so owned options carry their own servers, staff and facility. "
+                 "The last two rows show the portfolio bought together and the sum of the rows: the gap is what sharing saves.",
+                 class_="hint")),
+    ui.h4("3 · What owning means", class_="sec"),
+    ui.layout_columns(
+        ui.card(ui.card_header("Servers installed by year (owned options, shared by all applications)"),
+                ui.output_plot("chart_fleet", height="280px"), ui.output_ui("fleet_note")),
+        ui.card(ui.card_header("Where the money goes when owning (10-year present value)"), ui.output_ui("owned_parts")),
         col_widths=[6, 6]),
+    ui.output_ui("footnote"),
     ui.accordion(
-        ui.accordion_panel("Details: every buying option, Low – Base – High",
-                           ui.output_ui("tco_flag"), ui.output_table("tco")),
-        ui.accordion_panel("Details: placement tiers and hardware", ui.output_table("ladder")),
-        ui.accordion_panel("Details: rent or own per tier (year 1)", ui.output_table("rent_own"), ui.output_ui("rent_own_note")),
-        ui.accordion_panel("Details: demand by application", ui.output_table("demand")),
-        ui.accordion_panel("Details: cost by data class (Base, with range)", ui.output_plot("chart_class", height="300px")),
+        ui.accordion_panel("Details: assumptions used", ui.output_table("assumptions")),
+        ui.accordion_panel("Details: year by year (portfolio, not discounted)", ui.output_table("yearly")),
         open=False),
-    ui.layout_columns(ui.download_button("dl_results", "Export raw results (CSV, unrounded)"),
+    ui.layout_columns(ui.download_button("dl_results", "Export results (CSV, unrounded)"),
                       ui.download_button("dl_scenario", "Save scenario"),
                       ui.input_file("ul_scenario", None, accept=[".json"], button_label="Load scenario",
                                     placeholder="scenario.json"),
@@ -380,7 +380,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.7 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -453,7 +453,6 @@ def server(input, output, session):
     @reactive.event(input.a_type)
     def _default_class():
         t = A()[input.a_type()]
-        ui.update_select("a_class", selected=str(t["data_class"]))
         ui.update_numeric("a_volume", label=t["unit_label"])
         if is_llm(t) and t["unit"] == "users":
             ui.update_numeric("a_rate", label=f'Requests per person per day (default {t["rate"]["base"]:g} in Base)')
@@ -468,17 +467,10 @@ def server(input, output, session):
         if not vol:
             ui.notification_show(f'Enter {t["unit_label"].lower()} first.', type="warning")
             return
-        split = None
-        s = (input.a_split() or "").strip()
-        if s:
-            try:
-                split = {int(k): float(v) for k, v in (p.split(":") for p in s.split(","))}
-            except ValueError:
-                ui.notification_show("Traffic split not understood, ignored. Format: 2:0.9, 3:0.1", type="warning")
         rate = num(input.a_rate()) if is_llm(t) and t["unit"] == "users" else None
         new = dict(uid=uuid.uuid4().hex[:8], name=input.a_name().strip() or t["label"], type=t["id"], volume=vol,
-                   data_class=int(input.a_class()), rate_override=rate, model_class=input.a_model() or None,
-                   traffic_split=split,
+                   data_class=int(t.get("data_class", 1)), rate_override=rate, model_class=input.a_model() or None,
+                   start_year=int(input.a_start()), growth=(num(input.a_growth()) or 0) / 100,
                    population_basis=input.a_basis() if t.get("rate_by_basis") else "eligible")
         w = volume_warning(new, country()[0], A(), D["agri_volume_tolerance"]["value"])
         if w:
@@ -486,7 +478,6 @@ def server(input, output, session):
         apps.set(apps.get() + [new])
         ui.update_text("a_name", value="")
         ui.update_numeric("a_volume", value=None)
-        ui.update_text("a_split", value="")
 
     @reactive.effect
     @reactive.event(input.remove_app)
@@ -520,7 +511,6 @@ def server(input, output, session):
                 load = f'{fmt(ntr[a["uid"]]["gpu_hours_day"], 1)} GPU-h/day'
             else:
                 load = "-"
-            tier = input[f"map{a['data_class']}"]()
             rows.append(ui.tags.tr(
                 ui.tags.td(ui.tags.b(a["name"]), ui.br(), ui.span(t["label"], class_="hint"),
                            *([ui.br(), ui.span("⚠ " + w, style="color:#92400e;font-size:.82rem")]
@@ -529,8 +519,8 @@ def server(input, output, session):
                              if (n := low_usage_note(a, A(), input.ambition())) else [])),
                 ui.tags.td(f'{fmt(a["volume"])}', ui.br(), ui.span(t["unit_label"], class_="hint"),
                            *([ui.br(), ui.span(f"({b})", class_="hint")] if (b := basis_label(a, A())) else [])),
-                ui.tags.td(ui.span(CLASS_LABELS[a["data_class"]], class_=f'badge-c badge-{a["data_class"]}'),
-                           " → ", tier),
+                ui.tags.td(f'Year {a.get("start_year", 1)}', ui.br(),
+                           ui.span(f'{a.get("growth", 0) * 100:+.0f}% per year', class_="hint")),
                 ui.tags.td(load),
                 ui.tags.td(ui.span("●", class_=f'conf-{t["confidence"]["volume"]}', title=f'Usage rate evidence: {t["confidence"]["volume"]}'),
                            ui.span("●", class_=f'conf-{t["confidence"]["tokens"]}', title=f'Size evidence: {t["confidence"]["tokens"]}'),
@@ -539,8 +529,8 @@ def server(input, output, session):
                                           onclick=f"Shiny.setInputValue('remove_app','{a['uid']}',{{priority:'event'}})")),
             ))
         return ui.tags.table(
-            ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Application", "Volume", "Data class → tier",
-                                                                "Estimated load", "Evidence", "")])),
+            ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Application", "Volume", "Start · growth",
+                                                                "Load at start", "Evidence", "")])),
             ui.tags.tbody(*rows), class_="applist")
 
     # ---- country and profile
@@ -595,7 +585,8 @@ def server(input, output, session):
         cc = COUNTRIES[input.iso()]
         o, s = cc.get("outages_per_month"), cc.get("firms_with_outages_share")
         if o is not None:
-            bits.append(f"outages {o:.1f} per month ({cc['_sources'].get('outages_per_month', '')[-4:]})")
+            yr = cc.get("_sources", {}).get("outages_per_month", "")[-4:]
+            bits.append(f"outages {o:.1f} per month" + (f" ({yr})" if yr.isdigit() else ""))
         if s is not None:
             bits.append(f"{s:.0%} of firms had outages ({cc['_sources'].get('firms_with_outages_share', '')[-4:]})")
         if o is None and s is None:
@@ -605,7 +596,7 @@ def server(input, output, session):
     def quotes():
         q = {}
         for key, inp in [("gpu_hour_usd", "q_gpu_hour"), ("gpu_capex_usd", "q_gpu_capex"),
-                         ("facility_capex_usd_per_mw_it", "q_fac")]:
+                         ("facility_capex_usd_per_mw_it", "q_fac"), ("colo_usd_per_kw_month", "q_colo")]:
             v = num(input[inp]())
             if v:
                 q[key] = v
@@ -614,37 +605,26 @@ def server(input, output, session):
     def _run(ambition, app_list=None, tiers=None):
         c, _ = country()
         p = build_profile(c, ambition, apps.get() if app_list is None else app_list, A(),
-                          tiers or {cl: input[f"map{cl}"]() for cl in (1, 2, 3, 4)}, quotes(), input.hw())
+                          dict(D["class_to_tier"]), quotes(), input.hw())
         p.speed = input.speed()
-        p.local_gpu_provider = input.provider() == "yes"
-        p.shared_sovereign_site = bool(input.shared())
+        p.gov_dc = "ready" if input.own_dc_existing() else "fitout"
         pct = lambda v: (num(v) or 0) / 100
-        p.finance = {"discount_rate": pct(input.disc()), "demand_growth": pct(input.growth()),
-                     "price_decline": pct(input.decline())}
-        return run(p, CAT, D, API_PRICES)
+        p.finance = {"discount_rate": pct(input.disc()), "demand_growth": 0.0, "price_decline": pct(input.decline())}
+        return p
+
+    @reactive.calc
+    def opt():
+        """The four options, per application and for the portfolio."""
+        p = with_no_placement(_run(input.ambition()))
+        meta = {a["uid"]: {"start_year": a.get("start_year", 1), "growth": a.get("growth", 0.0)} for a in apps.get()}
+        return compare(p, CAT, D, API_PRICES, meta)
 
     @reactive.calc
     def result():
-        return _run(input.ambition())
+        return run(_run(input.ambition()), CAT, D, API_PRICES)
 
-    @reactive.calc
-    def added_last():
-        """Extra 10-year cost of each application if added last: total minus the total without it."""
-        lst = apps.get()
-        tot = result()["totals"]["cost"]
-        return {a["uid"]: tot - _run(input.ambition(), [x for x in lst if x["uid"] != a["uid"]])["totals"]["cost"]
-                for a in lst} if len(lst) > 1 else {a["uid"]: tot for a in lst}
 
-    @reactive.calc
-    def placement_delta():
-        """Versus the default placement: servers and 10-year cost added by the user's placement rules."""
-        r0 = _run(input.ambition(), tiers=dict(D["class_to_tier"]))
-        r1 = result()
-        return dict(servers=_build_summary(r1)[0] - _build_summary(r0)[0], cost=r1["totals"]["cost"] - r0["totals"]["cost"])
 
-    @reactive.calc
-    def scenarios():
-        return {a: (result() if a == input.ambition() else _run(a)) for a in ("Low", "Base", "High")}
 
     # ---- results
     @render.ui
@@ -664,16 +644,6 @@ def server(input, output, session):
                         ". Set requests per person per day under Advanced if the client knows it.")
         if quotes():
             msgs.append("Client quotes in use: " + ", ".join(quotes()))
-        order = {"T1": 1, "T2": 2, "T3": 3, "T4": 4}
-        moved = [a["name"] for a in apps.get()
-                 if order[input[f'map{a["data_class"]}']()] > order[D["class_to_tier"][a["data_class"]]]]
-        if moved:
-            pdl = placement_delta()
-            srv = (f'{pdl["servers"]:+d} server{"s" if abs(pdl["servers"]) != 1 else ""}' if pdl["servers"]
-                   else "no extra servers (they use spare capacity)")
-            msgs.append(f'{len(moved)} application{"s" if len(moved) != 1 else ""} placed above the default tier by your '
-                        f'placement rules ({", ".join(moved)}). Versus the default placement: {srv}, '
-                        f'10-year cost {"+" if pdl["cost"] >= 0 else "−"}{money(abs(pdl["cost"]))}.')
         info = [n for a in apps.get() if (n := low_usage_note(a, A(), input.ambition()))]
         out = []
         if msgs:
@@ -686,252 +656,260 @@ def server(input, output, session):
     DEST = {"T1": "Public data", "T2": "Internal data", "T3": "Confidential data", "T4": "Restricted data"}
     SCEN_LABEL = {"Low": "Cautious", "Base": "Expected", "High": "Aggressive"}
 
-    SHORT = {"build": "sovereign site", "rent": "GPU rental", "service": "API"}
+    # ---- results (v0.9: four options per application and for the portfolio)
+    OPT_SHORT = {"API": "API", "GPU-as-a-service": "GPU rental", "Owned + colocation": "Own + colocation",
+                 "Owned + own data centre": "Own + own data centre"}
 
-    def where(r, t):
-        v = r["tiers"][t]
-        k = v["capacity"]["kind"]
-        if v.get("shared_site"):
-            return "Sovereign site (shared)"
-        if k == "build":
-            return f"Sovereign site ({DEST[t].split()[0].lower()})"
-        if k == "rent":
-            return "In-country GPU rental"
-        if k == "service":
-            return "API service" + (" (residency)" if t == "T2" else "")
-        return DEST[t]
+    def _names():
+        return {a["uid"]: a for a in apps.get()}
 
-    def _build_summary(r):
-        builds = [(t, v) for t, v in r["tiers"].items() if v["capacity"]["kind"] == "build"]
-        servers = sum(v["capacity"]["servers"] or 0 for _, v in builds)
-        gpus = sum(v["capacity"]["gpus"] or 0 for _, v in builds)
-        fkw = sum(v["capacity"]["facility_kw"] or 0 for _, v in builds)
-        capex = sum(v["detail"]["base"]["Owned"]["upfront"] for _, v in builds)
-        return servers, gpus, fkw, capex
+    @render.ui
+    def colo_facts():
+        c, _ = country()
+        cp = colo_price(dict(c, _quotes=quotes()), D, "base", 0)
+        small = D["colocation"]["small_deployment_factor"]["value"]
+        return ui.p(f'Colocation price used: about ${cp["wholesale"]:,.0f} per kW of IT per month wholesale '
+                    f'({cp["src"]}), x{small:g} for deployments under '
+                    f'{D["colocation"]["small_deployment_kw"]["value"]:,.0f} kW. Energy is paid on top.', class_="hint")
 
     @render.ui
     def answer():
         if not apps.get():
             return None
-        r = result()
-        t = r["totals"]
-        servers, gpus, fkw, capex = _build_summary(r)
-        rent = [v for v in r["tiers"].values() if v["capacity"]["kind"] == "rent"]
-        svc = [v for v in r["tiers"].values() if v["capacity"]["kind"] == "service"]
-        parts = []
-        if servers:
-            parts.append(f"Build in-country: {servers} server{'s' if servers != 1 else ''} ({gpus} GPUs), "
-                         f"about {power(fkw / 1000)} of facility power, {money(capex)} upfront.")
-        if rent:
-            parts.append(f"Rent about {sum(v['capacity']['gpus'] for v in rent)} GPUs from an in-country provider.")
-        if svc:
-            yr = sum(v["detail"]["base"]["API / managed"]["annual_y1"] for v in svc if "API / managed" in v["detail"]["base"])
-            parts.append(f"Buy the rest as cloud or API services, about {money(yr)} per year.")
+        r = opt()["total"]
+        pv, rg = r["base"]["pv"], r["range"]
+        best = r["cheapest"]
+        order = sorted(OPTIONS, key=pv.get)
+        others = " · ".join(f"{OPT_SHORT[o]} about {money(pv[o])}" for o in order[1:])
+        fl = r["base"]["fleet"]
+        peak = max(fl.values(), key=lambda f: f["servers"])
+        yr = next(y for y, f in fl.items() if f["servers"] == peak["servers"])
+        own = (f'Owning needs up to {peak["servers"]} server{"s" if peak["servers"] != 1 else ""} '
+               f'({peak["gpus"]} GPUs, about {power(r["base"]["peak_it_kw"] / 1000)} of IT load) by year {yr}.'
+               if peak["servers"] else "")
         return ui.div(
-            ui.div(f'About {money(t["cost"])} over 10 years', class_="big"),
-            ui.div(f'Range {money_range(t["cost_range"]["low"], t["cost_range"]["high"])} with '
-                   f'{SCEN_LABEL[input.ambition()].lower()} adoption · present value at {num(input.disc()) or 0:g}% · '
-                   f'{len(apps.get())} application{"s" if len(apps.get()) != 1 else ""}', class_="line"),
-            ui.div(" ".join(parts), class_="line"),
+            ui.div(f"Cheapest over 10 years: {OPT_SHORT[best]}, about {money(pv[best])}", class_="big"),
+            ui.div(f'Range {money_range(rg[best]["low"], rg[best]["high"])} · present value at {num(input.disc()) or 0:g}% · '
+                   f'{len(apps.get())} application{"s" if len(apps.get()) != 1 else ""}, {SCEN[input.ambition()].lower()} adoption',
+                   class_="line"),
+            ui.div("Other options: " + others + ". " + own, class_="line"),
             class_="answer")
 
-    @render.plot(alt="10-year cost by adoption scenario")
-    def chart_scen():
+    @render.plot(alt="10-year cost by option")
+    def chart_opts():
         import matplotlib.pyplot as plt
-        from matplotlib.patches import Patch
-        fig, ax = plt.subplots(figsize=(7.5, 3.3))
         if not apps.get():
-            ax.axis("off")
-            ax.text(0.5, 0.5, "Add applications to see costs", ha="center", color="#52514e")
-            return fig
-        sc = scenarios()
-        keys = ["Low", "Base", "High"]
-        x = range(3)
-        bottom = [0.0, 0.0, 0.0]
-        used = []
-        for t in ("T1", "T2", "T3", "T4"):
-            vals = [sc[k]["tiers"][t]["cost_range"]["base"] or 0 for k in keys]
-            if any(vals):
-                ax.bar(x, vals, bottom=bottom, color=TIER_COLORS[t], width=0.55, edgecolor="#fcfcfb", linewidth=2)
-                bottom = [b + v for b, v in zip(bottom, vals)]
-                used.append(t)
-        lo = [sc[k]["totals"]["cost_range"]["low"] for k in keys]
-        hi = [sc[k]["totals"]["cost_range"]["high"] for k in keys]
-        ax.errorbar(x, bottom, yerr=[[b - l for b, l in zip(bottom, lo)], [h - b for b, h in zip(bottom, hi)]],
-                    fmt="none", ecolor="#52514e", elinewidth=1.2, capsize=4)
-        for xi, b, h in zip(x, bottom, hi):
-            ax.text(xi, h * 1.03, f"about {money(b)}", ha="center", va="bottom", fontsize=8, color="#0b0b0b", fontweight="bold")
-        ax.set_xticks(list(x), [f"{SCEN_LABEL[k]}\nadoption" + (" (selected)" if k == input.ambition() else "") for k in keys])
-        ax.set_ylim(0, max(hi) * 1.2)
-        ax.legend(handles=[Patch(color=TIER_COLORS[t], label=DEST[t]) for t in used], loc="upper center",
-                  bbox_to_anchor=(0.5, -0.2), ncol=len(used), frameon=False, fontsize=7.5)
-        for sp in ("top", "right"):
-            ax.spines[sp].set_visible(False)
-        ax.spines["left"].set_color("#c9c8c3")
-        ax.spines["bottom"].set_color("#c9c8c3")
-        ax.tick_params(colors="#52514e", labelsize=7.5, length=0)
-        ax.yaxis.grid(True, color="#ecebe7", linewidth=0.8)
+            return None
+        r = opt()["total"]
+        pv, rg, best = r["base"]["pv"], r["range"], r["cheapest"]
+        fig, ax = plt.subplots(figsize=(7, 3))
+        xs = list(range(len(OPTIONS)))
+        vals = [pv[o] / 1e6 for o in OPTIONS]
+        ax.bar(xs, vals, width=0.55, color=["#1f5fa8" if o == best else "#9db8d9" for o in OPTIONS])
+        for x, o in zip(xs, OPTIONS):
+            lo, hi = rg[o]["low"] / 1e6, rg[o]["high"] / 1e6
+            ax.plot([x, x], [lo, hi], color="#333", lw=1.2)
+            ax.plot([x - 0.08, x + 0.08], [lo, lo], color="#333", lw=1.2)
+            ax.plot([x - 0.08, x + 0.08], [hi, hi], color="#333", lw=1.2)
+            ax.text(x, hi * 1.02 + 0.01, money(pv[o]), ha="center", va="bottom", fontsize=8,
+                    fontweight="bold" if o == best else "normal")
+        ax.set_xticks(xs, ["API", "GPU rental", "Own, colo", "Own, own DC"], fontsize=8)
+        ax.tick_params(axis="y", labelsize=8)
+        ax.yaxis.set_major_formatter(lambda v, _: f"${v:g}M")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#e5e7eb", lw=0.6)
         ax.set_axisbelow(True)
-        import matplotlib.ticker as mt
-        ax.yaxis.set_major_formatter(mt.FuncFormatter(lambda v, _: money(v) if v else "0"))
-        ax.yaxis.set_major_locator(mt.MaxNLocator(4))
-        fig.subplots_adjust(left=0.1, right=0.98, bottom=0.28, top=0.95)
+        ax.set_ylim(0, max(rg[o]["high"] for o in OPTIONS) / 1e6 * 1.18)
+        fig.subplots_adjust(left=0.1, right=0.98, top=0.95, bottom=0.12)
         return fig
 
-    @render.table
-    def scen_table():
+    @render.ui
+    def opt_table():
         if not apps.get():
             return None
-        sc = scenarios()
+        r = opt()["total"]
+        b = r["base"]
         rows = []
-        for k in ("Low", "Base", "High"):
-            r = sc[k]
-            servers, gpus, fkw, capex = _build_summary(r)
-            rows.append({"Adoption": SCEN_LABEL[k] + (" ★" if k == input.ambition() else ""),
-                         "10-year cost": f'about {money(r["totals"]["cost"])}',
-                         "Price range": money_range(r["totals"]["cost_range"]["low"], r["totals"]["cost_range"]["high"]),
-                         "Servers to build": f"{servers}" if servers else "none",
-                         "Facility power": power(fkw / 1000) if fkw else "-"})
-        return pd.DataFrame(rows)
+        for o in OPTIONS:
+            parts = b["pv_parts"].get(o, {})
+            up = (parts.get("facility_build", 0) + b["fleet"][b["first_year"]]["buy"] * b["capex_gpu"]
+                  * D_GPS.get(b["hardware"], 8)) if o.startswith("Owned") and b["first_year"] else 0
+            rows.append(ui.tags.tr(
+                ui.tags.td(ui.tags.b(OPT_SHORT[o]) if o == r["cheapest"] else OPT_SHORT[o]),
+                ui.tags.td(("about " + money(b["pv"][o])), style="font-weight:600" if o == r["cheapest"] else ""),
+                ui.tags.td(money_range(r["range"][o]["low"], r["range"][o]["high"])),
+                ui.tags.td(money(up) if up else "-")))
+        return ui.tags.table(ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Option", "10-year cost", "Price range",
+                                                                                  "Upfront, first year of use")])),
+                             ui.tags.tbody(*rows), class_="table table-sm")
 
     @render.ui
-    def range_note():
+    def app_opts():
         if not apps.get():
             return None
-        r = result()
-        per = {h["id"]: h.get("gpus_per_server", 1) for h in CAT["hardware"]}
-        extra = []
-        for t, v in r["tiers"].items():
-            if v["capacity"]["kind"] != "build" or v.get("merged_into"):
+        o_ = opt()
+        nm = _names()
+        head = ui.tags.tr(ui.tags.th("Application"), ui.tags.th("Start · growth"),
+                          *[ui.tags.th(OPT_SHORT[o]) for o in OPTIONS], ui.tags.th("Cheapest"))
+
+        def row(label, sub, pv, best, style=""):
+            return ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
+                              *[ui.tags.td(money(pv[o]), style="font-weight:700" if o == best else "") for o in OPTIONS],
+                              ui.tags.td(OPT_SHORT[best]), style=style)
+        rows = []
+        for uid, res in o_["apps"].items():
+            a = nm.get(uid)
+            if not a:
                 continue
-            n = per.get(v["hardware"], 1)
-            hi = math.ceil((v["sizing_range"]["high"]["gpus"] or 0) / n)
-            if hi > (v["sizing"].get("servers") or 0):
-                extra.append(hi - v["sizing"]["servers"])
-        if not extra:
+            label = a["name"] + (f" ({b})" if (b := basis_label(a, A())) else "")
+            sub = f'year {a.get("start_year", 1)}, {a.get("growth", 0) * 100:+.0f}%/yr'
+            if not any(res["base"]["pv"].values()):
+                rows.append(ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
+                                       ui.tags.td(f"Below {D['gpu_threshold']['value']:g} GPU on its own: runs on existing "
+                                                  "servers (CPU or a shared GPU). In the portfolio it uses spare GPU time.",
+                                                  colspan=len(OPTIONS) + 1, class_="hint")))
+                continue
+            rows.append(row(label, sub, res["base"]["pv"], res["cheapest"]))
+        t = o_["total"]
+        rows.append(row(ui.tags.b("All together (shared capacity)"), "", t["base"]["pv"], t["cheapest"],
+                        "border-top:2px solid #94a3b8"))
+        ss = o_["sum_standalone"]
+        rows.append(row(ui.tags.i("Sum if each is bought alone"), "", ss, min(ss, key=ss.get), "color:#64748b"))
+        return ui.tags.table(ui.tags.thead(head), ui.tags.tbody(*rows), class_="table table-sm")
+
+    @render.plot(alt="Servers installed by year")
+    def chart_fleet():
+        import matplotlib.pyplot as plt
+        if not apps.get():
             return None
-        k = sum(extra)
-        return ui.p(f'The high end of the price range adds {k} server{"s" if k != 1 else ""}: with lower GPU efficiency the same '
-                    'load no longer fits, which is why the range is lopsided.', class_="hint")
+        b = opt()["total"]["base"]
+        yrs = list(b["fleet"])
+        sv = [b["fleet"][y]["servers"] for y in yrs]
+        need = [b["sizing"][y]["gpu_need"] / D_GPS.get(b["hardware"], 8) for y in yrs]
+        fig, ax = plt.subplots(figsize=(7, 3))
+        ax.bar(yrs, sv, width=0.6, color="#9db8d9", label="installed")
+        ax.plot(yrs, need, color="#1f5fa8", lw=2, marker="o", ms=4, label="needed at the busiest hour")
+        for y in yrs:
+            if b["fleet"][y]["buy"]:
+                ax.text(y, b["fleet"][y]["servers"] + 0.03, f'+{b["fleet"][y]["buy"]}', ha="center", va="bottom", fontsize=7)
+        ax.set_xticks(yrs, [f"Y{y}" for y in yrs], fontsize=7)
+        ax.tick_params(axis="y", labelsize=7)
+        ax.yaxis.get_major_locator().set_params(integer=True)
 
-    def _m(v, l):
-        return ui.div(ui.div(v, class_="v"), ui.div(l, class_="l"), class_="m")
+        ax.spines[["top", "right"]].set_visible(False)
+        ax.grid(axis="y", color="#e5e7eb", lw=0.6)
+        ax.set_axisbelow(True)
+        ax.legend(fontsize=7, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2)
+        ax.set_ylim(0, max(sv + [1]) * 1.2)
+        fig.subplots_adjust(left=0.07, right=0.98, top=0.95, bottom=0.25)
+        return fig
 
-    def _pv_breakdown(pv):
-        """10-year present value of owning, split so a client with colocation or an existing room sees the GPU part."""
-        gpu = pv["gpu_servers"] + pv["software"] + pv["maintenance_gpu"]
-        fac = pv["facility_build"] + pv["maintenance_facility"]
+    @render.ui
+    def fleet_note():
+        if not apps.get():
+            return None
+        b = opt()["total"]["base"]
+        hw = {h["id"]: h["name"] for h in CAT["hardware"]}[b["hardware"]]
+        return ui.p(f"Hardware: {hw}. Servers are bought when the combined need exceeds what is installed (+N), "
+                    f"replaced after {D['gpu_refresh_years']['value']} years, and never sold. Peak IT load about "
+                    f"{power(b['peak_it_kw'] / 1000)}, about {power(b['peak_facility_kw'] / 1000)} with cooling (PUE {b['pue']:.2f}).",
+                    class_="hint")
+
+    @render.ui
+    def owned_parts():
+        if not apps.get():
+            return None
+        b = opt()["total"]["base"]
+        pc, po = b["pv_parts"]["Owned + colocation"], b["pv_parts"]["Owned + own data centre"]
+        items = [("GPU servers (purchases and refresh)", "gpu_servers"), ("GPU software and support", "software"),
+                 ("GPU maintenance", "maintenance_gpu"), ("Staff", "staff"), ("Energy", "energy"),
+                 ("Colocation fee", "colocation"), ("Facility build", "facility_build"),
+                 ("Facility maintenance", "maintenance_facility")]
+        rows = [ui.tags.tr(ui.tags.td(lbl), ui.tags.td(money(pc[k]) if pc.get(k) else "-"),
+                           ui.tags.td(money(po[k]) if po.get(k) else "-")) for lbl, k in items]
+        rows.append(ui.tags.tr(ui.tags.td(ui.tags.b("Total")), ui.tags.td(ui.tags.b(money(sum(pc.values())))),
+                               ui.tags.td(ui.tags.b(money(sum(po.values()))))))
+        gpu = sum(pc[k] for k in ("gpu_servers", "software", "maintenance_gpu"))
+        return ui.div(ui.tags.table(ui.tags.thead(ui.tags.tr(ui.tags.th(""), ui.tags.th("Own + colocation"),
+                                                             ui.tags.th("Own + own data centre"))),
+                                    ui.tags.tbody(*rows), class_="table table-sm"),
+                      ui.p(f"The GPU part alone (servers, software, maintenance) is {money(gpu)} in both. The difference "
+                           "between the two is the colocation fee against building and maintaining a facility. "
+                           + ("An existing facility is assumed: no build cost." if input.own_dc_existing() else ""),
+                           class_="hint"))
+
+    @render.ui
+    def footnote():
+        if not apps.get():
+            return None
         return ui.div(
-            ui.p(ui.tags.b("10-year cost of owning, present value"), class_="hint", style="margin:6px 0 2px"),
-            ui.div(_m(money(pv["gpu_servers"]), "GPU servers incl. refresh"),
-                   _m(money(pv["software"] + pv["maintenance_gpu"]), "GPU software + maintenance"),
-                   _m(money(fac), "facility build + maintenance"),
-                   _m(money(pv["energy"]), "energy"), _m(money(pv["staff"]), "staff"), class_="row2"),
-            ui.p(f"GPU part alone: {money(gpu)}. With colocation or an existing server room, the facility "
-                 f"({money(fac)}) drops out and is replaced by colocation rent or the room's existing costs (not included); "
-                 "energy and staff usually remain, unless the colocation fee bundles power.", class_="hint"))
-
-    @render.ui
-    def capacity_cards():
-        if not apps.get():
-            return None
-        r = result()
-        hwname = {h["id"]: h["name"] for h in CAT["hardware"]}
-        cards = []
-        for t, v in r["tiers"].items():
-            cap, det = v["capacity"], v["detail"]["base"]
-            if v.get("merged_into") or cap["kind"] == "none":
-                continue
-            color = TIER_COLORS[t]
-            title = ("Shared sovereign site · Confidential + Restricted data" if v.get("shared_site")
-                     else f'{DEST[t]} · {D["tiers"][t]["name"]}')
-            if cap["kind"] == "service":
-                api = det.get("API / managed", {}).get("annual_y1")
-                body = [ui.div(_m(money(api) if api is not None else "-", "per year"),
-                               _m(money(v["cost_range"]["base"]), "10-year present value"), class_="row2"),
-                        ui.p("Nothing to build: bought as an API service.", class_="hint")]
-            elif cap["kind"] == "rent":
-                body = [ui.div(_m(f'{cap["gpus"]}', "GPUs rented"),
-                               _m(money(det["GPU-as-a-service"]["annual_y1"]), "per year"),
-                               _m(money(v["cost_range"]["base"]), "10-year present value"), class_="row2")]
-            else:
-                own = det["Owned"]
-                rent = det.get("GPU-as-a-service", {}).get("annual_y1")
-                body = [ui.div(_m(f'{cap["servers"]}', "servers" if (cap["servers"] or 0) != 1 else "server"),
-                               _m(f'{cap["gpus"]}', "GPUs"), _m(power(cap["it_kw"] / 1000), "IT load"),
-                               _m(power(cap["facility_kw"] / 1000), f'facility (PUE {v["facility"]["pue"]:.2f})'),
-                               _m(f'{cap["racks"]}', "rack" if cap["racks"] == 1 else "racks"), class_="row2"),
-                        ui.div(_m(money(own["upfront"]), "upfront (facility + GPUs)"),
-                               _m(money(own["annual_opex_y1"]), "per year to run"),
-                               _m(", ".join(f"{money(x)} in year {y}" for y, x in own["refresh"]) or "-", "GPU refresh"),
-                               class_="row2"),
-                        ui.p(f'Headroom at the busiest hour: about {max(0, 1 - v["sizing"].get("gpu_need", 0) / cap["gpus"]):.0%} '
-                             'of the GPUs, room for more applications without new hardware.' if cap["gpus"] else "",
-                             class_="hint", style="margin:4px 0"),
-                        _pv_breakdown(own["pv_breakdown"]),
-                        ui.p(f'Hardware: {hwname.get(v["hardware"], v["hardware"])} · utilisation {v["sizing"]["utilisation"]:.0%}'
-                             + (f' · renting instead: {money(rent)} per year' if rent else
-                                " · renting not available (no in-country provider)" if t == "T3" or v.get("shared_site") else ""),
-                             class_="hint")]
-            cards.append(ui.div(ui.tags.h5(title), ui.div(v["grid"] if v["grid"] not in ("-", "OK", "Offshore: not applicable") else "",
-                                                           class_="sub"),
-                                *body, ui.div(v["step"], class_="step"), class_="ccard", style=f"--c:{color}"))
-        return ui.div(*cards, class_="cards")
+            ui.tags.b("Hosting and data regulation are not assessed here. "),
+            "The cheapest option may not be allowed. Before choosing, the client needs to check its data protection and "
+            "sector rules for each application: whether the data may be processed by an API provider or a cloud outside "
+            "the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a "
+            "government data centre.",
+            class_="warn", style="margin-top:14px")
 
     @render.table
-    def app_table():
-        r = result()
+    def assumptions():
         if not apps.get():
-            return None
-        total = r["totals"]["cost"] or 1
-        req = {}
-        for x in r["demand"]:
-            req[x["id"]] = req.get(x["id"], 0) + x["sessions"]
+            return pd.DataFrame()
+        b = opt()["total"]["base"]
+        c, _ = country()
+        hw = next(h for h in CAT["hardware"] if h["id"] == b["hardware"])
+        rows = [("Hardware", f'{hw["name"]}, {hw["kw_per_gpu"]:g} kW per GPU'),
+                ("GPU server price", f'${b["capex_gpu"]:,.0f} per GPU'),
+                ("GPU rental", f'${b["gpu_hour"]:.2f} per GPU-hour'),
+                ("Colocation", f'${b["colo"]["value"]:,.0f} per kW of IT per month ({b["colo"]["src"]}'
+                               + (", small-deployment rate" if b["colo"]["small"] else "") + ")"),
+                ("Facility build (own data centre)", "existing facility, not counted" if input.own_dc_existing()
+                 else f'{money(b["facility_capex"])} for {power(b["peak_it_kw"] / 1000)} of IT'),
+                ("PUE", f'{b["pue"]:.2f}'),
+                ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),
+                ("API prices", API_PROV),
+                ("Discount rate", f'{num(input.disc()) or 0:g}% · price decline {num(input.decline()) or 0:g}% per year')]
+        return pd.DataFrame(rows, columns=["Item", "Value used (Base)"])
+
+    @render.table
+    def yearly():
+        if not apps.get():
+            return pd.DataFrame()
+        b = opt()["total"]["base"]
         rows = []
-        for a in sorted(apps.get(), key=lambda a: -sum(r["by_app"].get(a["uid"], {}).values())):
-            cost = sum(r["by_app"].get(a["uid"], {}).values())
-            dest = [t for t in r["by_app"].get(a["uid"], {})]
-            t = A()[a["type"]]
-            rows.append({"Application": a["name"],
-                         "Volume": f'{fmt(a["volume"])} {t["unit_label"].lower()}'
-                                   + (f" ({b})" if (b := basis_label(a, A())) else ""),
-                         "Requests/day": fmt(req[a["uid"]]) if a["uid"] in req else "GPU job",
-                         "Data class": CLASS_LABELS[a["data_class"]].split(" · ")[1],
-                         "Runs in": ", ".join(where(r, x) for x in dest) or "-",
-                         "10-year cost (share of site)": money(cost) if cost else "-",
-                         "Share": f"{cost / total:.0%}" if cost else "-",
-                         "Extra cost if added last": money(max(0, al)) if (al := added_last().get(a["uid"])) is not None and al > 1 else "≈ 0"})
+        for y in b["fleet"]:
+            rows.append({"Year": y, "GPUs needed (busiest hour)": b["sizing"][y]["gpus"],
+                         "Servers installed": b["fleet"][y]["servers"],
+                         **{OPT_SHORT[o]: money(b["yearly"][o][y]) for o in OPTIONS}})
         return pd.DataFrame(rows)
 
-    @render.ui
-    def kpis():
-        r = result()
-        t = r["totals"]
-        lo = sum((v["cost_range"]["low"] or 0) for v in r["tiers"].values())
-        hi = sum((v["cost_range"]["high"] or 0) for v in r["tiers"].values())
-        local = sum(v["sizing"]["facility_mw"] for k, v in r["tiers"].items() if k in ("T3", "T4"))
-        g, mw = t["gpus_range"], t["mw_range"]
-        return ui.layout_columns(
-            kpi("GPUs (all tiers)", f'about {fmt(t["gpus"])}', f'range {fmt(g["low"])}–{fmt(g["high"])} · {SCEN[input.ambition()]} adoption'),
-            kpi("Facility power", f'about {power(t["facility_mw"])}', f'range {power(mw["low"])}–{power(mw["high"])} · in-country sovereign: {power(local)}'),
-            kpi("10-year cost (present value)", f'about {money(t["cost"])}', f"range {money_range(lo, hi)} · discount {num(input.disc()) or 0:g}%"),
-            col_widths=[4, 4, 4])
+    @render.download(filename="ai_compute_options_raw.csv")
+    def dl_results():
+        o_ = opt()
+        nm = _names()
+        rows = []
+        for uid, res in list(o_["apps"].items()) + [("ALL", o_["total"])]:
+            for o in OPTIONS:
+                rows.append({"application": nm[uid]["name"] if uid in nm else "All together (shared capacity)",
+                             "start_year": nm[uid].get("start_year", 1) if uid in nm else "",
+                             "growth": nm[uid].get("growth", 0) if uid in nm else "",
+                             "option": o, **{f"pv_{s_}": res["range"][o][s_] for s_ in ("low", "base", "high")},
+                             "cheapest": o == res["cheapest"], "hardware": res["base"]["hardware"],
+                             "peak_servers": max(f["servers"] for f in res["base"]["fleet"].values())})
+        yield pd.DataFrame(rows).to_csv(index=False)
 
-    @render.table
-    def ladder():
-        r = result()
-        return pd.DataFrame([{
-            "Tier": f'{t} · {D["tiers"][t]["name"]}',
-            "GPUs": ("service" if v["capacity"]["kind"] == "service" else
-                     f'{v["sizing"]["gpus"]} ({v["sizing"].get("servers")} servers)' if v["capacity"]["kind"] == "build"
-                     else fmt(v["sizing"]["gpus"])),
-            "Facility power": power(v["sizing"]["facility_mw"]) if v["capacity"]["kind"] == "build" else "-",
-            "Utilisation": f'{v["sizing"]["utilisation"]:.0%}',
-            "Apps / pooling": f'{v["sizing"]["n_apps"]} / D {v["sizing"]["diversity"]:.2f}' if v["sizing"]["n_apps"] else "-",
-            "Hardware": v["hardware"] if v["sizing"]["gpus"] else "-",
-            "PUE": f'{v["facility"]["pue"]:.2f}' if v["sizing"]["gpus"] else "-",
-            "Grid": v["grid"], "Recommended step": v["step"],
-        } for t, v in r["tiers"].items()])
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     import matplotlib
@@ -950,163 +928,18 @@ def server(input, output, session):
         import matplotlib.ticker as mt
         ax.xaxis.set_major_formatter(mt.FuncFormatter(lambda v, _: money(v) if v else "0"))
 
-    @render.plot(alt="10-year cost by data class")
-    def chart_class():
-        import matplotlib.pyplot as plt
-        r = result()
-        rows = [(t, v) for t, v in r["tiers"].items() if v["cheapest_cost"]]
-        fig, ax = plt.subplots(figsize=(7.5, 3.2))
-        if not rows:
-            ax.axis("off")
-            ax.text(0.5, 0.5, "Add applications to see costs", ha="center", color="#52514e")
-            return fig
-        labels = [f'{t}\n{"Public" if t == "T1" else "Internal" if t == "T2" else "Confidential" if t == "T3" else "Restricted"}'
-                  for t, _ in rows][::-1]
-        base = [v["cost_range"]["base"] for _, v in rows][::-1]
-        lo = [v["cost_range"]["low"] for _, v in rows][::-1]
-        hi = [v["cost_range"]["high"] for _, v in rows][::-1]
-        cols = [TIER_COLORS[t] for t, _ in rows][::-1]
-        y = range(len(rows))
-        ax.barh(y, base, color=cols, height=0.55)
-        ax.errorbar(base, y, xerr=[[b - l for b, l in zip(base, lo)], [h - b for b, h in zip(base, hi)]],
-                    fmt="none", ecolor="#52514e", elinewidth=1.2, capsize=3)
-        for yi, b, h, (t, v) in zip(y, base, hi, rows[::-1]):
-            ax.text(h * 1.02, yi, f'{money(b)} · {v["cheapest_mode"]}', va="center", fontsize=7.5, color="#0b0b0b")
-        ax.set_yticks(list(y), labels)
-        ax.set_xlim(0, max(hi) * 1.6)
-        _style(ax)
-        _money_axis(ax)
-        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
-        fig.subplots_adjust(left=0.2, right=0.97, bottom=0.12, top=0.96)
-        return fig
 
-    @render.plot(alt="10-year cost by application")
-    def chart_app():
-        import matplotlib.pyplot as plt
-        from matplotlib.patches import Patch
-        r = result()
-        names = {a["uid"]: a["name"] + (f" ({b})" if (b := basis_label(a, A())) else "") for a in apps.get()}
-        items = sorted(((names.get(k, k), sum(v.values()), max(v, key=v.get)) for k, v in r["by_app"].items()),
-                       key=lambda x: x[1])
-        fig, ax = plt.subplots(figsize=(7.5, max(3.2, 0.3 * len(items) + 0.9)))
-        if not items:
-            ax.axis("off")
-            ax.text(0.5, 0.5, "Add applications to see costs", ha="center", color="#52514e")
-            return fig
-        y = range(len(items))
-        ax.barh(y, [c for _, c, _ in items], color=[TIER_COLORS[t] for _, _, t in items], height=0.6)
-        for yi, (_, c, t) in zip(y, items):
-            ax.text(c * 1.02 + max(x for _, x, _ in items) * 0.01, yi, f"{money(c)} · {SHORT.get(r['tiers'][t]['capacity']['kind'], '')}",
-                    va="center", fontsize=7.5, color="#0b0b0b")
-        ax.set_yticks(list(y), [n if len(n) <= 40 else n[:38] + "…" for n, _, _ in items])
-        ax.set_xlim(0, max(c for _, c, _ in items) * 2.5)
-        tiers_used = sorted({t for _, _, t in items})
-        _style(ax)
-        _money_axis(ax)
-        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(4))
-        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(3))
-        fig.subplots_adjust(left=0.44, right=0.97, bottom=0.1, top=0.97)
-        return fig
 
-    @render.table
-    def rent_own():
-        r = result()
-        rows = []
-        for t, v in r["tiers"].items():
-            if not v["sizing"]["gpus"]:
-                continue
-            det = v["detail"]["base"]
-            api = det.get("API / managed", {}).get("annual_y1")
-            rent = det.get("GPU-as-a-service", {}).get("annual_y1")
-            own = det.get("Owned")
-            rows.append({
-                "Tier": t,
-                "API: per year": money(api) if api is not None else "not allowed",
-                "Rent GPUs: per year": money(rent) if rent is not None else "not allowed",
-                "Own: upfront (facility + GPUs)": money(own["upfront"]) if own else "-",
-                "Own: per year (energy, staff, software, maintenance)": money(own["annual_opex_y1"]) if own else "-",
-                "Own: GPU refresh": ", ".join(f'{money(val)} in year {y}' for y, val in own["refresh"]) if own and own["refresh"] else "-",
-                "Facility basis": (f'PUE {v["facility"]["pue"]:.2f}; ${own["capex_per_mw"] / 1e6:.1f}M per MW IT '
-                                   f'({v["facility"]["capex_src"]})') if own else "-",
-            })
-        return pd.DataFrame(rows) if rows else None
 
-    @render.ui
-    def rent_own_note():
-        return ui.p("Renting has no upfront cost and scales down; owning concentrates cost upfront and needs utilisation to pay off. "
-                    "Facility cost and PUE come from the country and the cooling type (Methodology, Section 8). "
-                    "Year-1 values, rounded to two significant figures.", class_="hint")
 
-    @render.ui
-    def tco_flag():
-        r = result()
-        flips = [f'{t}: cheapest is {v["winners"]["low"]} (Low), {v["winners"]["base"]} (Base), {v["winners"]["high"]} (High)'
-                 for t, v in r["tiers"].items() if v["winner_changes"]]
-        if not flips:
-            return ui.p("The cheapest option is the same across the Low – High range in every tier.", class_="hint")
-        return ui.div(ui.tags.b("The cheapest option changes within the range: "), "; ".join(flips),
-                      ". Get client quotes before choosing.", class_="warn")
 
-    @render.table
-    def tco():
-        r = result()
-        rows = []
-        for t, v in r["tiers"].items():
-            row = {"Tier": t}
-            for m in ("API / managed", "GPU-as-a-service", "Owned"):
-                if m not in v["tco"]["base"]:
-                    row[m] = "not allowed"
-                elif v["sizing"]["gpus"] == 0:
-                    row[m] = "-"
-                else:
-                    cell = " – ".join(money(v["tco"][s][m]) for s in ("low", "base", "high"))
-                    row[m] = ("★ " if m == v["cheapest_mode"] else "") + cell
-            row["$ per M tokens (base)"] = "-" if v["usd_per_m_eq_tokens"] is None else f'${v["usd_per_m_eq_tokens"]:.2f}'
-            rows.append(row)
-        return pd.DataFrame(rows)
 
-    @render.table
-    def demand():
-        r = result()
-        names = {a["uid"]: a["name"] for a in apps.get()}
-        rows = [{"Application": names.get(x["id"], x["id"]), "Tier": x["tier"], "Share": f'{x["share"]:.0%}',
-                 "Requests/day": fmt(x["sessions"]), "Tokens/day (in+out)": f'{sig2((x["daily_input"] + x["daily_output"]) / 1e6):g}M',
-                 "Peak tokens/s": fmt(x["peak_eq_tps"], 0), "Model": x["model_class"]} for x in r["demand"]]
-        rows += [{"Application": names.get(x["id"], x["id"]), "Tier": x["tier"], "Share": "100%",
-                  "Requests/day": "-", "Tokens/day (in+out)": f'{fmt(x["gpu_hours_day"], 1)} GPU-h/day',
-                  "Peak tokens/s": f'{x["peak_gpus"]:.2f} GPUs at peak' if x["mode"] == "Interactive" else "batch",
-                  "Model": "non-LLM"} for x in r["nontoken"]]
-        return pd.DataFrame(rows) if rows else None
 
-    @render.download(filename="sovereign_ai_compute_results_raw.csv")
-    def dl_results():
-        r = result()
-        rows = []
-        for t, v in r["tiers"].items():
-            kind = v["capacity"]["kind"]
-            phys = kind in ("build", "rent")
-            sz = v["sizing"]
-            rows.append({
-                "tier": t, "buying_option": v["cheapest_mode"], "capacity": kind, "step": v["step"], "grid": v["grid"],
-                "hardware": v["hardware"] if phys else "",
-                "servers": sz.get("servers", "") if kind == "build" else "",
-                "gpus": sz["gpus"] if phys else "", "it_kw": sz["it_kw"] if phys else "",
-                "facility_kw": sz["facility_mw"] * 1000 if kind == "build" else "",
-                "racks": sz["racks"] if kind == "build" else "", "energy_mwh_year": sz["energy_mwh"] if kind == "build" else "",
-                "utilisation": sz["utilisation"] if phys else "",
-                "notional_gpus_if_api": sz["gpus"] if kind == "service" else "",
-                **{f"cost_pv_{s_}": v["cost_range"][s_] for s_ in ("low", "base", "high")},
-                **{f"owned_pv_{k}": x for k, x in
-                   (v["detail"]["base"].get("Owned", {}).get("pv_breakdown", {}) if kind == "build" else {}).items()},
-            })
-        yield ("# Raw, unrounded figures for analysts. Planning-grade estimates: present to clients rounded, as ranges.\n"
-               + pd.DataFrame(rows).to_csv(index=False))
 
     def scenario_dict():
-        return {"version": "0.7", "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
-                "speed": input.speed(), "finance": {"disc": input.disc(), "growth": input.growth(),
-                                                    "decline": input.decline()},
-                "class_to_tier": {c: input[f"map{c}"]() for c in (1, 2, 3, 4)},
+        return {"version": "0.9", "own_dc_existing": bool(input.own_dc_existing()),
+                "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
+                "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline()},
                 "quotes": quotes(), "apps": apps.get(), "custom_types": custom.get()}
 
     @render.download(filename="scenario.json")
@@ -1119,15 +952,17 @@ def server(input, output, session):
         ui.update_selectize("iso", selected=sc.get("iso", "XEX"))
         ui.update_radio_buttons("ambition", selected=sc.get("ambition", "Base"))
         ui.update_radio_buttons("grid", selected=sc.get("grid", "auto"))
+        cap = sc.get("capability", {})
+        ui.update_checkbox("own_dc_existing", value=bool(sc.get("own_dc_existing", cap.get("gov_dc") == "ready")))
         ui.update_select("hw", selected=sc.get("hw", "auto"))
         ui.update_radio_buttons("speed", selected=sc.get("speed", "base"))
         f = sc.get("finance", {})
-        for k in ("disc", "growth", "decline"):
+        for k in ("disc", "decline"):
             if f.get(k) is not None:
                 ui.update_numeric(k, value=f[k])
-        for c, t in sc.get("class_to_tier", {}).items():
-            ui.update_select(f"map{c}", selected=t)
-        lst = [normalize_app(a) for a in sc.get("apps", [])]
+        g_old = (num(f.get("growth")) or 0) / 100          # before v0.9 growth was one global rate
+        lst = [dict(normalize_app(a), start_year=a.get("start_year", 1), growth=a.get("growth", g_old))
+               for a in sc.get("apps", [])]
         missing = [a["name"] for a in lst if a["type"] not in known]
         if missing:
             ui.notification_show("Skipped applications with an unknown type: " + ", ".join(missing), type="warning")

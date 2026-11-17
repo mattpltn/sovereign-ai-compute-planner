@@ -4,25 +4,26 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 
 ## Summary for presenters (one page)
 
-**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is shown separately, as three scenarios, and is often larger.
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range) of delivering them four ways, for each application and for the whole portfolio. The four options are: **API** (pay per token), **GPU rental** (GPU-as-a-service), **owning servers in a commercial colocation data centre**, and **owning servers in the government's own data centre**. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is a separate setting (cautious, expected, aggressive).
 
-**The four inputs that matter.**
-1. *The applications and their volume*: who uses each one and how many (staff with access, documents per day, citizens served). This is the single biggest driver.
-2. *The data class of each application*: it decides where the application may run (public cloud, in-country cloud, sovereign site).
-3. *The country*: grid reliability, electricity price, construction cost, and whether an in-country GPU provider exists.
-4. *The adoption scenario*: cautious, expected or aggressive use.
+**The inputs that matter.**
+1. *The applications*: type, volume (staff with access, documents per day, citizens served), the year each one starts and its growth per year. Volume is the single biggest driver.
+2. *The country*: grid reliability, electricity price, construction cost and colocation price per kW.
+3. *The adoption scenario*: cautious, expected or aggressive use.
+
+**What the tool does not decide.** Data classification and hosting rules are not modelled in the results (since v0.9). The results carry a note: the client must check its data protection and sector rules to know which options are allowed for each application. The cheapest option may not be allowed.
 
 **How to read the results page.**
-- *The banner* gives the answer in two lines: the 10-year cost and what to build in-country.
-- *1 · How much will it cost?* compares the three adoption scenarios. Each bar is split by data class, and the whisker shows the price range (hardware, cloud and API prices, GPU efficiency).
-- *2 · What needs to be built or bought?* shows one card per destination. A cloud or API card shows the annual bill and nothing to build. A sovereign-site card shows servers, GPUs, power, the upfront capex next to the annual running cost, and renting as the alternative where an in-country provider exists.
-- *3 · Where does the cost come from?* splits the cost by application.
+- *The banner* names the cheapest option for the portfolio, its 10-year cost and range, the other three options, and the servers needed if owning.
+- *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
+- *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
+- *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
 
 **What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
 
 **What they cannot be used for.** Procurement quantities, budget lines, or quotes. Before any commitment, replace the defaults with the client's own data: pilot logs, vendor quotes, and a site assessment (Annex A explains how).
 
-**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Demand is held flat over 10 years unless a growth rate is entered. Backup fuel on weak grids is not costed.
+**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Colocation prices outside North America, Europe, Latin America and the main Asia-Pacific markets are regional assumptions (Low confidence): replace them with a local quote. Backup fuel on weak grids is not costed.
 
 ## 1. Purpose and scope
 
@@ -49,7 +50,7 @@ Tokens per request (input, cached input, output, reasoning)          Layer 1-2
    │
 Daily tokens → peak tokens per second                                 Layer 3
    │
-Placement: data class → tier (T1 public cloud ... T4 government enclave)
+Placement: data class → tier (T1 offshore cloud or API ... T4 government data centre), adjusted by in-country capability
    │
 GPUs per tier → IT kW → facility MW → energy                         Layer 4
    │
@@ -72,9 +73,10 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 | Adoption scenario | Setup | Low / Base / High usage rate for each application type. |
 | Response speed | Setup | Fast / Standard / Relaxed tokens per second per user; selects the throughput point. |
 | Finance | Setup | Discount rate (default 8%), demand growth and market price decline (default 0%). |
+| In-country capability | Setup | GPU provider, residency cloud, government data centre readiness, colocation (Section 7). |
 | Placement rules | Setup | Which tier each data class may use. Set once per country from its data protection law. |
 | Client quotes (optional) | Setup | GPU rental price, GPU server cost, data centre build cost. A quote replaces the default range. |
-| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
+| Applications | Applications | One by one: type, name, volume, start year, growth per year (data class is kept internally from the type but not asked since v0.9). Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
 | Custom application types (optional) | Applications | Uploaded from a CSV template when no type fits (Section 9). |
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
@@ -150,14 +152,29 @@ peak tokens/s    = daily equivalent tokens × peak share / (peak window hours ×
 
 ## 7. Placement
 
+*Since v0.9 the results page does not use placement: all applications are priced under all four options and the client checks which options its rules allow (Section 11a). Placement remains in the engine and in the Excel parity tests, and is documented here for reference.*
+
 Each application runs in the tier of its data class (the "high-water mark": the most sensitive data it touches decides). The default mapping follows the World Bank data classification approach [S14]:
 
 | Data class | Example | Default tier |
 |---|---|---|
 | 1 Public | open data, public information | T1 public cloud or API, offshore allowed |
-| 2 Internal | non-sensitive government data | T2 cloud with in-country or regional residency |
-| 3 Confidential | personal and confidential data | T3 sovereign local, privately operated |
-| 4 Restricted | health, social protection, tax, security | T4 government enclave, state-operated |
+| 2 Internal | non-sensitive government data | T2 cloud with data residency (in-country or regional) |
+| 3 Confidential | personal and confidential data | T3 in-country, private provider (government data centre if there is none) |
+| 4 Restricted | health, social protection, tax, security | T4 government data centre |
+
+**One vocabulary for locations.** Results name where work actually runs, after the cheapest buying option is chosen: *Offshore cloud (API)*; *Cloud with in-country / regional data residency (API)*; *Cloud GPUs with data residency (rented)*; *In-country GPU provider (rented)*; *Government data centre* (government-owned servers in a government facility); *Government-owned servers in private colocation*. The tier codes T1-T4 are kept in the detail tables only.
+
+**In-country capability (Setup).** Four questions decide what is possible in the country:
+
+| Question | Answers | Effect |
+|---|---|---|
+| In-country GPU cloud provider (GPU-as-a-service)? | No / not sure (default), Yes | Without a provider, Confidential work cannot be rented in-country: it runs on government-owned servers (capex). |
+| Cloud with acceptable data residency for Internal data? | In-country region, Regional (default), No | With No, Internal data is kept in-country: it is placed with Confidential data (T3) and follows the same rules. |
+| Can a government data centre host GPU servers? | Ready (power and cooling available), Fit-out needed (default), No | Ready: no facility build cost for government-run sites (energy, staff and maintenance remain). Otherwise the facility cost by country applies. Also words Step 1. |
+| Commercial colocation data centre in-country? | No / not sure (default), Yes | With Yes, Confidential work on owned servers is placed in private colocation (facility cost applies as a proxy for colocation charges). Words Step 2. |
+
+So when there is no in-country GPU provider, everything that must stay in-country is government capex in the government data centre, unless a colocation site exists for Confidential data.
 
 **Traffic split (optional).** If an application routes sensitive requests separately (e.g. 90% public questions, 10% personal cases), the user enters a split such as `1:0.9, 3:0.1`. Each part is sized in its own tier. This often decides whether a local node is needed at all.
 
@@ -236,7 +253,7 @@ Country and regional values, and how to calibrate a specific site with the Schne
 
 **Owned capacity comes in whole servers.** GPUs are sold in servers, not one by one: 8 GPUs per HGX server (H200, B200) and 72 per GB300 NVL72 rack. For owned capacity, GPUs are rounded up to whole servers first; IT load, facility power, racks, energy, utilisation and cost are then all calculated from the rounded number. Rented GPUs are counted one by one.
 
-**One shared sovereign site (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. After the merge, the site is sized as one tier: pooling uses the number of applications on the site (e.g. 3 applications give D = 0.83), servers are rounded once for the combined load, there is one facility, and one 2-FTE staff minimum instead of two. The option can be switched off in Setup.
+**One government data centre for Confidential and Restricted data (default).** In a small country, Confidential (T3) and Restricted (T4) data would realistically share one secure site. When both tiers would otherwise be owned, the tool moves the Confidential work into the Restricted site: data can always move to a more secure tier. After the merge, the site is sized as one tier: pooling uses the number of applications on the site (e.g. 3 applications give D = 0.83), servers are rounded once for the combined load, there is one facility, and one 2-FTE staff minimum instead of two. The option can be switched off in Setup.
 
 **Is there an in-country GPU provider?** Renting GPUs for Confidential data assumes an in-country provider exists. Setup asks the question (default: no or not sure). Without one, owning is the only option for Confidential data.
 
@@ -346,7 +363,7 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 **The results page** is organised around three client questions (see the summary at the top): the 10-year cost under three adoption scenarios, the capacity to build or buy per destination, and the cost per application. Detailed tables (every option Low – Base – High, tiers and hardware, rent or own per tier, demand) are collapsed below. The raw CSV export is unrounded, for analysts.
 
-**Why moving a small application to the sovereign site barely changes its cost.** The site is sized by the largest workloads, usually the staff copilot. A small application placed on the same site uses spare capacity on servers that are bought anyway, so its share of the cost is small, and it may be close to its API cost. Its cost only jumps if it is the only workload on a site, or if it pushes the site to another server. The results therefore show cost per application two ways: **share of site** (fixed costs spread by GPU need, as in the charts; removing the application would not save this amount) and **extra cost if added last** (10-year total with all applications minus the total without this one). When placement rules move applications above their default tier, the warning states what the move changes versus the default placement: servers added and the change in 10-year cost, which can be negative when API spending is replaced by spare capacity. Each owned site card also shows the **headroom at the busiest hour** (1 − GPU need at peak ÷ GPUs bought), and the scenario table notes when the high end of the price range needs an extra server, which explains a lopsided range.
+**Why moving a small application to the government data centre barely changes its cost.** The site is sized by the largest workloads, usually the staff copilot. A small application placed on the same site uses spare capacity on servers that are bought anyway, so its share of the cost is small, and it may be close to its API cost. Its cost only jumps if it is the only workload on a site, or if it pushes the site to another server. The results therefore show cost per application two ways: **share of site** (fixed costs spread by GPU need, as in the charts; removing the application would not save this amount) and **extra cost if added last** (10-year total with all applications minus the total without this one). When placement rules move applications above their default tier, the warning states what the move changes versus the default placement: servers added and the change in 10-year cost, which can be negative when API spending is replaced by spare capacity. Each owned site card also shows the **headroom at the busiest hour** (1 − GPU need at peak ÷ GPUs bought), and the scenario table notes when the high end of the price range needs an extra server, which explains a lopsided range.
 
 **Charts.** The tool plots the 10-year present value by data class (with the Low – High range) and by application. Application costs share each tier's cost in proportion to the application's GPU need (peak tokens/s ÷ tokens/s per GPU for language models; GPUs at peak or GPU-hours per day ÷ 24 for other workloads).
 
@@ -354,7 +371,45 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 **Ranges and the cheapest option.** Every cost item has a Low / Base / High value (Section 14). The results table shows **every allowed option** across Low – Base – High, marks the cheapest at Base with ★, and flags any tier where the cheapest option changes within the range. In that case the choice depends on prices and the client should obtain quotes. A client quote replaces the range for that item.
 
+## 11a. Four delivery options, start year and growth (v0.9)
+
+**Start year and growth.** Each application has a start year (1 to 10) and a growth rate per year. Its demand in year y is:
+
+```
+demand(y) = 0                                         before the start year
+demand(y) = demand at start × (1 + growth)^(y − start) from the start year
+```
+
+The global demand growth setting is replaced by these per-application rates (older saved scenarios apply their global rate to every application).
+
+**Sizing each year, pooled.** For each year, the tool sizes one pool with the demand of every application active that year (Section 8, with pooling across all of them). So a server bought for one application serves the others' spare needs: excess capacity is never added up across applications.
+
+**The four options**, each priced year by year and discounted to present value:
+
+| Option | Cost each year |
+|---|---|
+| API | Language-model tokens × API prices (cached input at a discount, Section 11). Non-LLM work is priced as rented cloud GPU-hours. |
+| GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
+| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand, sized for the peak IT load over the horizon (country $ per W, Section 8.1) + facility maintenance. If an existing facility has spare power and cooling (Setup), the build cost is zero. |
+
+Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the same in both owned options; a colocation operator runs the building, not the servers.
+
+**Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
+
+**Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
+
+**Data regulation.** The tool does not check whether an option is allowed. The results page states that the client must assess, for each application, whether its data may be processed by an API provider or a cloud outside the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a government data centre.
+
+### Colocation price per kW
+
+Colocation is priced per kW of committed IT load per month, excluding energy, which is paid on top. Wholesale benchmarks are asking rates for 250–500 kW requirements in Tier III facilities [S69, S70]. Smaller deployments, which is most government AI starts (one to a few servers, 10–60 kW), pay retail rates: published US cabinet prices work out at a median of about $364 per kW per month [S71] against the $196 wholesale average, so the tool multiplies by 1.8 below 250 kW. For Sub-Saharan Africa, the Middle East and North Africa, South Asia and developing East Asia no public wholesale benchmark was found; the regional values are assumptions (Low confidence), checked against retail points: power above the rack allowance costs $500 per kW per month in Nairobi, Dar es Salaam and Lagos [S73], and Indian providers quote INR 12,000–25,000 per kW per month [S72]. A client quote replaces the value (Setup, Client quotes). The Low / Base / High cases use ×0.8 / 1 / 1.3.
+
+{{COLOCATION}}
+
 ## 12. Recommended step (the ladder)
+
+*Not shown on the results page since v0.9; kept for reference and for the engine's placement view.*
 
 The step is worded after the buying option the tool actually chose, so the two never contradict each other.
 
@@ -363,13 +418,13 @@ The step is worded after the buying option the tool actually chose, so the two n
 | Only tiny non-LLM workloads (below 0.25 GPU) | **Below GPU threshold:** run on existing servers (CPU or a shared GPU). |
 | Cheapest option is API | **Step 0:** buy as an API service (with data residency for internal data). |
 | Cheapest option is GPU rental | **Step 0:** rent cloud GPUs (public or internal data), or **Step 1:** rent GPUs from an in-country provider (confidential data). |
-| Owned, facility power below 1 MW | **Step 1:** own N servers in an existing secure server room. |
-| Owned, 1 to 10 MW | **Step 2:** own N servers in a colocation data centre run by a private operator. |
+| Owned, facility power below 1 MW | **Step 1:** own N servers in the existing government data centre / the government data centre (fit-out needed) / a secure server room to be built or leased, following the Setup answer. In colocation if Confidential servers are placed there. |
+| Owned, 1 to 10 MW | **Step 2:** own N servers in a colocation data centre run by a private operator, or in a new or expanded government data centre when there is no colocation in-country. |
 | Owned, 10 MW or more | **Step 3:** dedicated facility through a PPP or private operator (IFC-investable). |
 
 Cloud and API tiers show no GPUs, racks or power in the results: nothing is built for them. The raw CSV export keeps their notional GPU count in a separate, labelled column for analysts.
 
-If the placement rules put an application above its default tier (e.g. internal data mapped to the sovereign site), the results flag it, so a presenter can explain why the sovereign site is larger than expected.
+If the placement rules put an application above its default tier (e.g. internal data mapped to the government data centre), the results flag it with the servers and 10-year cost it adds versus the default placement.
 
 A PPP or IFC transaction for a facility of one or two megawatts is not realistic: transaction costs and minimum ticket sizes call for roughly 10 MW or more (assumption, adjustable). Between 1 and 10 MW, hosting in an existing colocation site is the practical route.
 
