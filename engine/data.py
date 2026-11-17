@@ -25,6 +25,7 @@ def load_catalogue() -> dict:
 def load_defaults() -> dict:
     d = _y("defaults")
     d["facility"] = _y("facility")
+    d["colocation"] = _y("colocation")
     d["class_to_tier"] = {int(k): v for k, v in d["class_to_tier"].items()}
     return d
 

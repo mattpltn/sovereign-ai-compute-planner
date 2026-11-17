@@ -6,25 +6,26 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 
 ## Summary for presenters (one page)
 
-**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range), the capacity to build or buy, and how that cost splits by application. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is shown separately, as three scenarios, and is often larger.
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range) of delivering them four ways, for each application and for the whole portfolio. The four options are: **API** (pay per token), **GPU rental** (GPU-as-a-service), **owning servers in a commercial colocation data centre**, and **owning servers in the government's own data centre**. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is a separate setting (cautious, expected, aggressive).
 
-**The four inputs that matter.**
-1. *The applications and their volume*: who uses each one and how many (staff with access, documents per day, citizens served). This is the single biggest driver.
-2. *The data class of each application*: it decides where the application may run (offshore cloud or API, cloud with data residency, an in-country provider, or the government data centre).
-3. *The country*: grid reliability, electricity price, construction cost, and whether an in-country GPU provider exists.
-4. *The adoption scenario*: cautious, expected or aggressive use.
+**The inputs that matter.**
+1. *The applications*: type, volume (staff with access, documents per day, citizens served), the year each one starts and its growth per year. Volume is the single biggest driver.
+2. *The country*: grid reliability, electricity price, construction cost and colocation price per kW.
+3. *The adoption scenario*: cautious, expected or aggressive use.
+
+**What the tool does not decide.** Data classification and hosting rules are not modelled in the results (since v0.9). The results carry a note: the client must check its data protection and sector rules to know which options are allowed for each application. The cheapest option may not be allowed.
 
 **How to read the results page.**
-- *The banner* gives the answer in two lines: the 10-year cost and what to build in-country.
-- *1 · How much will it cost?* compares the three adoption scenarios. Each bar is split by data class, and the whisker shows the price range (hardware, cloud and API prices, GPU efficiency).
-- *2 · What needs to be built or bought?* shows one card per destination. A cloud or API card shows the annual bill and nothing to build. A government data centre (or colocation) card shows servers, GPUs, power, the upfront capex next to the annual running cost, and renting as the alternative where an in-country provider exists.
-- *3 · Where does the cost come from?* splits the cost by application.
+- *The banner* names the cheapest option for the portfolio, its 10-year cost and range, the other three options, and the servers needed if owning.
+- *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
+- *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
+- *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
 
 **What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
 
 **What they cannot be used for.** Procurement quantities, budget lines, or quotes. Before any commitment, replace the defaults with the client's own data: pilot logs, vendor quotes, and a site assessment (Annex A explains how).
 
-**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Demand is held flat over 10 years unless a growth rate is entered. Backup fuel on weak grids is not costed.
+**Key caveats.** Usage rates for several application types are assumptions (marked Low confidence). Colocation prices outside North America, Europe, Latin America and the main Asia-Pacific markets are regional assumptions (Low confidence): replace them with a local quote. Backup fuel on weak grids is not costed.
 
 ## 1. Purpose and scope
 
@@ -77,7 +78,7 @@ The token layers follow the structure of the NVIDIA AI Tokenomics worksheet [S01
 | In-country capability | Setup | GPU provider, residency cloud, government data centre readiness, colocation (Section 7). |
 | Placement rules | Setup | Which tier each data class may use. Set once per country from its data protection law. |
 | Client quotes (optional) | Setup | GPU rental price, GPU server cost, data centre build cost. A quote replaces the default range. |
-| Applications | Applications | One by one: type, name, volume, data class. Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
+| Applications | Applications | One by one: type, name, volume, start year, growth per year (data class is kept internally from the type but not asked since v0.9). Optional: usage rate, model size, traffic split. For agriculture advisory, also who the farmers are (everyone eligible, or service users). The type list shows the evidence confidence of each type in parentheses. |
 | Custom application types (optional) | Applications | Uploaded from a CSV template when no type fits (Section 9). |
 
 The volume is always something a client can give: staff with access, people in the target population, documents per day, audio hours per day. The tool never derives it from population statistics.
@@ -152,6 +153,8 @@ peak tokens/s    = daily equivalent tokens × peak share / (peak window hours ×
 - **Seasonal:** planting season, tax deadlines, epidemics.
 
 ## 7. Placement
+
+*Since v0.9 the results page does not use placement: all applications are priced under all four options and the client checks which options its rules allow (Section 11a). Placement remains in the engine and in the Excel parity tests, and is documented here for reference.*
 
 Each application runs in the tier of its data class (the "high-water mark": the most sensitive data it touches decides). The default mapping follows the World Bank data classification approach [S14]:
 
@@ -514,7 +517,71 @@ $ per million tokens           = present value / Σ discount(y) × annual equiva
 
 **Ranges and the cheapest option.** Every cost item has a Low / Base / High value (Section 14). The results table shows **every allowed option** across Low – Base – High, marks the cheapest at Base with ★, and flags any tier where the cheapest option changes within the range. In that case the choice depends on prices and the client should obtain quotes. A client quote replaces the range for that item.
 
+## 11a. Four delivery options, start year and growth (v0.9)
+
+**Start year and growth.** Each application has a start year (1 to 10) and a growth rate per year. Its demand in year y is:
+
+```
+demand(y) = 0                                         before the start year
+demand(y) = demand at start × (1 + growth)^(y − start) from the start year
+```
+
+The global demand growth setting is replaced by these per-application rates (older saved scenarios apply their global rate to every application).
+
+**Sizing each year, pooled.** For each year, the tool sizes one pool with the demand of every application active that year (Section 8, with pooling across all of them). So a server bought for one application serves the others' spare needs: excess capacity is never added up across applications.
+
+**The four options**, each priced year by year and discounted to present value:
+
+| Option | Cost each year |
+|---|---|
+| API | Language-model tokens × API prices (cached input at a discount, Section 11). Non-LLM work is priced as rented cloud GPU-hours. |
+| GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
+| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand, sized for the peak IT load over the horizon (country $ per W, Section 8.1) + facility maintenance. If an existing facility has spare power and cooling (Setup), the build cost is zero. |
+
+Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the same in both owned options; a colocation operator runs the building, not the servers.
+
+**Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
+
+**Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
+
+**Data regulation.** The tool does not check whether an option is allowed. The results page states that the client must assess, for each application, whether its data may be processed by an API provider or a cloud outside the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a government data centre.
+
+### Colocation price per kW
+
+Colocation is priced per kW of committed IT load per month, excluding energy, which is paid on top. Wholesale benchmarks are asking rates for 250–500 kW requirements in Tier III facilities [S69, S70]. Smaller deployments, which is most government AI starts (one to a few servers, 10–60 kW), pay retail rates: published US cabinet prices work out at a median of about $364 per kW per month [S71] against the $196 wholesale average, so the tool multiplies by 1.8 below 250 kW. For Sub-Saharan Africa, the Middle East and North Africa, South Asia and developing East Asia no public wholesale benchmark was found; the regional values are assumptions (Low confidence), checked against retail points: power above the rack allowance costs $500 per kW per month in Nairobi, Dar es Salaam and Lagos [S73], and Indian providers quote INR 12,000–25,000 per kW per month [S72]. A client quote replaces the value (Setup, Client quotes). The Low / Base / High cases use ×0.8 / 1 / 1.3.
+
+| Country | Market used | $ per kW per month (wholesale) | Source | Confidence |
+|---|---|---|---|---|
+| USA | North America primary markets average | 196 | [S69](#src-s69) | High |
+| GBR | London (195-230) | 213 | [S70](#src-s70) | High |
+| DEU | Frankfurt (235-265) | 250 | [S69](#src-s69) | High |
+| FRA | Paris (175-205) | 190 | [S70](#src-s70) | High |
+| NLD | Amsterdam (165-195) | 180 | [S70](#src-s70) | High |
+| JPN | Tokyo (average) | 280 | [S69](#src-s69) | High |
+| SGP | Singapore (330-475) | 403 | [S69](#src-s69) | High |
+| AUS | Sydney (average) | 188 | [S69](#src-s69) | High |
+| HKG | Hong Kong (average) | 295 | [S69](#src-s69) | High |
+| BRA | Sao Paulo (130-190) | 160 | [S69](#src-s69) | High |
+| MEX | Queretaro (250-270) | 260 | [S69](#src-s69) | High |
+| CHL | Santiago (190-210) | 200 | [S69](#src-s69) | High |
+| COL | Bogota (150-230) | 190 | [S69](#src-s69) | High |
+
+| Region (proxy for other countries) | $ per kW per month (wholesale) | Basis | Source | Confidence |
+|---|---|---|---|---|
+| North America | 196 | CBRE North America average | [S69](#src-s69) | High |
+| Europe & Central Asia | 208 | Mean of London, Frankfurt, Paris, Amsterdam | [S69](#src-s69), [S70](#src-s70) | Medium |
+| Latin America & Caribbean | 202 | Mean of Sao Paulo, Queretaro, Santiago, Bogota | [S69](#src-s69) | Medium |
+| East Asia & Pacific | 200 | Assumption between Sydney (188) and Tokyo (280); Singapore (403) excluded as a supply-constrained outlier | assumption, [S69](#src-s69) | Low |
+| South Asia | 200 | Assumption; Indian retail power charges of INR 12,000-25,000 per kW per month (~$140-290) are consistent | assumption, [S72](#src-s72) | Low |
+| Middle East, North Africa, Afghanistan & Pakistan | 230 | Assumption: no public wholesale benchmark found | assumption | Low |
+| Sub-Saharan Africa | 250 | Assumption: no public wholesale benchmark found. Retail power above the rack allowance is $500 per kW per month in Nairobi, Dar es Salaam and Lagos (S73), consistent with this value x the small-deployment factor | assumption, [S73](#src-s73) | Low |
+
+Below 250 kW of IT: x1.8 ([S71](#src-s71), [S69](#src-s69)). Global fallback: $210 per kW per month.
+
 ## 12. Recommended step (the ladder)
+
+*Not shown on the results page since v0.9; kept for reference and for the engine's placement view.*
 
 The step is worded after the buying option the tool actually chose, so the two never contradict each other.
 
@@ -805,5 +872,10 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s66"></a>S66 | Open-source TTS latency benchmarks (Kokoro-82M real-time factor ~0.03 on GPU) | GigaGPU | Text-to-speech GPU-seconds per audio hour | https://gigagpu.com/tts-latency-benchmarks |
 | <a id="src-s67"></a>S67 | An Evaluation of DWP's Microsoft 365 Copilot Trial (published 29 January 2026) | UK Department for Work and Pensions | Copilot usage frequency (most users daily or weekly), qualitative cross-check | https://www.gov.uk/government/publications/an-evaluation-of-dwps-microsoft-copilot-365-trial |
 | <a id="src-s68"></a>S68 | Employment in agriculture (% of total employment) (modeled ILO estimate), SL.AGR.EMPL.ZS; Labor force, total, SL.TLF.TOTL.IN; Rural population, SP.RUR.TOTL | World Bank, World Development Indicators (ILO modelled estimates, ILOSTAT) | Estimated agricultural workers for the agriculture advisory volume check | https://data.worldbank.org/indicator/SL.AGR.EMPL.ZS |
+| <a id="src-s69"></a>S69 | Global Data Center Trends 2026 (colocation rental rates, 250-500 kW requirements, Q1 2026) | CBRE Research | Colocation price per kW for North America, Frankfurt, Latin America and Asia-Pacific markets | https://www.cbre.com/insights/reports/global-data-center-trends-2026 |
+| <a id="src-s70"></a>S70 | The Colocation Price Index (wholesale $/kW per month by market, compiled from CBRE 2026 reports) | Coloprice | London, Paris and Amsterdam colocation ranges (CBRE Global 2026, Fig. 5) | https://coloprice.com/index/ |
+| <a id="src-s71"></a>S71 | Colocation pricing, as published (77 rate-card prices from 42 operators, Oct 2026) | Watt & Rack | Retail price per kW for small deployments (median $364 per kW per month, US cabinets) | https://wattandrack.com/colocation/pricing/ |
+| <a id="src-s72"></a>S72 | Colocation hosting pricing across Indian data center providers | Cyfuture Cloud (knowledge base) | India retail power charges, INR 12,000-25,000 per kW per month (cross-check for South Asia) | https://cyfuture.cloud/kb/colocation/colocation-hosting-pricing-across-indian-data-center-providers |
+| <a id="src-s73"></a>S73 | Colocation in Nairobi, Dar es Salaam and Lagos (published rate card) | Lineserve | Africa retail cross-check: power above the rack allowance at $500 per kW per month | https://www.lineserve.net/colocation |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

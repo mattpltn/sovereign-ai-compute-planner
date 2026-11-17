@@ -564,3 +564,70 @@ def test_shared_site_label():
     r = one([dict(COP, data_class=3), dict(DOC, data_class=4)], local_gpu_provider=False)
     assert r["tiers"]["T4"]["location"] == "Government data centre" and r["tiers"]["T4"]["shared_site"]
     assert "government data centre" in r["tiers"]["T3"]["step"]
+
+
+# ---------------------------------------------------------------- four options, start year and growth (v0.9)
+import math as _m  # noqa: E402
+
+from engine.data import load_countries  # noqa: E402
+from engine.options import OPTIONS, colo_price, compare, evaluate, with_no_placement  # noqa: E402
+
+COUNTRIES_ = load_countries()
+
+
+def _opts(apps, meta, iso="GHA", **kw):
+    c = dict(COUNTRIES_[iso], iso3=iso)
+    p = with_no_placement(build_profile(c, "Base", apps, ARCH, dict(D["class_to_tier"])))
+    for k, v in kw.items():
+        setattr(p, k, v)
+    return compare(p, CAT, D, None, meta)
+
+
+APPS3 = [dict(COP, uid="cop", volume=40000), dict(uid="tut", name="Tutor", type="tutor", volume=200000, data_class=2),
+         dict(uid="doc", name="Docs", type="document_extraction", volume=10000, data_class=3)]
+META3 = {"cop": {"start_year": 1, "growth": 0.1}, "tut": {"start_year": 3, "growth": 0.3}, "doc": {"start_year": 2, "growth": 0}}
+
+
+def test_start_year_means_no_cost_before():
+    r = _opts(APPS3, META3)
+    y = r["apps"]["tut"]["base"]["yearly"]
+    assert all(y[o][1] == 0 and y[o][2] == 0 and y[o][3] > 0 for o in ("API", "GPU-as-a-service"))
+    assert r["apps"]["tut"]["base"]["fleet"][2]["servers"] == 0 and r["apps"]["tut"]["base"]["fleet"][3]["servers"] > 0
+
+
+def test_growth_raises_cost():
+    flat = _opts(APPS3[:1], {"cop": {"start_year": 1, "growth": 0}})["total"]["base"]["pv"]
+    grow = _opts(APPS3[:1], {"cop": {"start_year": 1, "growth": 0.3}})["total"]["base"]["pv"]
+    assert grow["API"] > flat["API"] * 1.5 and grow["GPU-as-a-service"] >= flat["GPU-as-a-service"]
+
+
+def test_pooled_capacity_never_exceeds_sum_of_standalone():
+    r = _opts(APPS3, META3)
+    for o in OPTIONS:
+        assert r["total"]["base"]["pv"][o] <= r["sum_standalone"][o] * 1.0001
+    assert r["total"]["base"]["pv"]["API"] == pytest.approx(r["sum_standalone"]["API"], rel=0.01)   # tokens are additive
+    assert r["total"]["base"]["pv"]["Owned + own data centre"] < 0.6 * r["sum_standalone"]["Owned + own data centre"]
+
+
+def test_fleet_covers_need_and_refreshes():
+    b = _opts(APPS3, META3)["total"]["base"]
+    k = 8
+    for y, f in b["fleet"].items():
+        assert f["servers"] >= _m.ceil(b["sizing"][y]["gpus"] / k)
+    assert b["fleet"][6]["buy"] >= b["fleet"][1]["buy"]          # year-1 servers replaced after 5 years
+
+
+def test_colocation_price_lookup():
+    usa = colo_price({"iso3": "USA", "region": "North America"}, D, "base", 1000)
+    assert usa["value"] == 196 and not usa["small"]
+    gha = colo_price(dict(COUNTRIES_["GHA"], iso3="GHA"), D, "base", 20)
+    assert gha["small"] and gha["value"] == pytest.approx(250 * 1.8)
+    assert colo_price({"iso3": "USA", "_quotes": {"colo_usd_per_kw_month": 150}}, D)["value"] == 150
+
+
+def test_existing_data_centre_drops_build():
+    a = _opts(APPS3, META3)["total"]["base"]
+    b = _opts(APPS3, META3, gov_dc="ready")["total"]["base"]
+    assert a["pv_parts"]["Owned + own data centre"]["facility_build"] > 0
+    assert b["pv_parts"]["Owned + own data centre"]["facility_build"] == 0
+    assert b["pv"]["Owned + colocation"] == pytest.approx(a["pv"]["Owned + colocation"])

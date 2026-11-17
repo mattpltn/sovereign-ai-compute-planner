@@ -94,13 +94,13 @@ def build_profile(country: dict, ambition: str, apps: list, archetypes: dict, cl
 
 
 EXAMPLE_PORTFOLIO = [
-    dict(name="Civil servant copilot", type="staff_copilot", volume=40000, data_class=3),
-    dict(name="National services assistant", type="citizen_assistant", volume=9000000, data_class=2),
-    dict(name="Land registry intake", type="document_extraction", volume=10000, data_class=3),
-    dict(name="Customs risk agent", type="process_agent", volume=2000, data_class=4),
-    dict(name="Legal research", type="research_agent", volume=200, data_class=2),
-    dict(name="Court transcription", type="speech_to_text", volume=500, data_class=3),
-    dict(name="ID enrolment deduplication", type="biometric_dedup", volume=5000, data_class=4),
+    dict(name="Civil servant copilot", type="staff_copilot", volume=40000, data_class=3, start_year=1, growth=0.10),
+    dict(name="National services assistant", type="citizen_assistant", volume=9000000, data_class=2, start_year=2, growth=0.20),
+    dict(name="Land registry intake", type="document_extraction", volume=10000, data_class=3, start_year=1, growth=0.0),
+    dict(name="Customs risk agent", type="process_agent", volume=2000, data_class=4, start_year=2, growth=0.05),
+    dict(name="Legal research", type="research_agent", volume=200, data_class=2, start_year=3, growth=0.10),
+    dict(name="Court transcription", type="speech_to_text", volume=500, data_class=3, start_year=1, growth=0.0),
+    dict(name="ID enrolment deduplication", type="biometric_dedup", volume=5000, data_class=4, start_year=1, growth=0.0),
 ]
 
 
