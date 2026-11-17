@@ -391,23 +391,23 @@ The global demand growth setting is replaced by these per-application rates (old
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Non-LLM work is priced as rented cloud GPU-hours. |
 | GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
-| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility operations every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility operations cost (assumed already paid). |
+| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
 Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the same in both owned options; a colocation operator runs the building, not the servers.
 
-**Own data centre: build and operations.**
+**Own data centre: build and maintenance.**
 
 ```
 design IT load      = peak installed IT load over 10 years × (1 + 30% buffer)
 facility build      = design IT load (W) × construction cost ($ per W of IT, country or region, Section 8.1)
-facility operations = 10% of the build cost per year, from the first year of use (excluding energy)
+facility maintenance = 5% of the build cost per year, from the first year of use
 ```
 
 - *Buffer.* Facilities are built with spare capacity above the IT load installed: 30% is used as best practice (`facility_buffer`, adjustable).
-- *Operations.* Maintenance contracts, facility staff, 24/7 security, insurance, generator fuel and testing, fire and security system contracts. At 10% per year, 10 years of operations are about equal to the build cost (`facility_opex_share`, assumption, Medium confidence). Large facilities report less: an illustrative large site has operating costs of 8.6% of capital cost per year, 40% of it power, so about 5% excluding energy [S74]; a 10 MW site needs 15-25 staff plus maintenance, fuel and insurance contracts [S75]. Small sites sit higher because staff and security are fixed costs, so 10% is used for the 0.01-10 MW range this tool covers.
-- *Energy* is not part of facility operations: all energy (IT × PUE) is counted separately in both owned options.
+- *Maintenance.* 5% of the build cost per year (`maintenance_share`, the same rate as GPU maintenance). Facility staff, security, insurance and generator fuel are not counted separately.
+- *Energy* (IT × PUE) is counted separately in both owned options.
 
-Example: 1 MW of design IT load in Ghana (Sub-Saharan Africa proxy, $10.51 per W): build $10.51M, operations $1.05M per year, so $21.0M over 10 years before energy and discounting.
+Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW (Sub-Saharan Africa proxy, $10.51 per W): build $13.66M, maintenance $0.68M per year, so $20.5M over 10 years before energy and discounting.
 
 **Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
 

@@ -113,7 +113,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     # Own data centre: built once, in the first year of use, for the peak installed IT load plus a spare buffer.
     design_kw = peak_it_kw * (1 + d["facility_buffer"]["value"])
     build = 0.0 if p.gov_dc == "ready" else design_kw / 1000 * fac_per_mw
-    fac_ops = d["facility_opex_share"]["value"] * build      # an existing facility's running costs are already paid
+    fac_maint = maint * build                                # facility maintenance, 5% of build per year
 
     yearly = {o: {} for o in OPTIONS}
     parts = {o: {} for o in OPTIONS}
@@ -134,7 +134,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
         cpr = colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw)
         colo = dict(common, colocation=g * kw_gpu * cpr["value"] * 12)
         fb = build if y == first else 0.0
-        own = dict(common, facility_build=fb, facility_operations=fac_ops if first and y >= first else 0.0)
+        own = dict(common, facility_build=fb, maintenance_facility=fac_maint if first and y >= first else 0.0)
         parts["Owned + colocation"][y], parts["Owned + own data centre"][y] = colo, own
         yearly["Owned + colocation"][y] = sum(colo.values())
         yearly["Owned + own data centre"][y] = sum(own.values())
@@ -147,7 +147,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     return dict(pv=pv, yearly=yearly, pv_parts=pv_parts, fleet=fleet, sizing=sz, hardware=hw["id"],
                 peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue, design_it_kw=design_kw,
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
-                facility_capex=build, facility_opex_year=fac_ops,
+                facility_capex=build, facility_maint_year=fac_maint,
                 gpu_hour=rate, capex_gpu=capex_gpu, first_year=first,
                 tokens_pv_m=sum(disc[y] * sz[y]["annual_eq_m"] for y in yrs))
 

@@ -60,4 +60,3 @@ tiers:
   T4: {name: "Government data centre", api: false, gpuaas: false, owned: true}
 agri_volume_tolerance: {value: 1.5, source: "assumption (confidence Low)", note: "Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service)"}
 facility_buffer: {value: 0.30, source: "analyst (best practice)", note: "Own data centre: built with 30% spare capacity above the peak installed IT load"}
-facility_opex_share: {value: 0.10, source: "assumption (confidence Medium), S74, S75", note: "Own data centre: facility operations per year, excluding energy (maintenance, facility staff, security, insurance, generator fuel, contracts), as a share of the build cost. About equal to the build cost over 10 years. Large facilities report less (about 5%, S74); small sites more, because staff and security are fixed costs"}

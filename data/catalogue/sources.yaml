@@ -437,15 +437,3 @@
   url: https://www.lineserve.net/colocation
   used_for: "Africa retail cross-check: power above the rack allowance at $500 per kW per month"
   type: Vendor rate card
-- id: S74
-  title: "Data Centers: Jobs and Opportunities in Communities Nationwide (illustrative facility: annual operating expenditure 8.6% of capital expenditure, power 40% of it)"
-  publisher: U.S. Chamber of Commerce Technology Engagement Center
-  url: https://perryvillageohio.com/web/wp-content/uploads/2025/07/US-Chamber-of-Commerce-Data-Centers.pdf
-  used_for: Cross-check of facility operations excluding energy (about 5% of capex per year for a large facility)
-  type: Industry report
-- id: S75
-  title: "Data Centre Costs Explained: What You Actually Pay"
-  publisher: datacentres.com
-  url: https://www.datacentres.com/guides/data-centre-costs-explained
-  used_for: Facility operating cost items for a 10 MW site (15-25 staff, maintenance contracts, generator fuel, insurance)
-  type: Industry guide

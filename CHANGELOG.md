@@ -7,8 +7,7 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [0.9.1] - 2026-11-17
 ### Changed
-- Own data centre is built with 30% spare capacity above the peak installed IT load (`facility_buffer`).
-- Facility running costs: facility maintenance at 5% of build replaced by facility operations at 10% of build per year, excluding energy (maintenance, facility staff, security, insurance, generator fuel, contracts); about equal to the build cost over 10 years. Cross-checked against S74 and S75. An existing facility carries no build or operations cost.
+- Own data centre is built with 30% spare capacity above the peak installed IT load (`facility_buffer`); facility maintenance stays at 5% of the build cost per year.
 - Results page shows Base figures in US dollars rounded to the dollar, without price ranges; the CSV export gives one 10-year figure per option.
 ### Fixed
 - Middle East, North Africa, Afghanistan & Pakistan countries used the global default PUE and construction cost because the region name did not match the World Bank data; they now use the regional values.

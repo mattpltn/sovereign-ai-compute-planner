@@ -826,7 +826,7 @@ def server(input, output, session):
         items = [("GPU servers (purchases and refresh)", "gpu_servers"), ("GPU software and support", "software"),
                  ("GPU maintenance", "maintenance_gpu"), ("Staff", "staff"), ("Energy", "energy"),
                  ("Colocation fee", "colocation"), ("Facility build (peak IT load + buffer)", "facility_build"),
-                 ("Facility operations (maintenance, facility staff, security, insurance, fuel)", "facility_operations")]
+                 ("Facility maintenance", "maintenance_facility")]
         rows = [ui.tags.tr(ui.tags.td(lbl), ui.tags.td(usd(pc[k]) if pc.get(k) else "-"),
                            ui.tags.td(usd(po[k]) if po.get(k) else "-")) for lbl, k in items]
         rows.append(ui.tags.tr(ui.tags.td(ui.tags.b("Total")), ui.tags.td(ui.tags.b(usd(sum(pc.values())))),
@@ -836,7 +836,7 @@ def server(input, output, session):
                                                              ui.tags.th("Own + own data centre"))),
                                     ui.tags.tbody(*rows), class_="table table-sm"),
                       ui.p(f"The GPU part alone (servers, software, maintenance) is {usd(gpu)} in both. The difference "
-                           "between the two is the colocation fee against building and running a facility. "
+                           "between the two is the colocation fee against building and maintaining a facility. "
                            + ("An existing facility is assumed: no build cost." if input.own_dc_existing() else ""),
                            class_="hint"))
 
@@ -866,7 +866,7 @@ def server(input, output, session):
                                + (", small-deployment rate" if b["colo"]["small"] else "") + ")"),
                 ("Facility build (own data centre)", "existing facility, not counted" if input.own_dc_existing()
                  else f'{usd(b["facility_capex"])} for {b["design_it_kw"]:,.0f} kW of IT (peak + {D["facility_buffer"]["value"]:.0%}); '
-                      f'operations {usd(b["facility_opex_year"])} per year ({D["facility_opex_share"]["value"]:.0%} of build)'),
+                      f'maintenance {usd(b["facility_maint_year"])} per year ({D["maintenance_share"]["value"]:.0%} of build)'),
                 ("PUE", f'{b["pue"]:.2f}'),
                 ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),
                 ("API prices", API_PROV),

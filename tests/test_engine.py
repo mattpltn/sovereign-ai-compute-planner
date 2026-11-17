@@ -639,9 +639,8 @@ def test_facility_buffer_and_operations():
     per_mw = facility_for(dict(COUNTRIES_["GHA"], iso3="GHA"), {"cooling": "Air"}, D)["capex_per_mw"]
     assert b["design_it_kw"] == pytest.approx(b["peak_it_kw"] * 1.3)
     assert b["facility_capex"] == pytest.approx(b["design_it_kw"] / 1000 * per_mw)
-    assert b["facility_opex_year"] == pytest.approx(0.10 * b["facility_capex"])
-    parts = b["pv_parts"]["Owned + own data centre"]
-    assert parts["facility_operations"] > 0 and "maintenance_facility" not in parts
+    assert b["facility_maint_year"] == pytest.approx(0.05 * b["facility_capex"])
+    assert b["pv_parts"]["Owned + own data centre"]["maintenance_facility"] > 0
 
 
 def test_mena_region_has_its_own_facility_values():
