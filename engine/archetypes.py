@@ -49,7 +49,7 @@ def to_engine_rows(apps: list[dict], archetypes: dict) -> tuple[list, list]:
                 id=a["uid"], name=a["name"], include=1, unit=t["unit_label"], units_per_day=per_day,
                 gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=t["mode"],
                 peak_share=t["peak_share"], peak_window_h=t["peak_window_h"], burst=t["burst"],
-                data_class=cls, type=a["type"],
+                data_class=cls, type=a["type"], api_price=t.get("api_price"),
             ))
     return llm, nt
 

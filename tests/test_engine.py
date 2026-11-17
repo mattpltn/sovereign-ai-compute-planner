@@ -659,3 +659,12 @@ def test_build_cost_size_curve():
     assert 25e6 < build_cost_per_mw(0.75, xex, air, D)["value"] < 30e6
     gha = build_cost_per_mw(1, dict(COUNTRIES_["GHA"], iso3="GHA"), air, D)
     assert gha["value"] == pytest.approx(25e6 * 10.51 / 11.0)
+
+
+def test_api_option_uses_per_unit_prices_for_non_llm():
+    stt = [dict(uid="stt", name="Courts", type="speech_to_text", volume=500, data_class=3)]
+    r = _opts(stt, {"stt": {"start_year": 1, "growth": 0}})["total"]["base"]
+    assert r["yearly"]["API"][1] == pytest.approx(500 * 365 * 0.36)             # $0.006 per minute
+    ded = [dict(uid="bd", name="Dedup", type="biometric_dedup", volume=500000, data_class=4)]
+    rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}})["total"]["base"]
+    assert rb["yearly"]["API"][1] == pytest.approx(rb["yearly"]["GPU-as-a-service"][1])   # no API: rented GPUs

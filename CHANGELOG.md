@@ -5,6 +5,13 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-11-17
+### Added
+- Two downloads on the results page: a summary CSV (each application and the portfolio under the four options) and the full calculation as a ZIP of CSV files with a README (inputs, tokens per application, demand by year, capacity, kW and energy by year, yearly costs by item with discount factors, every assumption with its source).
+- Per-unit cloud API prices for other AI work in the API option: speech-to-text per audio hour, text-to-speech per audio hour, OCR per page, face verification per call, retrieval indexing per chunk (sources S76-S81).
+### Changed
+- The API option no longer prices other AI work as rented GPU-hours. Biometric deduplication, image and satellite analysis and fine-tuning are marked as not available as an API (†) and priced as rented GPUs; below 0.25 GPU they run on existing servers.
+
 ## [0.9.2] - 2026-11-17
 ### Added
 - Results: a collapsed "For specialists: tokens and sizing factors" section. Per application: model size, requests per day, tokens per request (input, output, cached share), tokens per day at start, tokens per year in year 10, peak equivalent tokens per second, active days. Other AI applications: GPU-seconds per unit and GPU-hours per day. Plus the factors applied (retries and agent steps, prefill weight, peak factors, pooling, throughput per GPU, API prices).

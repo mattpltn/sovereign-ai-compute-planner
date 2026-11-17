@@ -437,3 +437,39 @@
   url: https://www.lineserve.net/colocation
   used_for: "Africa retail cross-check: power above the rack allowance at $500 per kW per month"
   type: Vendor rate card
+- id: S76
+  title: "Speech-to-text API pricing guide (2026): per-hour rates, add-ons and hidden costs"
+  publisher: AssemblyAI
+  url: https://assemblyai.com/blog/speech-to-text-api-pricing
+  used_for: "Speech-to-text API price: Google Cloud dynamic batch $0.003/min, standard $0.016/min"
+  type: Price comparison (vendor blog)
+- id: S77
+  title: "Speech-to-Text API Pricing 2026: Real Costs Compared"
+  publisher: convertaudiototext.com
+  url: https://convertaudiototext.com/blog/speech-to-text-api-pricing-2026
+  used_for: "Speech-to-text API price: OpenAI $0.003-0.006/min, AWS Transcribe $0.024/min"
+  type: Price comparison
+- id: S78
+  title: Cloud Text-to-Speech pricing
+  publisher: Google Cloud
+  url: https://cloud.google.com/text-to-speech/pricing
+  used_for: "Text-to-speech API price per million characters ($4 Standard, $16 Neural2 / latest, $30 Chirp 3 HD)"
+  type: Official price list
+- id: S79
+  title: "Google Vision vs AWS Textract vs Azure: Cloud OCR comparison 2026"
+  publisher: imagetotable.ai
+  url: https://imagetotable.ai/blog/google-vs-aws-vs-azure-ocr-2026
+  used_for: "OCR API price: $1.50 per 1,000 pages, $0.60 above 5 million a month; specialised processors $10-30"
+  type: Price comparison
+- id: S80
+  title: "Face Recognition APIs and Open-Source Libraries in 2026: Prices, Licences and Traps"
+  publisher: Stork.ai
+  url: https://stork.ai/blog/face-recognition-api-2026
+  used_for: "Face verification API price: Amazon Rekognition $1 per 1,000 ($0.0004 at volume), Face++ $0.002 per call"
+  type: Price comparison
+- id: S81
+  title: text-embedding-3-small model page
+  publisher: OpenAI
+  url: https://developers.openai.com/api/docs/models/text-embedding-3-small
+  used_for: "Embedding API price: $0.02 per million tokens (text-embedding-3-large: $0.13)"
+  type: Official price list

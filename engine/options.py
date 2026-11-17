@@ -103,6 +103,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     maint = d["maintenance_share"]["value"]
 
     yrs = list(_years(d))
+    nt_meta = {w["id"]: w for w in p.nontoken}
     sz = {}
     for y in yrs:
         dy, ny = _year_rows(dem, nt, meta, y)
@@ -111,6 +112,16 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
                                + x.get("annual_cached_input_m", 0) * prices[x["model_class"]]["input"] * cp["cache_share"]
                                + x["annual_output_m"] * prices[x["model_class"]]["output"] for x in dy) * cp["api_mult"]
         sz[y]["nt_gpus"] = (sz[y]["gpus_nontoken"] + sz[y]["gpus_batch_extra"])
+        # Non-LLM work in the API option: per-unit cloud API prices where such an API exists, otherwise rented GPUs.
+        api_nt, no_api_gpus = 0.0, 0.0
+        for w in ny:
+            ap = (nt_meta.get(w["id"]) or {}).get("api_price") or {}
+            if ap.get("available", True) and scenario in ap:
+                api_nt += w["units_per_day"] * 365 * ap[scenario]
+            elif w["gpu_hours_day"]:
+                no_api_gpus += w["peak_gpus"] if w["mode"] == "Interactive" else w["gpu_hours_day"] / 24
+        below = no_api_gpus < d["gpu_threshold"]["value"]      # tiny work runs on existing servers, as elsewhere
+        sz[y]["api_nt"] = api_nt + (0.0 if below else _roundup(no_api_gpus) * 8760 * rate)
         sz[y]["busy_h"] = sz[y]["utilisation"] * sz[y]["gpus"] * 24
     disc = {y: 1 / (1 + r_) ** (y - 1) for y in yrs}
     price = {y: (1 - dec) ** (y - 1) for y in yrs}
@@ -141,7 +152,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     for y in yrs:
         s, f = sz[y], fleet[y]
         # API: tokens priced per million; non-LLM rented as cloud GPU-hours
-        api = s["api_llm"] + _roundup(s["nt_gpus"]) * 8760 * rate if s["gpus"] else 0.0
+        api = s["api_llm"] + s["api_nt"]
         yearly["API"][y] = api * price[y]
         # GPU-as-a-service: the GPUs needed this year, rented all year
         yearly["GPU-as-a-service"][y] = s["gpus"] * 8760 * rate * price[y]
@@ -165,7 +176,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
         for y in yrs:
             for kk, v in parts[o][y].items():
                 pv_parts[o][kk] = pv_parts[o].get(kk, 0.0) + disc[y] * v
-    return dict(pv=pv, yearly=yearly, pv_parts=pv_parts, fleet=fleet, sizing=sz, hardware=hw["id"],
+    return dict(pv=pv, yearly=yearly, pv_parts=pv_parts, yearly_parts=parts, disc=disc, fleet=fleet, sizing=sz, hardware=hw["id"],
                 peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue, design_it_kw=design_kw,
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
                 facility_capex=build, facility_maint_year=fac_maint, build_per_mw=per_mw, build_curve=bc,

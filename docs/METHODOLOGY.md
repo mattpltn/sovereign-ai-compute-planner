@@ -20,6 +20,7 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 - *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
 - *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
 - *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
+- *Download* gives two files. The **summary** (CSV) has the 10-year cost of each application and of the portfolio under the four options. The **full calculation** (ZIP of CSV files with a README) has every step: inputs and type defaults, requests and tokens per application, demand by application and year, GPUs, servers, kW, utilisation and energy by year, yearly cost by option and item with discount factors, and every price, factor and default used with its source.
 - *For specialists: tokens and sizing factors* (closed by default) shows, per application, the model size, requests per day, tokens per request (input and output, cached share), tokens per day at start and per year in year 10, peak equivalent tokens per second and active days; for other AI applications, GPU-seconds per unit and GPU-hours per day. It also lists the factors applied: retries and agent steps, the prefill weight, peak factors, pooling, throughput per GPU and API prices.
 
 **What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
@@ -535,7 +536,7 @@ The global demand growth setting is replaced by these per-application rates (old
 
 | Option | Cost each year |
 |---|---|
-| API | Language-model tokens × API prices (cached input at a discount, Section 11). Non-LLM work is priced as rented cloud GPU-hours. |
+| API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
 | GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
@@ -568,6 +569,25 @@ Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.
 **Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
 
 **Data regulation.** The tool does not check whether an option is allowed. The results page states that the client must assess, for each application, whether its data may be processed by an API provider or a cloud outside the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a government data centre.
+
+### Which applications can be bought as an API
+
+All language-model types can be bought from API providers. For other AI work the tool uses these per-unit prices (Low / Base / High):
+
+| Type | Unit | Low | Base | High | Basis |
+|---|---|---|---|---|---|
+| Speech-to-text | audio hour | $0.18 | $0.36 | $1.44 | $0.003 / $0.006 / $0.024 per minute (batch tiers, OpenAI, AWS Transcribe) [S76, S77] |
+| Text-to-speech | audio hour | $0.20 | $0.80 | $1.50 | $4 / $16 / $30 per million characters [S78] × ~50,000 characters per spoken hour (assumption) |
+| OCR | page | $0.0006 | $0.0015 | $0.01 | $1.50 per 1,000 pages on AWS, Google and Azure, $0.60 above 5 million a month, ~$10 with layout [S79] |
+| Face verification (1:1) | verification | $0.0004 | $0.001 | $0.002 | Amazon Rekognition, Face++ [S80]; liveness not included; some providers restrict identity use |
+| Retrieval indexing | 500-token chunk | $0.000002 | $0.00001 | $0.000065 | $0.02 per million tokens, $0.13 for a large model [S81] |
+| Biometric deduplication (1:N) | – | not available | | | Bought from an identity-system (ABIS) vendor and run in-country; priced as rented GPUs |
+| Image and satellite analysis | – | not available | | | Custom models; priced as rented GPUs |
+| Fine-tuning | – | not available | | | Training an open model; priced as rented GPUs |
+
+API prices can exceed GPU rental at steady volume: 500 audio hours a day of transcription cost about $66,000 a year at $0.006 per minute, while the same work fits on one rented GPU.
+
+Beyond technical availability, an API may be ruled out by data rules (see the note on the results page), offline use in the field, latency for real-time voice, local-language coverage, rate limits at national scale, or payment in foreign currency.
 
 ### Colocation price per kW
 
@@ -900,5 +920,11 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s71"></a>S71 | Colocation pricing, as published (77 rate-card prices from 42 operators, Oct 2026) | Watt & Rack | Retail price per kW for small deployments (median $364 per kW per month, US cabinets) | https://wattandrack.com/colocation/pricing/ |
 | <a id="src-s72"></a>S72 | Colocation hosting pricing across Indian data center providers | Cyfuture Cloud (knowledge base) | India retail power charges, INR 12,000-25,000 per kW per month (cross-check for South Asia) | https://cyfuture.cloud/kb/colocation/colocation-hosting-pricing-across-indian-data-center-providers |
 | <a id="src-s73"></a>S73 | Colocation in Nairobi, Dar es Salaam and Lagos (published rate card) | Lineserve | Africa retail cross-check: power above the rack allowance at $500 per kW per month | https://www.lineserve.net/colocation |
+| <a id="src-s76"></a>S76 | Speech-to-text API pricing guide (2026): per-hour rates, add-ons and hidden costs | AssemblyAI | Speech-to-text API price: Google Cloud dynamic batch $0.003/min, standard $0.016/min | https://assemblyai.com/blog/speech-to-text-api-pricing |
+| <a id="src-s77"></a>S77 | Speech-to-Text API Pricing 2026: Real Costs Compared | convertaudiototext.com | Speech-to-text API price: OpenAI $0.003-0.006/min, AWS Transcribe $0.024/min | https://convertaudiototext.com/blog/speech-to-text-api-pricing-2026 |
+| <a id="src-s78"></a>S78 | Cloud Text-to-Speech pricing | Google Cloud | Text-to-speech API price per million characters ($4 Standard, $16 Neural2 / latest, $30 Chirp 3 HD) | https://cloud.google.com/text-to-speech/pricing |
+| <a id="src-s79"></a>S79 | Google Vision vs AWS Textract vs Azure: Cloud OCR comparison 2026 | imagetotable.ai | OCR API price: $1.50 per 1,000 pages, $0.60 above 5 million a month; specialised processors $10-30 | https://imagetotable.ai/blog/google-vs-aws-vs-azure-ocr-2026 |
+| <a id="src-s80"></a>S80 | Face Recognition APIs and Open-Source Libraries in 2026: Prices, Licences and Traps | Stork.ai | Face verification API price: Amazon Rekognition $1 per 1,000 ($0.0004 at volume), Face++ $0.002 per call | https://stork.ai/blog/face-recognition-api-2026 |
+| <a id="src-s81"></a>S81 | text-embedding-3-small model page | OpenAI | Embedding API price: $0.02 per million tokens (text-embedding-3-large: $0.13) | https://developers.openai.com/api/docs/models/text-embedding-3-small |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.
