@@ -5,7 +5,7 @@
 # Calibrate a specific site with the Schneider Electric "Data center efficiency and PUE calculator" (S48).
 pue_air_by_region:
   Sub-Saharan Africa: {value: 1.79, source: S49, note: "Uptime Institute regional average for Africa and the Middle East (2020 survey)"}
-  Middle East & North Africa: {value: 1.79, source: S49, note: "Uptime Institute regional average for Africa and the Middle East (2020 survey)"}
+  "Middle East, North Africa, Afghanistan & Pakistan": {value: 1.79, source: S49, note: "Uptime Institute regional average for Africa and the Middle East (2020 survey)"}
   Latin America & Caribbean: {value: 1.79, source: "S49, S50", note: "Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50)"}
   South Asia: {value: 1.56, source: S22, note: "Proxy: global average 2024 (S22); hot climates likely higher"}
   East Asia & Pacific: {value: 1.56, source: "S22, S50", note: "Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50)"}
@@ -36,7 +36,7 @@ capex_usd_per_w_by_country:
 # Countries without a market: average of indexed markets in the same region (labelled as a proxy).
 capex_usd_per_w_by_region:
   Sub-Saharan Africa: {value: 10.51, note: "Average of Lagos, Johannesburg, Nairobi"}
-  Middle East & North Africa: {value: 10.25, note: "Average of Saudi Arabia and UAE"}
+  "Middle East, North Africa, Afghanistan & Pakistan": {value: 10.25, note: "Average of Saudi Arabia and UAE"}
   Latin America & Caribbean: {value: 9.13, note: "Bogota only: low confidence"}
   South Asia: {value: 6.83, note: "Mumbai only: low confidence, likely low for smaller markets"}
   East Asia & Pacific: {value: 10.30, note: "Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai)"}

@@ -110,6 +110,10 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
         fleet[y] = dict(servers=active, gpus=active * k, buy=buy)
     peak_it_kw = max((f["gpus"] for f in fleet.values()), default=0) * kw_gpu
     first = next((y for y in yrs if fleet[y]["gpus"]), None)
+    # Own data centre: built once, in the first year of use, for the peak installed IT load plus a spare buffer.
+    design_kw = peak_it_kw * (1 + d["facility_buffer"]["value"])
+    build = 0.0 if p.gov_dc == "ready" else design_kw / 1000 * fac_per_mw
+    fac_ops = d["facility_opex_share"]["value"] * build      # an existing facility's running costs are already paid
 
     yearly = {o: {} for o in OPTIONS}
     parts = {o: {} for o in OPTIONS}
@@ -129,9 +133,8 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
                       energy=it_kwh * pue * cp["kwh"])
         cpr = colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw)
         colo = dict(common, colocation=g * kw_gpu * cpr["value"] * 12)
-        fb = (0.0 if p.gov_dc == "ready" else peak_it_kw / 1000 * fac_per_mw) if y == first else 0.0
-        fac_total = 0.0 if p.gov_dc == "ready" else peak_it_kw / 1000 * fac_per_mw
-        own = dict(common, facility_build=fb, maintenance_facility=maint * fac_total if first and y >= first else 0.0)
+        fb = build if y == first else 0.0
+        own = dict(common, facility_build=fb, facility_operations=fac_ops if first and y >= first else 0.0)
         parts["Owned + colocation"][y], parts["Owned + own data centre"][y] = colo, own
         yearly["Owned + colocation"][y] = sum(colo.values())
         yearly["Owned + own data centre"][y] = sum(own.values())
@@ -142,9 +145,9 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
             for kk, v in parts[o][y].items():
                 pv_parts[o][kk] = pv_parts[o].get(kk, 0.0) + disc[y] * v
     return dict(pv=pv, yearly=yearly, pv_parts=pv_parts, fleet=fleet, sizing=sz, hardware=hw["id"],
-                peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue,
+                peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue, design_it_kw=design_kw,
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
-                facility_capex=0.0 if p.gov_dc == "ready" else peak_it_kw / 1000 * fac_per_mw,
+                facility_capex=build, facility_opex_year=fac_ops,
                 gpu_hour=rate, capex_gpu=capex_gpu, first_year=first,
                 tokens_pv_m=sum(disc[y] * sz[y]["annual_eq_m"] for y in yrs))
 

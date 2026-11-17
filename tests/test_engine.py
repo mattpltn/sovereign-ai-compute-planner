@@ -631,3 +631,21 @@ def test_existing_data_centre_drops_build():
     assert a["pv_parts"]["Owned + own data centre"]["facility_build"] > 0
     assert b["pv_parts"]["Owned + own data centre"]["facility_build"] == 0
     assert b["pv"]["Owned + colocation"] == pytest.approx(a["pv"]["Owned + colocation"])
+
+
+def test_facility_buffer_and_operations():
+    b = _opts(APPS3, META3)["total"]["base"]
+    from engine.model import facility_for
+    per_mw = facility_for(dict(COUNTRIES_["GHA"], iso3="GHA"), {"cooling": "Air"}, D)["capex_per_mw"]
+    assert b["design_it_kw"] == pytest.approx(b["peak_it_kw"] * 1.3)
+    assert b["facility_capex"] == pytest.approx(b["design_it_kw"] / 1000 * per_mw)
+    assert b["facility_opex_year"] == pytest.approx(0.10 * b["facility_capex"])
+    parts = b["pv_parts"]["Owned + own data centre"]
+    assert parts["facility_operations"] > 0 and "maintenance_facility" not in parts
+
+
+def test_mena_region_has_its_own_facility_values():
+    from engine.model import facility_for
+    egy = [k for k, v in COUNTRIES_.items() if (v.get("region") or "").startswith("Middle East")][0]
+    f = facility_for(dict(COUNTRIES_[egy], iso3="ZZZ"), {"cooling": "Air"}, D)
+    assert "proxy" in f["capex_src"] and f["capex_per_mw"] == pytest.approx(10.25e6)

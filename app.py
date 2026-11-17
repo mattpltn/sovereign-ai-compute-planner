@@ -178,6 +178,11 @@ def power(mw):
     return f"{sig2(mw * 1000):,.0f} kW" if mw < 1 else f"{sig2(mw):g} MW"
 
 
+def usd(v):
+    """Exact figure, rounded to the dollar (results page)."""
+    return f"${v:,.0f}"
+
+
 def money_range(lo, hi):
     """'$75–115M' style range."""
     if lo is None or hi is None:
@@ -320,12 +325,12 @@ results_panel = ui.nav_panel(
     ui.output_ui("answer"),
     ui.h4("1 · 10-year cost of the portfolio, four ways", class_="sec"),
     ui.layout_columns(
-        ui.card(ui.card_header("10-year cost by option (present value; whisker = price range)"),
+        ui.card(ui.card_header("10-year cost by option (present value)"),
                 ui.output_plot("chart_opts", height="300px")),
         ui.card(ui.card_header("The same numbers"), ui.output_ui("opt_table"),
                 ui.p("All applications together, with their start years and growth. Capacity is sized each year on the "
-                     "combined load, so spare capacity of one application serves the others. Price range: low and high "
-                     "costs for hardware, cloud, API and colocation prices, and GPU efficiency. All figures rounded.",
+                     "combined load, so spare capacity of one application serves the others. Base prices; figures in US "
+                     "dollars, present value, rounded to the dollar.",
                      class_="hint")),
         col_widths=[7, 5]),
     ui.h4("2 · Cost per application", class_="sec"),
@@ -668,7 +673,7 @@ def server(input, output, session):
         c, _ = country()
         cp = colo_price(dict(c, _quotes=quotes()), D, "base", 0)
         small = D["colocation"]["small_deployment_factor"]["value"]
-        return ui.p(f'Colocation price used: about ${cp["wholesale"]:,.0f} per kW of IT per month wholesale '
+        return ui.p(f'Colocation price used: ${cp["wholesale"]:,.0f} per kW of IT per month wholesale '
                     f'({cp["src"]}), x{small:g} for deployments under '
                     f'{D["colocation"]["small_deployment_kw"]["value"]:,.0f} kW. Energy is paid on top.', class_="hint")
 
@@ -680,16 +685,16 @@ def server(input, output, session):
         pv, rg = r["base"]["pv"], r["range"]
         best = r["cheapest"]
         order = sorted(OPTIONS, key=pv.get)
-        others = " · ".join(f"{OPT_SHORT[o]} about {money(pv[o])}" for o in order[1:])
+        others = " · ".join(f"{OPT_SHORT[o]} {usd(pv[o])}" for o in order[1:])
         fl = r["base"]["fleet"]
         peak = max(fl.values(), key=lambda f: f["servers"])
         yr = next(y for y, f in fl.items() if f["servers"] == peak["servers"])
         own = (f'Owning needs up to {peak["servers"]} server{"s" if peak["servers"] != 1 else ""} '
-               f'({peak["gpus"]} GPUs, about {power(r["base"]["peak_it_kw"] / 1000)} of IT load) by year {yr}.'
+               f'({peak["gpus"]} GPUs, {r["base"]["peak_it_kw"]:,.0f} kW of IT load) by year {yr}.'
                if peak["servers"] else "")
         return ui.div(
-            ui.div(f"Cheapest over 10 years: {OPT_SHORT[best]}, about {money(pv[best])}", class_="big"),
-            ui.div(f'Range {money_range(rg[best]["low"], rg[best]["high"])} · present value at {num(input.disc()) or 0:g}% · '
+            ui.div(f"Cheapest over 10 years: {OPT_SHORT[best]}, {usd(pv[best])}", class_="big"),
+            ui.div(f'10-year present value at {num(input.disc()) or 0:g}% · '
                    f'{len(apps.get())} application{"s" if len(apps.get()) != 1 else ""}, {SCEN[input.ambition()].lower()} adoption',
                    class_="line"),
             ui.div("Other options: " + others + ". " + own, class_="line"),
@@ -701,17 +706,13 @@ def server(input, output, session):
         if not apps.get():
             return None
         r = opt()["total"]
-        pv, rg, best = r["base"]["pv"], r["range"], r["cheapest"]
+        pv, best = r["base"]["pv"], r["cheapest"]
         fig, ax = plt.subplots(figsize=(7, 3))
         xs = list(range(len(OPTIONS)))
         vals = [pv[o] / 1e6 for o in OPTIONS]
         ax.bar(xs, vals, width=0.55, color=["#1f5fa8" if o == best else "#9db8d9" for o in OPTIONS])
         for x, o in zip(xs, OPTIONS):
-            lo, hi = rg[o]["low"] / 1e6, rg[o]["high"] / 1e6
-            ax.plot([x, x], [lo, hi], color="#333", lw=1.2)
-            ax.plot([x - 0.08, x + 0.08], [lo, lo], color="#333", lw=1.2)
-            ax.plot([x - 0.08, x + 0.08], [hi, hi], color="#333", lw=1.2)
-            ax.text(x, hi * 1.02 + 0.01, money(pv[o]), ha="center", va="bottom", fontsize=8,
+            ax.text(x, pv[o] / 1e6 * 1.02, usd(pv[o]), ha="center", va="bottom", fontsize=8,
                     fontweight="bold" if o == best else "normal")
         ax.set_xticks(xs, ["API", "GPU rental", "Own, colo", "Own, own DC"], fontsize=8)
         ax.tick_params(axis="y", labelsize=8)
@@ -719,7 +720,7 @@ def server(input, output, session):
         ax.spines[["top", "right"]].set_visible(False)
         ax.grid(axis="y", color="#e5e7eb", lw=0.6)
         ax.set_axisbelow(True)
-        ax.set_ylim(0, max(rg[o]["high"] for o in OPTIONS) / 1e6 * 1.18)
+        ax.set_ylim(0, max(pv.values()) / 1e6 * 1.15)
         fig.subplots_adjust(left=0.1, right=0.98, top=0.95, bottom=0.12)
         return fig
 
@@ -736,10 +737,9 @@ def server(input, output, session):
                   * D_GPS.get(b["hardware"], 8)) if o.startswith("Owned") and b["first_year"] else 0
             rows.append(ui.tags.tr(
                 ui.tags.td(ui.tags.b(OPT_SHORT[o]) if o == r["cheapest"] else OPT_SHORT[o]),
-                ui.tags.td(("about " + money(b["pv"][o])), style="font-weight:600" if o == r["cheapest"] else ""),
-                ui.tags.td(money_range(r["range"][o]["low"], r["range"][o]["high"])),
-                ui.tags.td(money(up) if up else "-")))
-        return ui.tags.table(ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Option", "10-year cost", "Price range",
+                ui.tags.td(usd(b["pv"][o]), style="font-weight:600" if o == r["cheapest"] else ""),
+                ui.tags.td(usd(up) if up else "-")))
+        return ui.tags.table(ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in ("Option", "10-year cost",
                                                                                   "Upfront, first year of use")])),
                              ui.tags.tbody(*rows), class_="table table-sm")
 
@@ -754,7 +754,7 @@ def server(input, output, session):
 
         def row(label, sub, pv, best, style=""):
             return ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
-                              *[ui.tags.td(money(pv[o]), style="font-weight:700" if o == best else "") for o in OPTIONS],
+                              *[ui.tags.td(usd(pv[o]), style="font-weight:700" if o == best else "") for o in OPTIONS],
                               ui.tags.td(OPT_SHORT[best]), style=style)
         rows = []
         for uid, res in o_["apps"].items():
@@ -811,8 +811,10 @@ def server(input, output, session):
         b = opt()["total"]["base"]
         hw = {h["id"]: h["name"] for h in CAT["hardware"]}[b["hardware"]]
         return ui.p(f"Hardware: {hw}. Servers are bought when the combined need exceeds what is installed (+N), "
-                    f"replaced after {D['gpu_refresh_years']['value']} years, and never sold. Peak IT load about "
-                    f"{power(b['peak_it_kw'] / 1000)}, about {power(b['peak_facility_kw'] / 1000)} with cooling (PUE {b['pue']:.2f}).",
+                    f"replaced after {D['gpu_refresh_years']['value']} years, and never sold. Peak IT load "
+                    f"{b['peak_it_kw']:,.0f} kW ({b['peak_facility_kw']:,.0f} kW with cooling, PUE {b['pue']:.2f}). "
+                    f"An own data centre is built for {b['design_it_kw']:,.0f} kW of IT: the peak plus "
+                    f"{D['facility_buffer']['value']:.0%} spare capacity.",
                     class_="hint")
 
     @render.ui
@@ -823,18 +825,18 @@ def server(input, output, session):
         pc, po = b["pv_parts"]["Owned + colocation"], b["pv_parts"]["Owned + own data centre"]
         items = [("GPU servers (purchases and refresh)", "gpu_servers"), ("GPU software and support", "software"),
                  ("GPU maintenance", "maintenance_gpu"), ("Staff", "staff"), ("Energy", "energy"),
-                 ("Colocation fee", "colocation"), ("Facility build", "facility_build"),
-                 ("Facility maintenance", "maintenance_facility")]
-        rows = [ui.tags.tr(ui.tags.td(lbl), ui.tags.td(money(pc[k]) if pc.get(k) else "-"),
-                           ui.tags.td(money(po[k]) if po.get(k) else "-")) for lbl, k in items]
-        rows.append(ui.tags.tr(ui.tags.td(ui.tags.b("Total")), ui.tags.td(ui.tags.b(money(sum(pc.values())))),
-                               ui.tags.td(ui.tags.b(money(sum(po.values()))))))
+                 ("Colocation fee", "colocation"), ("Facility build (peak IT load + buffer)", "facility_build"),
+                 ("Facility operations (maintenance, facility staff, security, insurance, fuel)", "facility_operations")]
+        rows = [ui.tags.tr(ui.tags.td(lbl), ui.tags.td(usd(pc[k]) if pc.get(k) else "-"),
+                           ui.tags.td(usd(po[k]) if po.get(k) else "-")) for lbl, k in items]
+        rows.append(ui.tags.tr(ui.tags.td(ui.tags.b("Total")), ui.tags.td(ui.tags.b(usd(sum(pc.values())))),
+                               ui.tags.td(ui.tags.b(usd(sum(po.values()))))))
         gpu = sum(pc[k] for k in ("gpu_servers", "software", "maintenance_gpu"))
         return ui.div(ui.tags.table(ui.tags.thead(ui.tags.tr(ui.tags.th(""), ui.tags.th("Own + colocation"),
                                                              ui.tags.th("Own + own data centre"))),
                                     ui.tags.tbody(*rows), class_="table table-sm"),
-                      ui.p(f"The GPU part alone (servers, software, maintenance) is {money(gpu)} in both. The difference "
-                           "between the two is the colocation fee against building and maintaining a facility. "
+                      ui.p(f"The GPU part alone (servers, software, maintenance) is {usd(gpu)} in both. The difference "
+                           "between the two is the colocation fee against building and running a facility. "
                            + ("An existing facility is assumed: no build cost." if input.own_dc_existing() else ""),
                            class_="hint"))
 
@@ -863,7 +865,8 @@ def server(input, output, session):
                 ("Colocation", f'${b["colo"]["value"]:,.0f} per kW of IT per month ({b["colo"]["src"]}'
                                + (", small-deployment rate" if b["colo"]["small"] else "") + ")"),
                 ("Facility build (own data centre)", "existing facility, not counted" if input.own_dc_existing()
-                 else f'{money(b["facility_capex"])} for {power(b["peak_it_kw"] / 1000)} of IT'),
+                 else f'{usd(b["facility_capex"])} for {b["design_it_kw"]:,.0f} kW of IT (peak + {D["facility_buffer"]["value"]:.0%}); '
+                      f'operations {usd(b["facility_opex_year"])} per year ({D["facility_opex_share"]["value"]:.0%} of build)'),
                 ("PUE", f'{b["pue"]:.2f}'),
                 ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),
                 ("API prices", API_PROV),
@@ -879,7 +882,7 @@ def server(input, output, session):
         for y in b["fleet"]:
             rows.append({"Year": y, "GPUs needed (busiest hour)": b["sizing"][y]["gpus"],
                          "Servers installed": b["fleet"][y]["servers"],
-                         **{OPT_SHORT[o]: money(b["yearly"][o][y]) for o in OPTIONS}})
+                         **{OPT_SHORT[o]: usd(b["yearly"][o][y]) for o in OPTIONS}})
         return pd.DataFrame(rows)
 
     @render.download(filename="ai_compute_options_raw.csv")
@@ -892,7 +895,7 @@ def server(input, output, session):
                 rows.append({"application": nm[uid]["name"] if uid in nm else "All together (shared capacity)",
                              "start_year": nm[uid].get("start_year", 1) if uid in nm else "",
                              "growth": nm[uid].get("growth", 0) if uid in nm else "",
-                             "option": o, **{f"pv_{s_}": res["range"][o][s_] for s_ in ("low", "base", "high")},
+                             "option": o, "pv_10y_usd": round(res["base"]["pv"][o]),
                              "cheapest": o == res["cheapest"], "hardware": res["base"]["hardware"],
                              "peak_servers": max(f["servers"] for f in res["base"]["fleet"].values())})
         yield pd.DataFrame(rows).to_csv(index=False)
