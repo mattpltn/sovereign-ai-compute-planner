@@ -635,10 +635,8 @@ def test_existing_data_centre_drops_build():
 
 def test_facility_buffer_and_operations():
     b = _opts(APPS3, META3)["total"]["base"]
-    from engine.model import facility_for
-    per_mw = facility_for(dict(COUNTRIES_["GHA"], iso3="GHA"), {"cooling": "Air"}, D)["capex_per_mw"]
     assert b["design_it_kw"] == pytest.approx(b["peak_it_kw"] * 1.3)
-    assert b["facility_capex"] == pytest.approx(b["design_it_kw"] / 1000 * per_mw)
+    assert b["facility_capex"] == pytest.approx(b["design_it_kw"] / 1000 * b["build_per_mw"])
     assert b["facility_maint_year"] == pytest.approx(0.05 * b["facility_capex"])
     assert b["pv_parts"]["Owned + own data centre"]["maintenance_facility"] > 0
 
@@ -648,3 +646,16 @@ def test_mena_region_has_its_own_facility_values():
     egy = [k for k, v in COUNTRIES_.items() if (v.get("region") or "").startswith("Middle East")][0]
     f = facility_for(dict(COUNTRIES_[egy], iso3="ZZZ"), {"cooling": "Air"}, D)
     assert "proxy" in f["capex_src"] and f["capex_per_mw"] == pytest.approx(10.25e6)
+
+
+def test_build_cost_size_curve():
+    from engine.options import build_cost_per_mw
+    xex = {"region": "", "iso3": "XEX"}                    # global default country: factor 1
+    air = {"cooling": "Air"}
+    for mw, musd in [(0.1, 40), (0.5, 30), (1, 25), (5, 22), (10, 20), (20, 15), (50, 12)]:
+        assert build_cost_per_mw(mw, xex, air, D)["value"] == pytest.approx(musd * 1e6)
+    assert build_cost_per_mw(0.01, xex, air, D)["value"] == pytest.approx(40e6)      # flat below 0.1 MW
+    assert build_cost_per_mw(200, xex, air, D)["value"] == pytest.approx(12e6)       # flat above 50 MW
+    assert 25e6 < build_cost_per_mw(0.75, xex, air, D)["value"] < 30e6
+    gha = build_cost_per_mw(1, dict(COUNTRIES_["GHA"], iso3="GHA"), air, D)
+    assert gha["value"] == pytest.approx(25e6 * 10.51 / 11.0)

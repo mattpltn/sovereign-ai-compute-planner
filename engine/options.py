@@ -46,6 +46,26 @@ def colo_price(country: dict, d: dict, scenario: str = "base", it_kw: float = 0.
     return dict(value=v * f * c["price_range"][scenario], wholesale=v, src=src, small=small)
 
 
+def build_cost_per_mw(design_mw: float, country: dict, hw: dict, d: dict, scenario: str = "base") -> dict:
+    """Own data centre build cost, USD per MW of IT capacity, from the size curve scaled to the country."""
+    f = d["facility"]
+    pts = f["capex_scale_curve"]["points"]
+    x = max(design_mw, 1e-6)
+    if x <= pts[0][0]:
+        base = pts[0][1]
+    elif x >= pts[-1][0]:
+        base = pts[-1][1]
+    else:
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            if x0 <= x <= x1:
+                t = (math.log(x) - math.log(x0)) / (math.log(x1) - math.log(x0))
+                base = y0 + t * (y1 - y0)
+                break
+    fac = facility_for(country, hw, d, scenario)          # country $/W x range x cooling, relative to the default
+    rel = fac["capex_per_mw"] / (f["capex_usd_per_w_default"]["value"] * 1e6)
+    return dict(value=base * 1e6 * rel, curve_musd_per_mw=base, country_factor=rel, src=fac["capex_src"])
+
+
 def _factor(app_meta: dict, y: int) -> float:
     s, g = int(app_meta.get("start_year") or 1), float(app_meta.get("growth") or 0.0)
     return 0.0 if y < s else (1 + g) ** (y - s)
@@ -74,7 +94,6 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     idle = d["idle_power_fraction"]["value"]
     fac = facility_for(p.country, hw, d, scenario)
     pue = fac["pue"]
-    fac_per_mw = q.get("facility_capex_usd_per_mw_it") or fac["capex_per_mw"]
     rate = (q.get("gpu_hour_usd") or hw["gpu_hour_usd"]) * cp["hour_mult"]
     capex_gpu = (q.get("gpu_capex_usd") or hw["capex_per_gpu_usd"]) * cp["capex_mult"]
     prices = q.get("api_prices") or api_prices
@@ -112,7 +131,9 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     first = next((y for y in yrs if fleet[y]["gpus"]), None)
     # Own data centre: built once, in the first year of use, for the peak installed IT load plus a spare buffer.
     design_kw = peak_it_kw * (1 + d["facility_buffer"]["value"])
-    build = 0.0 if p.gov_dc == "ready" else design_kw / 1000 * fac_per_mw
+    bc = build_cost_per_mw(design_kw / 1000, p.country, hw, d, scenario)
+    per_mw = q.get("facility_capex_usd_per_mw_it") or bc["value"]
+    build = 0.0 if p.gov_dc == "ready" else design_kw / 1000 * per_mw
     fac_maint = maint * build                                # facility maintenance, 5% of build per year
 
     yearly = {o: {} for o in OPTIONS}
@@ -147,7 +168,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     return dict(pv=pv, yearly=yearly, pv_parts=pv_parts, fleet=fleet, sizing=sz, hardware=hw["id"],
                 peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue, design_it_kw=design_kw,
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
-                facility_capex=build, facility_maint_year=fac_maint,
+                facility_capex=build, facility_maint_year=fac_maint, build_per_mw=per_mw, build_curve=bc,
                 gpu_hour=rate, capex_gpu=capex_gpu, first_year=first,
                 tokens_pv_m=sum(disc[y] * sz[y]["annual_eq_m"] for y in yrs))
 

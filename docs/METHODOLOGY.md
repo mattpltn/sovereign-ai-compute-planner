@@ -545,15 +545,22 @@ Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the sa
 
 ```
 design IT load      = peak installed IT load over 10 years × (1 + 30% buffer)
-facility build      = design IT load (W) × construction cost ($ per W of IT, country or region, Section 8.1)
+facility build      = design IT load (MW) × build cost per MW (size curve × country factor)
 facility maintenance = 5% of the build cost per year, from the first year of use
 ```
 
 - *Buffer.* Facilities are built with spare capacity above the IT load installed: 30% is used as best practice (`facility_buffer`, adjustable).
+- *Build cost by size.* Small sites cost more per MW because power intake, UPS, cooling plant, fire suppression and security are largely fixed. The tool uses this curve (analyst assumption from the World Bank team, Medium confidence), interpolated on the logarithm of capacity and flat outside its ends:
+
+| Design IT capacity | 0.1 MW | 0.5 MW | 1 MW | 5 MW | 10 MW | 20 MW | 50 MW |
+|---|---|---|---|---|---|---|---|
+| Build cost, $M per MW | 40 | 30 | 25 | 22 | 20 | 15 | 12 |
+
+- *Country factor.* The curve is the global level. Each country is scaled by its Turner & Townsend construction cost relative to the global default of $11.0 per W (Section 8.1): Ghana uses the Sub-Saharan Africa average, $10.51 per W, so × 0.955. Liquid cooling and the Low / High cases apply as in Section 8.1. A client quote in $ per MW replaces the curve.
 - *Maintenance.* 5% of the build cost per year (`maintenance_share`, the same rate as GPU maintenance). Facility staff, security, insurance and generator fuel are not counted separately.
 - *Energy* (IT × PUE) is counted separately in both owned options.
 
-Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW (Sub-Saharan Africa proxy, $10.51 per W): build $13.66M, maintenance $0.68M per year, so $20.5M over 10 years before energy and discounting.
+Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.5M per MW, × 0.955 = $23.4M per MW, so the build costs $30.4M and maintenance $1.5M per year. One 8-GPU server (11 kW peak, 15 kW built) sits below the curve's first point: $38.2M per MW, a build of $0.56M.
 
 **Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
 

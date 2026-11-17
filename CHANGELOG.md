@@ -8,6 +8,7 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 ## [0.9.1] - 2026-11-17
 ### Changed
 - Own data centre is built with 30% spare capacity above the peak installed IT load (`facility_buffer`); facility maintenance stays at 5% of the build cost per year.
+- Own data centre build cost now follows a size curve ($40M per MW at 0.1 MW down to $12M per MW at 50 MW, analyst assumption), scaled to each country by its Turner & Townsend cost relative to the global default. Small rooms are no longer priced at large-facility rates.
 - Results page shows Base figures in US dollars rounded to the dollar, without price ranges; the CSV export gives one 10-year figure per option.
 ### Fixed
 - Middle East, North Africa, Afghanistan & Pakistan countries used the global default PUE and construction cost because the region name did not match the World Bank data; they now use the regional values.

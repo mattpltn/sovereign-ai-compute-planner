@@ -865,7 +865,9 @@ def server(input, output, session):
                 ("Colocation", f'${b["colo"]["value"]:,.0f} per kW of IT per month ({b["colo"]["src"]}'
                                + (", small-deployment rate" if b["colo"]["small"] else "") + ")"),
                 ("Facility build (own data centre)", "existing facility, not counted" if input.own_dc_existing()
-                 else f'{usd(b["facility_capex"])} for {b["design_it_kw"]:,.0f} kW of IT (peak + {D["facility_buffer"]["value"]:.0%}); '
+                 else f'{usd(b["facility_capex"])} for {b["design_it_kw"]:,.0f} kW of IT (peak + {D["facility_buffer"]["value"]:.0%}), '
+                      f'at ${b["build_per_mw"] / 1e6:,.1f}M per MW (size curve ${b["build_curve"]["curve_musd_per_mw"]:.1f}M x country '
+                      f'factor {b["build_curve"]["country_factor"]:.2f}); '
                       f'maintenance {usd(b["facility_maint_year"])} per year ({D["maintenance_share"]["value"]:.0%} of build)'),
                 ("PUE", f'{b["pue"]:.2f}'),
                 ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),

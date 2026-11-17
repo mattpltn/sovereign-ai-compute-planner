@@ -49,3 +49,12 @@ capex_range: {low: 0.85, base: 1.0, high: 1.2}
 # Turner & Townsend: liquid-cooled AI facilities cost 7-10% more in the US (S52). Schneider WP282: equal at the same
 # density, 10-14% cheaper when liquid cooling allows 2-4x denser racks (S54).
 liquid_capex_multiplier: {low: 0.90, base: 1.085, high: 1.10}
+
+# Own data centre build cost by size (v0.9.1). USD million per MW of IT capacity built (peak IT load + buffer).
+# Small sites cost more per MW: fixed costs (power intake, UPS, cooling plant, fire suppression, security) are spread
+# over less load. Linear interpolation on log(capacity); flat below the first and above the last point.
+# The curve is the global level; each country is scaled by its Turner & Townsend cost relative to the global default
+# (capex_usd_per_w_by_country / by_region / default above).
+capex_scale_curve:
+  source: "analyst (World Bank team), assumption, confidence Medium"
+  points: [[0.1, 40], [0.5, 30], [1, 25], [5, 22], [10, 20], [20, 15], [50, 12]]
