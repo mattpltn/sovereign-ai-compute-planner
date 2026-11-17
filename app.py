@@ -337,7 +337,9 @@ results_panel = ui.nav_panel(
     ui.card(ui.card_header("10-year cost of each application if bought on its own, by option (present value)"),
             ui.output_ui("app_opts"),
             ui.p("Each row prices the application alone, so owned options carry their own servers, staff and facility. "
-                 "The last two rows show the portfolio bought together and the sum of the rows: the gap is what sharing saves.",
+                 "The last two rows show the portfolio bought together and the sum of the rows: the gap is what sharing saves. "
+                 "† Not available as a cloud API (e.g. national biometric deduplication): the API column prices it as rented GPUs. "
+                 "Other non-language-model work uses per-unit cloud API prices (per audio hour, page, verification or chunk).",
                  class_="hint")),
     ui.h4("3 · What owning means", class_="sec"),
     ui.layout_columns(
@@ -351,11 +353,18 @@ results_panel = ui.nav_panel(
         ui.accordion_panel("Details: assumptions used", ui.output_table("assumptions")),
         ui.accordion_panel("Details: year by year (portfolio, not discounted)", ui.output_table("yearly")),
         open=False),
-    ui.layout_columns(ui.download_button("dl_results", "Export results (CSV, unrounded)"),
-                      ui.download_button("dl_scenario", "Save scenario"),
-                      ui.input_file("ul_scenario", None, accept=[".json"], button_label="Load scenario",
-                                    placeholder="scenario.json"),
-                      col_widths=[3, 3, 6]),
+    ui.card(
+        ui.card_header("Download"),
+        ui.layout_columns(
+            ui.div(ui.download_button("dl_results", "Summary (CSV)", class_="w-100"),
+                   ui.p("The 10-year cost of each application and of the portfolio under the four options.", class_="hint")),
+            ui.div(ui.download_button("dl_detail", "Full calculation (ZIP)", class_="w-100"),
+                   ui.p("Every step: inputs, requests and tokens by year, GPUs, servers, kW and energy by year, "
+                        "yearly costs by item, and every assumption used, with a README.", class_="hint")),
+            ui.div(ui.download_button("dl_scenario", "Save scenario (JSON)", class_="w-100"),
+                   ui.input_file("ul_scenario", None, accept=[".json"], button_label="Load scenario",
+                                 placeholder="scenario.json")),
+            col_widths=[4, 4, 4])),
 )
 
 evidence_panel = ui.nav_panel(
@@ -753,9 +762,10 @@ def server(input, output, session):
         head = ui.tags.tr(ui.tags.th("Application"), ui.tags.th("Start · growth"),
                           *[ui.tags.th(OPT_SHORT[o]) for o in OPTIONS], ui.tags.th("Cheapest"))
 
-        def row(label, sub, pv, best, style=""):
+        def row(label, sub, pv, best, style="", no_api=False):
+            cell = lambda o: usd(pv[o]) + (" †" if no_api and o == "API" else "")
             return ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
-                              *[ui.tags.td(usd(pv[o]), style="font-weight:700" if o == best else "") for o in OPTIONS],
+                              *[ui.tags.td(cell(o), style="font-weight:700" if o == best else "") for o in OPTIONS],
                               ui.tags.td(OPT_SHORT[best]), style=style)
         rows = []
         for uid, res in o_["apps"].items():
@@ -770,7 +780,8 @@ def server(input, output, session):
                                                   "servers (CPU or a shared GPU). In the portfolio it uses spare GPU time.",
                                                   colspan=len(OPTIONS) + 1, class_="hint")))
                 continue
-            rows.append(row(label, sub, res["base"]["pv"], res["cheapest"]))
+            ap = A()[a["type"]].get("api_price") or {}
+            rows.append(row(label, sub, res["base"]["pv"], res["cheapest"], no_api=ap.get("available") is False))
         t = o_["total"]
         rows.append(row(ui.tags.b("All together (shared capacity)"), "", t["base"]["pv"], t["cheapest"],
                         "border-top:2px solid #94a3b8"))
@@ -949,20 +960,174 @@ def server(input, output, session):
                          **{OPT_SHORT[o]: usd(b["yearly"][o][y]) for o in OPTIONS}})
         return pd.DataFrame(rows)
 
-    @render.download(filename="ai_compute_options_raw.csv")
-    def dl_results():
+    @render.download(filename="ai_compute_full_calculation.zip")
+    def dl_detail():
+        import io
+        import zipfile
         o_ = opt()
         nm = _names()
+        r = result()
+        b = o_["total"]["base"]
+        H = int(D["horizon_years"]["value"])
+        files = {}
+        csv = lambda rows: pd.DataFrame(rows).to_csv(index=False)
+        g = lambda a, y: 0.0 if y < a.get("start_year", 1) else (1 + a.get("growth", 0)) ** (y - a.get("start_year", 1))
+        # 1. inputs
+        rows = []
+        for a in apps.get():
+            t = A()[a["type"]]
+            row_ = {"application": a["name"], "type": t["label"], "volume": a["volume"], "unit": t["unit_label"],
+                    "start_year": a.get("start_year", 1), "growth_per_year": a.get("growth", 0),
+                    "population_basis": a.get("population_basis", "")}
+            if "isl" in t:
+                rate = a.get("rate_override") or rate_for(a, t)[{"Low": "low", "Base": "base", "High": "high"}[input.ambition()]]
+                row_.update(rate_per_unit_per_active_day=rate, active_days_per_year=t.get("active_days_per_year", 365),
+                            model_size=a.get("model_class") or t["model_class"], input_tokens=t["isl"],
+                            system_prompt_tokens=t["system_prompt_tokens"], output_tokens=t["osl"],
+                            reasoning_tokens=t["reasoning_tokens"], calls_per_task=t["agent_steps"], retry=t["retry"],
+                            cache_hit=t["cache_hit"], peak_share=t["peak_share"], peak_window_h=t["peak_window_h"],
+                            burst=t["burst"], sla_headroom=t["sla_headroom"], seasonal=t["seasonal"])
+            else:
+                ap = t.get("api_price") or {}
+                row_.update(gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=t["mode"], peak_share=t["peak_share"],
+                            peak_window_h=t["peak_window_h"], burst=t["burst"],
+                            api_price_base=ap.get("base", "not available"), api_price_unit=ap.get("unit", ""))
+            rows.append(row_)
+        files["1_inputs_applications.csv"] = csv(rows)
+        # 2. tokens per application at start, 3. by year
+        rows, yrows = [], []
+        for x in r["demand"]:
+            a = nm.get(x["id"])
+            if not a:
+                continue
+            n = x["sessions"] or 1
+            rows.append({"application": a["name"], "model_size": x["model_class"], "requests_per_day": x["sessions"],
+                         "input_tokens_per_request": x["daily_input"] / n, "cached_input_tokens_per_request": x["daily_cached"] / n,
+                         "output_tokens_per_request": x["daily_output"] / n, "tokens_per_day": x["daily_input"] + x["daily_output"],
+                         "equivalent_tokens_per_day": x["daily_eq"], "peak_equivalent_tokens_per_s": x["peak_eq_tps"],
+                         "active_days_per_year": x["active_days"]})
+            for y in range(1, H + 1):
+                f = g(a, y)
+                yrows.append({"application": a["name"], "year": y, "growth_factor": f, "requests_per_day": x["sessions"] * f,
+                              "tokens_per_year": (x["daily_input"] + x["daily_output"]) * x["active_days"] * f,
+                              "uncached_input_tokens_per_year_m": x["annual_uncached_input_m"] * f,
+                              "cached_input_tokens_per_year_m": x["annual_cached_input_m"] * f,
+                              "output_tokens_per_year_m": x["annual_output_m"] * f,
+                              "equivalent_tokens_per_year_m": x["annual_eq_m"] * f, "peak_equivalent_tokens_per_s": x["peak_eq_tps"] * f})
+        for w in r["nontoken"]:
+            a = nm.get(w["id"])
+            if not a:
+                continue
+            for y in range(1, H + 1):
+                f = g(a, y)
+                yrows.append({"application": a["name"], "year": y, "growth_factor": f, "units_per_day": w["units_per_day"] * f,
+                              "gpu_hours_per_day": w["gpu_hours_day"] * f, "peak_gpus": w["peak_gpus"] * f})
+        files["2_tokens_per_application_at_start.csv"] = csv(rows)
+        files["3_demand_by_application_and_year.csv"] = csv(yrows)
+        # 4. sizing by year (portfolio)
+        hw = next(h for h in CAT["hardware"] if h["id"] == b["hardware"])
+        rows = []
+        for y in range(1, H + 1):
+            s_, f = b["sizing"][y], b["fleet"][y]
+            rows.append({"year": y, "applications_pooled": s_["n_apps"], "pooling_factor": s_["diversity"],
+                         "gpus_needed_fractional": s_["gpu_need"], "gpus_needed": s_["gpus"],
+                         "gpus_for_llm": s_["gpus_llm"], "gpus_for_other_ai": s_["gpus_nontoken"] + s_["gpus_batch_extra"],
+                         "servers_installed": f["servers"], "servers_bought": f["buy"], "gpus_installed": f["gpus"],
+                         "it_load_kw": f["gpus"] * hw["kw_per_gpu"], "facility_load_kw": f["gpus"] * hw["kw_per_gpu"] * b["pue"],
+                         "utilisation": s_["utilisation"], "equivalent_tokens_per_year_m": s_["annual_eq_m"],
+                         "api_tokens_cost_usd": s_["api_llm"], "api_other_ai_cost_usd": s_["api_nt"]})
+        files["4_capacity_by_year.csv"] = csv(rows)
+        # 5. yearly cost by option and item
+        rows = []
+        for y in range(1, H + 1):
+            for o in OPTIONS:
+                items = b["yearly_parts"][o].get(y) if o in b["yearly_parts"] and b["yearly_parts"][o] else None
+                if items:
+                    for k, v in items.items():
+                        rows.append({"year": y, "option": o, "item": k, "cost_usd": v, "discount_factor": b["disc"][y],
+                                     "present_value_usd": v * b["disc"][y]})
+                else:
+                    rows.append({"year": y, "option": o, "item": "total", "cost_usd": b["yearly"][o][y],
+                                 "discount_factor": b["disc"][y], "present_value_usd": b["yearly"][o][y] * b["disc"][y]})
+        files["5_costs_by_year_and_item.csv"] = csv(rows)
+        # 6. options per application
         rows = []
         for uid, res in list(o_["apps"].items()) + [("ALL", o_["total"])]:
             for o in OPTIONS:
                 rows.append({"application": nm[uid]["name"] if uid in nm else "All together (shared capacity)",
-                             "start_year": nm[uid].get("start_year", 1) if uid in nm else "",
-                             "growth": nm[uid].get("growth", 0) if uid in nm else "",
-                             "option": o, "pv_10y_usd": round(res["base"]["pv"][o]),
-                             "cheapest": o == res["cheapest"], "hardware": res["base"]["hardware"],
+                             "option": o, "pv_10y_usd": res["base"]["pv"][o], "cheapest": o == res["cheapest"],
+                             "hardware": res["base"]["hardware"],
                              "peak_servers": max(f["servers"] for f in res["base"]["fleet"].values())})
-        yield pd.DataFrame(rows).to_csv(index=False)
+        files["6_options_per_application.csv"] = csv(rows)
+        # 7. assumptions
+        c, _ = country()
+        cp_ = cost_params(_run(input.ambition()), D, "base")
+        rows = [("country", c.get("name", input.iso()), ""), ("adoption_scenario", SCEN[input.ambition()], ""),
+                ("hardware", hw["name"], hw.get("evidence", "")), ("kw_per_gpu", hw["kw_per_gpu"], "hardware.yaml"),
+                ("gpus_per_server", hw.get("gpus_per_server", 1), "hardware.yaml"),
+                ("gpu_server_price_per_gpu_usd", b["capex_gpu"], "hardware.yaml / quote"),
+                ("gpu_rental_usd_per_hour", b["gpu_hour"], "hardware.yaml / quote"),
+                *[(f"throughput_tokens_per_s_per_gpu_{k}", v, "S44 InferenceX, chosen speed") for k, v in b["sizing"][H]["eff_tps"].items()],
+                *[(f"api_price_{k}_input_per_m", v["input"], API_PROV) for k, v in API_PRICES.items()],
+                *[(f"api_price_{k}_output_per_m", v["output"], API_PROV) for k, v in API_PRICES.items()],
+                ("electricity_usd_per_kwh", cp_["kwh"], "country / default"), ("pue", b["pue"], "facility.yaml"),
+                ("colocation_usd_per_kw_month", b["colo"]["value"], b["colo"]["src"]),
+                ("facility_buffer", D["facility_buffer"]["value"], D["facility_buffer"]["source"]),
+                ("design_it_kw", b["design_it_kw"], "peak IT load x (1 + buffer)"),
+                ("build_usd_per_mw", b["build_per_mw"], "size curve x country factor"),
+                ("facility_build_usd", b["facility_capex"], ""), ("discount_rate_pct", num(input.disc()) or 0, "Setup"),
+                ("price_decline_pct", num(input.decline()) or 0, "Setup")]
+        for k, v in D.items():
+            if isinstance(v, dict) and "value" in v:
+                rows.append((f"default.{k}", v["value"], v.get("source", "")))
+        files["7_assumptions.csv"] = csv([{"item": k, "value": v, "source": s_} for k, v, s_ in rows])
+        files["README.txt"] = """Sovereign AI Compute Planner - full calculation
+Base prices, the adoption scenario chosen in Setup, US dollars, present value at the discount rate shown in 7_assumptions.csv.
+
+1_inputs_applications.csv      What was entered, and the defaults used for each application type.
+2_tokens_per_application_at_start.csv
+                               requests/day = volume x rate; tokens per request = (input + system prompt) x calls x retry
+                               for input, (output + reasoning) x calls x retry for output; cached = system prompt x cache hit.
+                               equivalent tokens = output + (input - cached) x prefill weight.
+                               peak tokens/s = equivalent tokens/day x peak share / (window x 3600) x burst x headroom x seasonal.
+3_demand_by_application_and_year.csv
+                               growth factor = 0 before the start year, (1 + growth)^(year - start) after.
+                               tokens/year use active days per year (working, school or calendar days).
+4_capacity_by_year.csv         All applications pooled each year: GPUs = summed peaks x pooling factor / tokens/s per GPU,
+                               plus other AI work. Servers are bought when the need exceeds what is installed, replaced
+                               after the refresh period, never sold. kW = GPUs x kW per GPU (x PUE for the facility).
+5_costs_by_year_and_item.csv   Yearly cost of each option by item, the discount factor and the present value.
+                               API and GPU rental are shown as totals.
+6_options_per_application.csv  Each application priced alone, and the portfolio priced together.
+7_assumptions.csv              Every price, factor and default used, with its source ID (see the methodology).
+"""
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            for name, content in files.items():
+                z.writestr(name, content)
+        yield buf.getvalue()
+
+    @render.download(filename="ai_compute_summary.csv")
+    def dl_results():
+        o_ = opt()
+        nm = _names()
+        rows = []
+        for uid, res in list(o_["apps"].items()):
+            a = nm.get(uid)
+            if not a:
+                continue
+            rows.append({"application": a["name"], "start_year": a.get("start_year", 1),
+                         "growth_per_year": a.get("growth", 0),
+                         **{f"{OPT_SHORT[o]} (10-year, USD)": round(res["base"]["pv"][o]) for o in OPTIONS},
+                         "cheapest": OPT_SHORT[res["cheapest"]]})
+        t = o_["total"]
+        rows.append({"application": "All together (shared capacity)",
+                     **{f"{OPT_SHORT[o]} (10-year, USD)": round(t["base"]["pv"][o]) for o in OPTIONS},
+                     "cheapest": OPT_SHORT[t["cheapest"]]})
+        rows.append({"application": "Sum if each is bought alone",
+                     **{f"{OPT_SHORT[o]} (10-year, USD)": round(v) for o, v in o_["sum_standalone"].items()}})
+        df = pd.DataFrame(rows).astype({"start_year": "Int64"})
+        yield df.to_csv(index=False)
 
 
 

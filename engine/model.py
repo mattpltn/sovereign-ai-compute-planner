@@ -141,6 +141,7 @@ def nontoken_rows(p: Profile, d: dict) -> list[dict]:
             peak = (w["units_per_day"] * w["gpu_seconds_per_unit"] * w["peak_share"]
                     / (w["peak_window_h"] * 3600) * w["burst"] / der)
         out.append(dict(id=w["id"], name=w["name"], mode=w["mode"], gpu_hours_day=gpu_h,
+                        units_per_day=w["units_per_day"] if inc else 0.0,
                         peak_gpus=peak, tier=p.class_to_tier[int(w["data_class"])]))
     return out
 

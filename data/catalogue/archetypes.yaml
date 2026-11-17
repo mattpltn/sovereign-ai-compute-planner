@@ -405,6 +405,7 @@
   unit: items
   unit_label: Audio hours per day
   gpu_seconds_per_unit: 12
+  api_price: {low: 0.18, base: 0.36, high: 1.44, unit: "per audio hour", source: "S76, S77", note: "Batch and low-cost tiers $0.003/min, OpenAI transcription $0.006/min, AWS Transcribe standard $0.024/min"}
   basis: {gpu: derived}
   mode: Interactive
   peak_share: 0.7
@@ -421,6 +422,7 @@
   unit: items
   unit_label: Pages per day
   gpu_seconds_per_unit: 0.75
+  api_price: {low: 0.0006, base: 0.0015, high: 0.01, unit: "per page", source: S79, note: "Plain OCR $1.50 per 1,000 pages on AWS, Google and Azure ($0.60 above 5 million pages a month); layout parsing about $10 per 1,000"}
   basis: {gpu: observed}
   mode: Batch
   peak_share: 0.6
@@ -437,6 +439,7 @@
   unit: items
   unit_label: Verifications per day
   gpu_seconds_per_unit: 0.02
+  api_price: {low: 0.0004, base: 0.001, high: 0.002, unit: "per verification", source: S80, note: "Amazon Rekognition CompareFaces $1 per 1,000 ($0.40 at volume); Face++ $2 per 1,000. Excludes liveness checks. Identity use is restricted by some providers"}
   basis: {gpu: derived}
   mode: Interactive
   peak_share: 0.6
@@ -453,6 +456,7 @@
   unit: items
   unit_label: Enrolments per day
   gpu_seconds_per_unit: 2
+  api_price: {available: false, note: "No general cloud API for national-scale 1:N deduplication; bought from an ABIS vendor and run in-country. The API option prices it as rented GPUs"}
   basis: {gpu: uncalibrated}
   mode: Batch
   peak_share: 0.6
@@ -469,6 +473,7 @@
   unit: items
   unit_label: Image chips per day (fixed size for the chosen model, e.g. 512 x 512 pixels)
   gpu_seconds_per_unit: 0.1
+  api_price: {available: false, note: "Custom models (crop, land use) are not sold as a per-image API; the API option prices them as rented GPUs"}
   basis: {gpu: uncalibrated}
   mode: Batch
   peak_share: 0.5
@@ -485,6 +490,7 @@
   unit: gpu_hours_year
   unit_label: GPU-hours per year
   gpu_seconds_per_unit: 3600
+  api_price: {available: false, note: "Training an open model is not a per-call API; the API option prices it as rented GPUs"}
   basis: {gpu: client}
   mode: Batch
   peak_share: 0.5
@@ -501,6 +507,7 @@
   unit: items
   unit_label: Audio hours generated per day
   gpu_seconds_per_unit: 40
+  api_price: {low: 0.2, base: 0.8, high: 1.5, unit: "per generated audio hour", source: "S78, assumption", note: "Google Cloud TTS $4 / $16 / $30 per million characters (Standard / Neural2 / Chirp 3 HD) x ~50,000 characters per spoken hour (assumption)"}
   basis: {gpu: derived}
   mode: Interactive
   peak_share: 0.7
@@ -517,6 +524,7 @@
   unit: items
   unit_label: 500-token chunks embedded per day, after overlap (new + re-indexing)
   gpu_seconds_per_unit: 0.01
+  api_price: {low: 0.000002, base: 0.00001, high: 0.000065, unit: "per 500-token chunk", source: S81, note: "$0.02 per million tokens (small embedding model); $0.13 for a large one"}
   basis: {gpu: assumption}
   mode: Batch
   peak_share: 0.5
