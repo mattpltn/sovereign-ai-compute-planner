@@ -20,6 +20,7 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 - *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
 - *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
 - *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
+- *For specialists: tokens and sizing factors* (closed by default) shows, per application, the model size, requests per day, tokens per request (input and output, cached share), tokens per day at start and per year in year 10, peak equivalent tokens per second and active days; for other AI applications, GPU-seconds per unit and GPU-hours per day. It also lists the factors applied: retries and agent steps, the prefill weight, peak factors, pooling, throughput per GPU and API prices.
 
 **What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
 
