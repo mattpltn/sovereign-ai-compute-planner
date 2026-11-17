@@ -5,6 +5,10 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-11-17
+### Added
+- Results: a collapsed "For specialists: tokens and sizing factors" section. Per application: model size, requests per day, tokens per request (input, output, cached share), tokens per day at start, tokens per year in year 10, peak equivalent tokens per second, active days. Other AI applications: GPU-seconds per unit and GPU-hours per day. Plus the factors applied (retries and agent steps, prefill weight, peak factors, pooling, throughput per GPU, API prices).
+
 ## [0.9.1] - 2026-11-17
 ### Changed
 - Own data centre is built with 30% spare capacity above the peak installed IT load (`facility_buffer`); facility maintenance stays at 5% of the build cost per year.

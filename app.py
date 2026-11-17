@@ -347,6 +347,7 @@ results_panel = ui.nav_panel(
         col_widths=[6, 6]),
     ui.output_ui("footnote"),
     ui.accordion(
+        ui.accordion_panel("For specialists: tokens and sizing factors behind the figures", ui.output_ui("tokens_panel")),
         ui.accordion_panel("Details: assumptions used", ui.output_table("assumptions")),
         ui.accordion_panel("Details: year by year (portfolio, not discounted)", ui.output_table("yearly")),
         open=False),
@@ -851,6 +852,67 @@ def server(input, output, session):
             "the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a "
             "government data centre.",
             class_="warn", style="margin-top:14px")
+
+    @render.ui
+    def tokens_panel():
+        if not apps.get():
+            return None
+        r = result()
+        H = int(D["horizon_years"]["value"])
+        nm = _names()
+        b = opt()["total"]["base"]
+        big = lambda v: (f"{v / 1e9:,.1f}B" if v >= 1e9 else f"{v / 1e6:,.1f}M" if v >= 1e6
+                         else f"{v / 1e3:,.0f}k" if v >= 1e3 else f"{v:,.0f}")
+        size = {"S": "Small (~8B)", "M": "Medium (~70B)", "L": "Large reasoning (~600B MoE)"}
+        rows = []
+        for x in r["demand"]:
+            a = nm.get(x["id"])
+            if not a or not x["sessions"]:
+                continue
+            g10 = (1 + a.get("growth", 0)) ** max(0, H - a.get("start_year", 1))
+            n = x["sessions"]
+            rows.append(ui.tags.tr(
+                ui.tags.td(a["name"]), ui.tags.td(size.get(x["model_class"], x["model_class"])),
+                ui.tags.td(f'{n:,.0f}'),
+                ui.tags.td(f'{x["daily_input"] / n:,.0f} · {x["daily_output"] / n:,.0f}'
+                           + (f' ({x["daily_cached"] / x["daily_input"]:.0%} cached)' if x["daily_input"] else "")),
+                ui.tags.td(big(x["daily_input"] + x["daily_output"])),
+                ui.tags.td(big((x["daily_input"] + x["daily_output"]) * x["active_days"] * g10)),
+                ui.tags.td(f'{x["peak_eq_tps"] * g10:,.0f}'),
+                ui.tags.td(f'{x["active_days"]:.0f}')))
+        llm = ui.tags.table(ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in (
+            "Application", "Model size", "Requests/day at start", "Tokens per request (input · output)",
+            "Tokens/day at start", f"Tokens/year in year {H}", f"Peak equivalent tokens/s, year {H}", "Active days/year")])),
+            ui.tags.tbody(*rows), class_="table table-sm") if rows else ui.p("No language-model application.", class_="hint")
+        nrows = [ui.tags.tr(ui.tags.td(nm[w["id"]]["name"]), ui.tags.td(f'{A()[nm[w["id"]]["type"]]["gpu_seconds_per_unit"]:g}'),
+                            ui.tags.td(w["mode"]), ui.tags.td(f'{w["gpu_hours_day"]:,.1f}'))
+                 for w in r["nontoken"] if w["id"] in nm and w["gpu_hours_day"]]
+        nt = ui.tags.table(ui.tags.thead(ui.tags.tr(*[ui.tags.th(h) for h in (
+            "Other AI application", "GPU-seconds per unit", "Mode", "GPU-hours/day at start (after derating)")])),
+            ui.tags.tbody(*nrows), class_="table table-sm") if nrows else None
+        sz = b["sizing"][H]
+        eff = ", ".join(f'{size[c].split(" ")[0]} {sz["eff_tps"][c]:,.0f}' for c in ("S", "M", "L"))
+        pr = ", ".join(f'{size[c].split(" ")[0]} ${API_PRICES[c]["input"]:g} in / ${API_PRICES[c]["output"]:g} out'
+                       for c in ("S", "M", "L"))
+        hw = {h["id"]: h["name"] for h in CAT["hardware"]}[b["hardware"]]
+        fac = [
+            f"Tokens per request include the system prompt, agent steps (calls per task) and a retry allowance (x{ARCH['staff_copilot']['retry']:g} for most types). "
+            "Part of the system prompt is served from cache and priced at a discount.",
+            f"GPU sizing uses equivalent tokens: output + uncached input x {D['prefill_weight']['value']:g} (reading input "
+            "is cheaper than writing output).",
+            "Peak load: share of daily traffic in the busy hours, x burst, x service headroom, x seasonal factor, set per type "
+            "(Evidence tab).",
+            f"Pooling: applications rarely peak together. In year {H} the {sz['n_apps']} active applications share the "
+            f"capacity with a factor of {sz['diversity']:.2f} on their summed peaks.",
+            f"Throughput per GPU on {hw} at the chosen response speed, tokens/s: {eff} (InferenceX measurements; "
+            "derived figures derated).",
+            f"API prices per million tokens: {pr} ({API_PROV}).",
+            f"Portfolio in year {H}: {big(sz['annual_eq_m'] * 1e6)} equivalent tokens per year, {sz['gpus']} GPUs at the busiest hour.",
+        ]
+        return ui.div(
+            ui.p("For readers who want to check the order of magnitude. Volumes are converted to requests, requests to "
+                 "tokens, and tokens to GPUs or API spend. Year figures include each application's growth.", class_="hint"),
+            llm, nt, ui.tags.ul(*[ui.tags.li(f, class_="hint") for f in fac]))
 
     @render.table
     def assumptions():
