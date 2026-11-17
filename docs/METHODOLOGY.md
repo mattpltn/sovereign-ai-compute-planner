@@ -6,7 +6,7 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 
 ## Summary for presenters (one page)
 
-**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range) of delivering them four ways, for each application and for the whole portfolio. The four options are: **API** (pay per token), **GPU rental** (GPU-as-a-service), **owning servers in a commercial colocation data centre**, and **owning servers in the government's own data centre**. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. The price range shown is typically ±30–40%; it covers prices and GPU efficiency only. Adoption uncertainty is a separate setting (cautious, expected, aggressive).
+**What the tool estimates.** For a government's planned AI applications: the 10-year cost (present value, with a range) of delivering them four ways, for each application and for the whole portfolio. The four options are: **API** (pay per token), **GPU rental** (GPU-as-a-service), **owning servers in a commercial colocation data centre**, and **owning servers in the government's own data centre**. It is a planning-grade estimate to open a conversation, not an engineering design or a procurement specification. Figures are shown at Base prices, in US dollars, rounded to the dollar; the precision of the display is not the precision of the estimate. Adoption uncertainty is a separate setting (cautious, expected, aggressive).
 
 **The inputs that matter.**
 1. *The applications*: type, volume (staff with access, documents per day, citizens served), the year each one starts and its growth per year. Volume is the single biggest driver.
@@ -537,9 +537,30 @@ The global demand growth setting is replaced by these per-application rates (old
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Non-LLM work is priced as rented cloud GPU-hours. |
 | GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
-| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand, sized for the peak IT load over the horizon (country $ per W, Section 8.1) + facility maintenance. If an existing facility has spare power and cooling (Setup), the build cost is zero. |
+| Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
 Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the same in both owned options; a colocation operator runs the building, not the servers.
+
+**Own data centre: build and maintenance.**
+
+```
+design IT load      = peak installed IT load over 10 years × (1 + 30% buffer)
+facility build      = design IT load (MW) × build cost per MW (size curve × country factor)
+facility maintenance = 5% of the build cost per year, from the first year of use
+```
+
+- *Buffer.* Facilities are built with spare capacity above the IT load installed: 30% is used as best practice (`facility_buffer`, adjustable).
+- *Build cost by size.* Small sites cost more per MW because power intake, UPS, cooling plant, fire suppression and security are largely fixed. The tool uses this curve (analyst assumption from the World Bank team, Medium confidence), interpolated on the logarithm of capacity and flat outside its ends:
+
+| Design IT capacity | 0.1 MW | 0.5 MW | 1 MW | 5 MW | 10 MW | 20 MW | 50 MW |
+|---|---|---|---|---|---|---|---|
+| Build cost, $M per MW | 40 | 30 | 25 | 22 | 20 | 15 | 12 |
+
+- *Country factor.* The curve is the global level. Each country is scaled by its Turner & Townsend construction cost relative to the global default of $11.0 per W (Section 8.1): Ghana uses the Sub-Saharan Africa average, $10.51 per W, so × 0.955. Liquid cooling and the Low / High cases apply as in Section 8.1. A client quote in $ per MW replaces the curve.
+- *Maintenance.* 5% of the build cost per year (`maintenance_share`, the same rate as GPU maintenance). Facility staff, security, insurance and generator fuel are not counted separately.
+- *Energy* (IT × PUE) is counted separately in both owned options.
+
+Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.5M per MW, × 0.955 = $23.4M per MW, so the build costs $30.4M and maintenance $1.5M per year. One 8-GPU server (11 kW peak, 15 kW built) sits below the curve's first point: $38.2M per MW, a build of $0.56M.
 
 **Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
 
@@ -549,7 +570,7 @@ Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the sa
 
 ### Colocation price per kW
 
-Colocation is priced per kW of committed IT load per month, excluding energy, which is paid on top. Wholesale benchmarks are asking rates for 250–500 kW requirements in Tier III facilities [S69, S70]. Smaller deployments, which is most government AI starts (one to a few servers, 10–60 kW), pay retail rates: published US cabinet prices work out at a median of about $364 per kW per month [S71] against the $196 wholesale average, so the tool multiplies by 1.8 below 250 kW. For Sub-Saharan Africa, the Middle East and North Africa, South Asia and developing East Asia no public wholesale benchmark was found; the regional values are assumptions (Low confidence), checked against retail points: power above the rack allowance costs $500 per kW per month in Nairobi, Dar es Salaam and Lagos [S73], and Indian providers quote INR 12,000–25,000 per kW per month [S72]. A client quote replaces the value (Setup, Client quotes). The Low / Base / High cases use ×0.8 / 1 / 1.3.
+Colocation is priced per kW of committed IT load per month, excluding energy, which is paid on top. Wholesale benchmarks are asking rates for 250–500 kW requirements in Tier III facilities [S69, S70]. Smaller deployments, which is most government AI starts (one to a few servers, 10–60 kW), pay retail rates: published US cabinet prices work out at a median of about $364 per kW per month [S71] against the $196 wholesale average, so the tool multiplies by 1.8 below 250 kW. For Sub-Saharan Africa, the Middle East and North Africa, South Asia and developing East Asia no public wholesale benchmark was found; the regional values are assumptions (Low confidence), checked against retail points: power above the rack allowance costs $500 per kW per month in Nairobi, Dar es Salaam and Lagos [S73], and Indian providers quote INR 12,000–25,000 per kW per month [S72]. A client quote replaces the value (Setup, Client quotes). The Low / Base / High cases use ×0.8 / 1 / 1.3 in the engine; since v0.9.1 the results page shows Base figures only.
 
 | Country | Market used | $ per kW per month (wholesale) | Source | Confidence |
 |---|---|---|---|---|
@@ -653,6 +674,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | cost_per_fte_usd | 60000 | analyst | Local market; override if known |
 | gpu_refresh_years | 5 | S03 |  |
 | agri_volume_tolerance | 1.5 | assumption (confidence Low) | Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service) |
+| facility_buffer | 0.3 | analyst (best practice) | Own data centre: built with 30% spare capacity above the peak installed IT load |
 
 **Cost ranges (replaced by client quotes when entered)**
 
@@ -722,7 +744,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | World Bank region | PUE air | PUE liquid | Source / note |
 |---|---|---|---|
 | Sub-Saharan Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
-| Middle East & North Africa | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
+| Middle East, North Africa, Afghanistan & Pakistan | 1.79 | 1.65 | Uptime Institute regional average for Africa and the Middle East (2020 survey) |
 | Latin America & Caribbean | 1.79 | 1.65 | Proxy: in 2025 Latin America has the same share of facilities below PUE 1.5 as Middle East and Africa (27%) (S50) |
 | South Asia | 1.56 | 1.46 | Proxy: global average 2024 (S22); hot climates likely higher |
 | East Asia & Pacific | 1.56 | 1.46 | Proxy: global average 2024; APAC has 50-55% of facilities below 1.5, like North America and Europe (S50) |
@@ -748,7 +770,7 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 | Region (proxy for other countries) | $ per W of IT | Basis |
 |---|---|---|
 | Sub-Saharan Africa | 10.51 | Average of Lagos, Johannesburg, Nairobi |
-| Middle East & North Africa | 10.25 | Average of Saudi Arabia and UAE |
+| Middle East, North Africa, Afghanistan & Pakistan | 10.25 | Average of Saudi Arabia and UAE |
 | Latin America & Caribbean | 9.13 | Bogota only: low confidence |
 | South Asia | 6.83 | Mumbai only: low confidence, likely low for smaller markets |
 | East Asia & Pacific | 10.3 | Average of Ho Chi Minh City, Jakarta, Malaysia (excluding Singapore, Tokyo, Shanghai) |

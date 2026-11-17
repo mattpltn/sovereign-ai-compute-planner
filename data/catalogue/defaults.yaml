@@ -59,3 +59,4 @@ tiers:
   T3: {name: "In-country, private provider (government data centre if none)", api: false, gpuaas: true, owned: true}
   T4: {name: "Government data centre", api: false, gpuaas: false, owned: true}
 agri_volume_tolerance: {value: 1.5, source: "assumption (confidence Low)", note: "Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service)"}
+facility_buffer: {value: 0.30, source: "analyst (best practice)", note: "Own data centre: built with 30% spare capacity above the peak installed IT load"}
