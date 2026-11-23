@@ -1,6 +1,6 @@
 {
  "_meta": {
-  "synced_at": "2026-11-16",
+  "synced_at": "2026-11-23",
   "source": "S21 OpenRouter /api/v1/models",
   "models": {
    "meta-llama/llama-3.1-8b-instruct": {
@@ -20,8 +20,8 @@
     "output": 0.28
    },
    "deepseek/deepseek-r1-0528": {
-    "input": 0.5,
-    "output": 2.1500000000000004
+    "input": 0.5710000000000001,
+    "output": 2.2859999999999996
    },
    "deepseek/deepseek-v3.2": {
     "input": 0.26,
@@ -40,8 +40,8 @@
     "output": 0.95
    },
    "deepseek/deepseek-chat-v3-0324": {
-    "input": 0.29,
-    "output": 1.1400000000000001
+    "input": 0.25,
+    "output": 1.0
    },
    "deepseek/deepseek-chat": {
     "input": 0.2574,
@@ -57,7 +57,7 @@
    },
    "moonshotai/kimi-k2.7-code": {
     "input": 0.6,
-    "output": 3.5
+    "output": 3.0
    },
    "moonshotai/kimi-k2.6": {
     "input": 0.65,
@@ -91,6 +91,6 @@
  },
  "L": {
   "input": 0.44999999999999996,
-  "output": 2.1500000000000004
+  "output": 2.2859999999999996
  }
 }
