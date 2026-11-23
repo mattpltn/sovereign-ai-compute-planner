@@ -473,3 +473,27 @@
   url: https://developers.openai.com/api/docs/models/text-embedding-3-small
   used_for: "Embedding API price: $0.02 per million tokens (text-embedding-3-large: $0.13)"
   type: Official price list
+- id: S82
+  title: LLM inference price trends
+  publisher: Epoch AI
+  url: https://epoch.ai/blog/llm-inference-price-trends
+  used_for: "Price for a fixed level of performance falls 9x to 900x per year depending on the task (context for the API price decline)"
+  type: Research
+- id: S83
+  title: "Welcome to LLMflation - LLM inference cost is going down fast"
+  publisher: Andreessen Horowitz (a16z)
+  url: https://a16z.com/llmflation-llm-inference-cost/
+  used_for: "Cost of an LLM of equivalent performance falls about 10x per year (context for the API price decline)"
+  type: Industry analysis
+- id: S84
+  title: "Nvidia H100 GPU rental costs surge 50% in six months as AI demand outpaces supply"
+  publisher: Crypto Briefing (citing SemiAnalysis)
+  url: https://cryptobriefing.com/nvidia-h100-gpu-rental-costs-surge/
+  used_for: "GPU rental prices fell more than 60% in 2025, then rose about 40% from October 2025 to March 2026 (no stable trend)"
+  type: News, citing a market index
+- id: S85
+  title: "AI Cluster Cost Breakdown: CapEx (2026)"
+  publisher: AM Compute
+  url: https://www.amcompute.com/blog/ai-cluster-cost-breakdown-capex
+  used_for: "GPU servers 60-70% of AI cluster capex, networking 10-25% (owned network, storage and security share)"
+  type: Industry analysis

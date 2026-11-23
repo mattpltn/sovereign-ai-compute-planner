@@ -5,6 +5,17 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-11-23
+Changes after an external review of an exported calculation.
+### Added
+- Citizen assistant: "Who is counted in the volume?" choice (everyone eligible, as before, or service users at 0.05 / 0.1 / 0.3 per user per day).
+- Owned options: network, storage and security equipment at 15% of each server purchase (S85); optional spare server (N+1) in Setup.
+- Separate price declines: API prices 20% per year by default (S82, S83); GPU rental and hardware 0% (S84). Replaces the single market price decline (0%).
+- Export: "utilisation of GPUs installed" column; a note column for applications below 0.25 GPU, types with no cloud API, and the biometric deduplication licence (not included).
+### Fixed
+- README of the full calculation: cached tokens = system prompt x cache hit x calls x retry (the engine was right, the text was not).
+- Colocation price label now shows the calculation (e.g. $190 wholesale x 1.8 under 250 kW = $342), not only the market range.
+
 ## [0.9.3] - 2026-11-17
 ### Added
 - Two downloads on the results page: a summary CSV (each application and the portfolio under the four options) and the full calculation as a ZIP of CSV files with a README (inputs, tokens per application, demand by year, capacity, kW and energy by year, yearly costs by item with discount factors, every assumption with its source).

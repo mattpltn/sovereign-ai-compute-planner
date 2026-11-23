@@ -20,7 +20,8 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 - *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
 - *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
 - *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
-- *Download* gives two files. The **summary** (CSV) has the 10-year cost of each application and of the portfolio under the four options. The **full calculation** (ZIP of CSV files with a README) has every step: inputs and type defaults, requests and tokens per application, demand by application and year, GPUs, servers, kW, utilisation and energy by year, yearly cost by option and item with discount factors, and every price, factor and default used with its source.
+- *Download* gives two files. Applications below 0.25 GPU on their own show $0 with a note (they run on existing servers); types with no cloud API carry a note in the API column.
+- The two files: The **summary** (CSV) has the 10-year cost of each application and of the portfolio under the four options. The **full calculation** (ZIP of CSV files with a README) has every step: inputs and type defaults, requests and tokens per application, demand by application and year, GPUs, servers, kW, utilisation and energy by year, yearly cost by option and item with discount factors, and every price, factor and default used with its source.
 - *For specialists: tokens and sizing factors* (closed by default) shows, per application, the model size, requests per day, tokens per request (input and output, cached share), tokens per day at start and per year in year 10, peak equivalent tokens per second and active days; for other AI applications, GPU-seconds per unit and GPU-hours per day. It also lists the factors applied: retries and agent steps, the prefill weight, peak factors, pooling, throughput per GPU and API prices.
 
 **What the figures can be used for.** Comparing options, sizing the order of magnitude of an investment, and showing which applications drive the cost.
@@ -89,7 +90,7 @@ The volume is always something a client can give: staff with access, people in t
 
 **Agriculture advisory check.** The volume is compared with the estimated number of agricultural workers: employed labour force × ILO modeled share of employment in agriculture [S68], synced from the World Bank API with its indicator code and year. The tool warns when the volume exceeds 1.5 times that estimate (`agri_volume_tolerance`, assumption, in the global defaults). Agricultural employment counts **workers, not holdings or households**; in smallholder countries several household members may use one service, hence the tolerance. If the share is missing or older than 2015, the estimate is treated as unknown and no check is run. The ILO share is a share of employment, so it is applied to the employed labour force (labour force × (1 − unemployment)), not to the whole labour force.
 
-**Who are these farmers?** Agriculture advisory has two usage rates, chosen per application. *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. The citizen assistant will get the same choice later.
+**Who is counted in the volume?** Agriculture advisory and the citizen assistant have two usage rates, chosen per application. For the citizen assistant, *everyone eligible* keeps the Kisan e-Mitra rates and *service users* (people registered or onboarded to the service) uses 0.05 / 0.1 / 0.3 queries per user per day, a Low-confidence assumption. For agriculture advisory: *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. 
 
 **Very low usage note.** For citizen assistant, agriculture advisory and tutor, the tool shows an information note (not a warning, no effect on results) when an application makes fewer than 100 requests per day: the volume may be the whole eligible population rather than service users.
 
@@ -329,7 +330,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Citizen assistant (chat or voice)**
 
-- *rate*: Queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 ([S40](#src-s40)). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption.
+- *rate*: Two bases, chosen per application. SERVICE USERS (people registered or onboarded to the service): 0.05 / 0.1 / 0.3 queries per user per day, assumption, Low confidence, same as agriculture advisory users. EVERYONE ELIGIBLE (default): queries per person in the target population per day. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries, i.e. 0.00009-0.00022 ([S40](#src-s40)). Low = the midpoint, 0.00015. Base ~3x and High ~13x that, for assistants covering several services: assumption.
 - *tokens*: Input 1,500 (question + retrieved context) + system 800, output 300. Azure production chat median 1,020 in / 129 out ([S31](#src-s31)); OpenRouter average completion ~400 ([S32](#src-s32)).
 - *seasonal*: 1.3 for deadline or benefit-payment peaks: assumption.
 
@@ -409,7 +410,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Biometric deduplication (1:N at enrolment)**
 
-- *gpu*: UNCALIBRATED PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark.
+- *gpu*: UNCALIBRATED PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark. Compute only: the identity-system (ABIS) licence and matching software, usually the larger cost, are not included.
 
 **Satellite or image analysis**
 
@@ -538,10 +539,21 @@ The global demand growth setting is replaced by these per-application rates (old
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
 | GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
-| Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
+| Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
 Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the same in both owned options; a colocation operator runs the building, not the servers.
+
+**Network, storage and security equipment.** Each server purchase carries 15% of its price for switches, storage, firewalls and security appliances, including key management (`owned_infra_share`, Medium confidence). Bills of materials for AI clusters put GPU servers at 60-70% of capital cost and networking at 10-25% [S85]; a small inference deployment needs little storage beyond the servers' own drives, so the lower end is used.
+
+**Redundancy (optional).** Setup can add one spare server (N+1) whenever servers are needed, for workloads that must survive a server failure. It adds a server's purchase, equipment, software, maintenance, energy and colocation space. A second site for disaster recovery is not modelled.
+
+**Price declines.** Two rates, set in Setup:
+
+- *API prices* (tokens and per-unit API prices): 20% per year by default (`api_price_decline`, Low confidence). The price of a fixed level of performance has fallen 9x to 900x per year depending on the task [S82], about 10x per year for an LLM of equivalent performance [S83]. A government does not keep paying for last year's capability: it moves to newer models, so its bill per token for a chosen tier falls far less. 20% is a conservative planning value.
+- *GPU rental and GPU server prices*: 0% by default (`hw_price_decline`). Rental prices fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 [S84]: there is no stable trend to project.
+
+With 0% on both, owning is favoured, because API and rental are paid every year while servers are bought upfront.
 
 **Own data centre: build and maintenance.**
 
@@ -581,7 +593,7 @@ All language-model types can be bought from API providers. For other AI work the
 | OCR | page | $0.0006 | $0.0015 | $0.01 | $1.50 per 1,000 pages on AWS, Google and Azure, $0.60 above 5 million a month, ~$10 with layout [S79] |
 | Face verification (1:1) | verification | $0.0004 | $0.001 | $0.002 | Amazon Rekognition, Face++ [S80]; liveness not included; some providers restrict identity use |
 | Retrieval indexing | 500-token chunk | $0.000002 | $0.00001 | $0.000065 | $0.02 per million tokens, $0.13 for a large model [S81] |
-| Biometric deduplication (1:N) | – | not available | | | Bought from an identity-system (ABIS) vendor and run in-country; priced as rented GPUs |
+| Biometric deduplication (1:N) | – | not available | | | Bought from an identity-system (ABIS) vendor and run in-country; priced as rented GPUs. Compute only: the ABIS licence and matching software, usually the larger cost, are not included |
 | Image and satellite analysis | – | not available | | | Custom models; priced as rented GPUs |
 | Fine-tuning | – | not available | | | Training an open model; priced as rented GPUs |
 
@@ -696,6 +708,9 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | gpu_refresh_years | 5 | S03 |  |
 | agri_volume_tolerance | 1.5 | assumption (confidence Low) | Agriculture advisory volume check: warn above this multiple of estimated agricultural workers (ILO modeled employment counts workers, not holdings or households; household members may also use the service) |
 | facility_buffer | 0.3 | analyst (best practice) | Own data centre: built with 30% spare capacity above the peak installed IT load |
+| api_price_decline | 0.2 | assumption (confidence Low), S82, S83 | Yearly fall in API token and per-unit API prices for the model tier chosen. Prices for a fixed capability fall about 10x per year (S82, S83), but clients move to newer, more capable models, so the bill per token for a chosen tier falls far less. 20% is a conservative planning value |
+| hw_price_decline | 0.0 | S84 | Yearly fall in GPU rental and GPU server prices. H100 rental fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 (S84): no stable trend, so 0% by default |
+| owned_infra_share | 0.15 | S85, assumption (confidence Medium) | Owned options: network switches, storage, firewalls and security appliances (incl. key management), bought with each server batch, as a share of the GPU server price. AI cluster bills of materials put networking at 10-25% of capex (S85); a small inference deployment needs little storage |
 
 **Cost ranges (replaced by client quotes when entered)**
 
@@ -926,5 +941,9 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s79"></a>S79 | Google Vision vs AWS Textract vs Azure: Cloud OCR comparison 2026 | imagetotable.ai | OCR API price: $1.50 per 1,000 pages, $0.60 above 5 million a month; specialised processors $10-30 | https://imagetotable.ai/blog/google-vs-aws-vs-azure-ocr-2026 |
 | <a id="src-s80"></a>S80 | Face Recognition APIs and Open-Source Libraries in 2026: Prices, Licences and Traps | Stork.ai | Face verification API price: Amazon Rekognition $1 per 1,000 ($0.0004 at volume), Face++ $0.002 per call | https://stork.ai/blog/face-recognition-api-2026 |
 | <a id="src-s81"></a>S81 | text-embedding-3-small model page | OpenAI | Embedding API price: $0.02 per million tokens (text-embedding-3-large: $0.13) | https://developers.openai.com/api/docs/models/text-embedding-3-small |
+| <a id="src-s82"></a>S82 | LLM inference price trends | Epoch AI | Price for a fixed level of performance falls 9x to 900x per year depending on the task (context for the API price decline) | https://epoch.ai/blog/llm-inference-price-trends |
+| <a id="src-s83"></a>S83 | Welcome to LLMflation - LLM inference cost is going down fast | Andreessen Horowitz (a16z) | Cost of an LLM of equivalent performance falls about 10x per year (context for the API price decline) | https://a16z.com/llmflation-llm-inference-cost/ |
+| <a id="src-s84"></a>S84 | Nvidia H100 GPU rental costs surge 50% in six months as AI demand outpaces supply | Crypto Briefing (citing SemiAnalysis) | GPU rental prices fell more than 60% in 2025, then rose about 40% from October 2025 to March 2026 (no stable trend) | https://cryptobriefing.com/nvidia-h100-gpu-rental-costs-surge/ |
+| <a id="src-s85"></a>S85 | AI Cluster Cost Breakdown: CapEx (2026) | AM Compute | GPU servers 60-70% of AI cluster capex, networking 10-25% (owned network, storage and security share) | https://www.amcompute.com/blog/ai-cluster-cost-breakdown-capex |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

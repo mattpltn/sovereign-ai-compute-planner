@@ -36,6 +36,7 @@ class Profile:
     residency_cloud: str = "regional"   # cloud with data residency for Internal data: in_country | regional | none
     gov_dc: str = "fitout"              # government data centre for GPU servers: ready | fitout | none
     colocation: bool = False            # commercial colocation data centre in-country
+    redundancy: bool = False            # owned options: one spare server (N+1)
 
 
 def government_run(tier: str, p: "Profile") -> bool:

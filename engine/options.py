@@ -89,7 +89,12 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     nt = [w for w in nt_all if ids is None or w["id"] in ids]
     cp = cost_params(p, d, scenario)
     q = p.quotes or {}
-    r_, _, dec = finance(p, d)
+    r_, _, _ = finance(p, d)
+    f_ = p.finance or {}
+    pick = lambda k: f_[k] if f_.get(k) is not None else d[k]["value"]
+    dec_api, dec_hw = pick("api_price_decline"), pick("hw_price_decline")
+    infra = d["owned_infra_share"]["value"]
+    spare = 1 if getattr(p, "redundancy", False) else 0      # N+1: one spare server whenever servers are needed
     R = int(d["gpu_refresh_years"]["value"])
     idle = d["idle_power_fraction"]["value"]
     fac = facility_for(p.country, hw, d, scenario)
@@ -121,17 +126,21 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
             elif w["gpu_hours_day"]:
                 no_api_gpus += w["peak_gpus"] if w["mode"] == "Interactive" else w["gpu_hours_day"] / 24
         below = no_api_gpus < d["gpu_threshold"]["value"]      # tiny work runs on existing servers, as elsewhere
-        sz[y]["api_nt"] = api_nt + (0.0 if below else _roundup(no_api_gpus) * 8760 * rate)
+        sz[y]["api_units"] = api_nt
+        sz[y]["api_gpu_fallback"] = 0.0 if below else _roundup(no_api_gpus) * 8760 * rate
+        sz[y]["api_nt"] = sz[y]["api_units"] + sz[y]["api_gpu_fallback"]
         sz[y]["busy_h"] = sz[y]["utilisation"] * sz[y]["gpus"] * 24
+        sz[y]["below_threshold"] = bool(sz[y].get("below_threshold"))
     disc = {y: 1 / (1 + r_) ** (y - 1) for y in yrs}
-    price = {y: (1 - dec) ** (y - 1) for y in yrs}
+    price = {y: (1 - dec_hw) ** (y - 1) for y in yrs}          # GPU rental and server purchases
+    price_api = {y: (1 - dec_api) ** (y - 1) for y in yrs}     # API tokens and per-unit API prices
 
     # Owned fleet: whole servers bought when the pooled need exceeds what is installed; each cohort is replaced
     # after the refresh period if still needed. Servers are never sold.
     cohorts, fleet = [], {}
     for y in yrs:
         cohorts = [(b, n) for b, n in cohorts if y - b < R]
-        need = math.ceil(sz[y]["gpus"] / k) if sz[y]["gpus"] else 0
+        need = (math.ceil(sz[y]["gpus"] / k) + spare) if sz[y]["gpus"] else 0
         have = sum(n for _, n in cohorts)
         buy = max(0, need - have)
         if buy:
@@ -152,15 +161,14 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     for y in yrs:
         s, f = sz[y], fleet[y]
         # API: tokens priced per million; non-LLM rented as cloud GPU-hours
-        api = s["api_llm"] + s["api_nt"]
-        yearly["API"][y] = api * price[y]
+        yearly["API"][y] = (s["api_llm"] + s["api_units"]) * price_api[y] + s["api_gpu_fallback"] * price[y]
         # GPU-as-a-service: the GPUs needed this year, rented all year
         yearly["GPU-as-a-service"][y] = s["gpus"] * 8760 * rate * price[y]
         g = f["gpus"]
         util = min(1.0, s["busy_h"] / (g * 24)) if g else 0.0
         it_kwh = g * kw_gpu * (idle + (1 - idle) * util) * 8760
         gpu_capex = f["buy"] * k * capex_gpu * price[y]
-        common = dict(gpu_servers=gpu_capex, software=g * hw["software_per_gpu_year_usd"],
+        common = dict(gpu_servers=gpu_capex, network_storage_security=infra * gpu_capex, software=g * hw["software_per_gpu_year_usd"],
                       maintenance_gpu=maint * g * capex_gpu, staff=staff_fte(g, d) * fte_cost if g else 0.0,
                       energy=it_kwh * pue * cp["kwh"])
         cpr = colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw)

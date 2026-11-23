@@ -668,3 +668,28 @@ def test_api_option_uses_per_unit_prices_for_non_llm():
     ded = [dict(uid="bd", name="Dedup", type="biometric_dedup", volume=500000, data_class=4)]
     rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}})["total"]["base"]
     assert rb["yearly"]["API"][1] == pytest.approx(rb["yearly"]["GPU-as-a-service"][1])   # no API: rented GPUs
+
+
+# ---------------------------------------------------------------- review fixes (v0.9.5)
+def test_citizen_assistant_population_basis():
+    c = default_profile("XEX").country
+    req = lambda b: run(build_profile(c, "Base", [dict(uid="c", name="C", type="citizen_assistant", volume=9_000_000,
+                                                       data_class=2, population_basis=b)], ARCH, dict(D["class_to_tier"])),
+                        CAT, D)["demand"][0]["sessions"]
+    assert req("eligible") == pytest.approx(4500) and req("users") == pytest.approx(900_000)
+
+
+def test_api_and_hardware_price_declines_are_separate():
+    meta = {"cop": {"start_year": 1, "growth": 0}}
+    r = _opts(APPS3[:1], meta)["total"]["base"]
+    assert r["yearly"]["API"][2] == pytest.approx(r["yearly"]["API"][1] * 0.8)                       # 20% default
+    assert r["yearly"]["GPU-as-a-service"][2] == pytest.approx(r["yearly"]["GPU-as-a-service"][1])     # 0% default
+
+
+def test_owned_infrastructure_share_and_redundancy():
+    meta = {"cop": {"start_year": 1, "growth": 0}}
+    a = _opts(APPS3[:1], meta)["total"]["base"]
+    y1 = a["yearly_parts"]["Owned + colocation"][1]
+    assert y1["network_storage_security"] == pytest.approx(0.15 * y1["gpu_servers"])
+    b = _opts(APPS3[:1], meta, redundancy=True)["total"]["base"]
+    assert b["fleet"][1]["servers"] == a["fleet"][1]["servers"] + 1
