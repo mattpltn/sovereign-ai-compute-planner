@@ -5,6 +5,10 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-11-23
+### Fixed
+- Weekly data sync failed on its first call with "429 Too Many Requests" from the World Bank API. All sync calls now go through one session that retries rate limits, server errors and timeouts (Retry-After honoured, otherwise exponential backoff up to 5 minutes, about 13 minutes in total) and pauses 1 second between calls.
+
 ## [0.9.3] - 2026-11-17
 ### Added
 - Two downloads on the results page: a summary CSV (each application and the portfolio under the four options) and the full calculation as a ZIP of CSV files with a README (inputs, tokens per application, demand by year, capacity, kW and energy by year, yearly costs by item with discount factors, every assumption with its source).

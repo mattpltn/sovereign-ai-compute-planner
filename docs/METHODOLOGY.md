@@ -95,7 +95,7 @@ The volume is always something a client can give: staff with access, people in t
 
 ### 3.2 What the tool provides
 
-Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
+Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; when the API limits requests (HTTP 429) or times out, the sync waits and retries (honouring the API's Retry-After, otherwise 15 s doubling to 5 min, up to about 13 minutes) and pauses 1 s between calls; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
 
 ## 4. Layer 0: requests per day
 

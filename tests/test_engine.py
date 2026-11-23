@@ -668,3 +668,29 @@ def test_api_option_uses_per_unit_prices_for_non_llm():
     ded = [dict(uid="bd", name="Dedup", type="biometric_dedup", volume=500000, data_class=4)]
     rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}})["total"]["base"]
     assert rb["yearly"]["API"][1] == pytest.approx(rb["yearly"]["GPU-as-a-service"][1])   # no API: rented GPUs
+
+
+def test_sync_retries_rate_limits():
+    import requests
+    import sync.worldbank as wb
+
+    class R:
+        def __init__(self, code, headers=None):
+            self.status_code, self.headers, self.url = code, headers or {}, "u"
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise requests.HTTPError(str(self.status_code), response=self)
+
+    calls, waits = [], []
+    seq = [R(429, {"Retry-After": "7"}), R(503), R(200)]
+    orig = wb.SESSION.get
+    wb.SESSION.get = lambda *a, **k: (calls.append(1), seq.pop(0))[1]
+    try:
+        assert wb.fetch("u", {}, sleep=waits.append).status_code == 200
+        assert waits[:2] == [7.0, 30] and len(calls) == 3       # Retry-After honoured, then backoff
+        seq[:] = [R(404)]
+        with pytest.raises(requests.HTTPError):                 # not retried
+            wb.fetch("u", {}, sleep=waits.append)
+    finally:
+        wb.SESSION.get = orig
