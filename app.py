@@ -226,6 +226,7 @@ setup_panel = ui.nav_panel(
             ui.card_header("Owning the servers"),
             ui.p("Two owned options are compared: servers in a commercial colocation data centre (price per kW, by "
                  "country), and servers in a data centre the government builds or already has.", class_="hint"),
+            ui.input_checkbox("redundancy", "Owned options: add one spare server (N+1) for redundancy", value=False),
             ui.input_checkbox("own_dc_existing", "Own data centre: an existing facility has spare power and cooling "
                               "(no build cost; energy, staff and maintenance still counted)", value=False),
             ui.output_ui("colo_facts"),
@@ -249,7 +250,8 @@ setup_panel = ui.nav_panel(
         ui.card_header("Finance"),
         ui.layout_columns(
             ui.input_numeric("disc", "Discount rate (%/year)", value=round(D["discount_rate"]["value"] * 100, 1), min=0, max=20, step=0.5),
-            ui.input_numeric("decline", "Market price decline (%/year)", value=round(D["price_decline"]["value"] * 100, 1), min=0, max=80, step=5),
+            ui.input_numeric("decline", "API price decline (%/year)", value=round(D["api_price_decline"]["value"] * 100, 1), min=0, max=80, step=5),
+            ui.input_numeric("decline_hw", "GPU rental and hardware price decline (%/year)", value=round(D["hw_price_decline"]["value"] * 100, 1), min=-20, max=50, step=5),
             col_widths=[6, 6]),
         ui.p("Costs are shown as present value over 10 years. Growth is set per application. Price decline applies to API "
              "tokens, GPU rental and GPU purchases.",
@@ -279,10 +281,12 @@ apps_panel = ui.nav_panel(
             ui.input_text("a_name", "Name", placeholder="e.g. Ministry of Finance copilot"),
             ui.input_numeric("a_volume", ARCH["staff_copilot"]["unit_label"], value=None, min=0),
             ui.panel_conditional(
-                "input.a_type === 'agriculture_advisory'",
-                ui.input_radio_buttons("a_basis", "Who are these farmers?", {
-                    "eligible": "Everyone eligible (all farmers, or all beneficiaries of a scheme; most will not use the AI service)",
-                    "users": "Farmers using the advisory service (onboarded through extension, cooperatives, or app users)"},
+                "['agriculture_advisory', 'citizen_assistant'].includes(input.a_type)",
+                ui.input_radio_buttons("a_basis", "Who is counted in the volume?", {
+                    "eligible": "Everyone eligible (all citizens or farmers in the target population, or all beneficiaries "
+                                "of a scheme; most will not use the AI service)",
+                    "users": "Service users (people registered or onboarded to the service: app users, or farmers "
+                             "reached through extension or cooperatives)"},
                     selected="eligible"),
             ),
             ui.layout_columns(
@@ -624,7 +628,9 @@ def server(input, output, session):
         p.speed = input.speed()
         p.gov_dc = "ready" if input.own_dc_existing() else "fitout"
         pct = lambda v: (num(v) or 0) / 100
-        p.finance = {"discount_rate": pct(input.disc()), "demand_growth": 0.0, "price_decline": pct(input.decline())}
+        p.finance = {"discount_rate": pct(input.disc()), "demand_growth": 0.0, "price_decline": 0.0,
+                     "api_price_decline": pct(input.decline()), "hw_price_decline": pct(input.decline_hw())}
+        p.redundancy = bool(input.redundancy())
         return p
 
     @reactive.calc
@@ -835,7 +841,8 @@ def server(input, output, session):
             return None
         b = opt()["total"]["base"]
         pc, po = b["pv_parts"]["Owned + colocation"], b["pv_parts"]["Owned + own data centre"]
-        items = [("GPU servers (purchases and refresh)", "gpu_servers"), ("GPU software and support", "software"),
+        items = [("GPU servers (purchases and refresh)", "gpu_servers"),
+                 ("Network, storage and security equipment", "network_storage_security"), ("GPU software and support", "software"),
                  ("GPU maintenance", "maintenance_gpu"), ("Staff", "staff"), ("Energy", "energy"),
                  ("Colocation fee", "colocation"), ("Facility build (peak IT load + buffer)", "facility_build"),
                  ("Facility maintenance", "maintenance_facility")]
@@ -843,11 +850,11 @@ def server(input, output, session):
                            ui.tags.td(usd(po[k]) if po.get(k) else "-")) for lbl, k in items]
         rows.append(ui.tags.tr(ui.tags.td(ui.tags.b("Total")), ui.tags.td(ui.tags.b(usd(sum(pc.values())))),
                                ui.tags.td(ui.tags.b(usd(sum(po.values()))))))
-        gpu = sum(pc[k] for k in ("gpu_servers", "software", "maintenance_gpu"))
+        gpu = sum(pc.get(k, 0) for k in ("gpu_servers", "network_storage_security", "software", "maintenance_gpu"))
         return ui.div(ui.tags.table(ui.tags.thead(ui.tags.tr(ui.tags.th(""), ui.tags.th("Own + colocation"),
                                                              ui.tags.th("Own + own data centre"))),
                                     ui.tags.tbody(*rows), class_="table table-sm"),
-                      ui.p(f"The GPU part alone (servers, software, maintenance) is {usd(gpu)} in both. The difference "
+                      ui.p(f"The IT part alone (servers, network and security equipment, software, maintenance) is {usd(gpu)} in both. The difference "
                            "between the two is the colocation fee against building and maintaining a facility. "
                            + ("An existing facility is assumed: no build cost." if input.own_dc_existing() else ""),
                            class_="hint"))
@@ -935,8 +942,10 @@ def server(input, output, session):
         rows = [("Hardware", f'{hw["name"]}, {hw["kw_per_gpu"]:g} kW per GPU'),
                 ("GPU server price", f'${b["capex_gpu"]:,.0f} per GPU'),
                 ("GPU rental", f'${b["gpu_hour"]:.2f} per GPU-hour'),
-                ("Colocation", f'${b["colo"]["value"]:,.0f} per kW of IT per month ({b["colo"]["src"]}'
-                               + (", small-deployment rate" if b["colo"]["small"] else "") + ")"),
+                ("Colocation", f'${b["colo"]["value"]:,.0f} per kW of IT per month'
+                               + (f' = ${b["colo"]["wholesale"]:,.0f} wholesale x {D["colocation"]["small_deployment_factor"]["value"]:g} '
+                                  f'under {D["colocation"]["small_deployment_kw"]["value"]:,.0f} kW' if b["colo"]["small"] else "")
+                               + f' ({b["colo"]["src"]})'),
                 ("Facility build (own data centre)", "existing facility, not counted" if input.own_dc_existing()
                  else f'{usd(b["facility_capex"])} for {b["design_it_kw"]:,.0f} kW of IT (peak + {D["facility_buffer"]["value"]:.0%}), '
                       f'at ${b["build_per_mw"] / 1e6:,.1f}M per MW (size curve ${b["build_curve"]["curve_musd_per_mw"]:.1f}M x country '
@@ -945,7 +954,8 @@ def server(input, output, session):
                 ("PUE", f'{b["pue"]:.2f}'),
                 ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),
                 ("API prices", API_PROV),
-                ("Discount rate", f'{num(input.disc()) or 0:g}% · price decline {num(input.decline()) or 0:g}% per year')]
+                ("Discount rate", f'{num(input.disc()) or 0:g}% · API price decline {num(input.decline()) or 0:g}% per year · '
+                                   f'GPU rental and hardware {num(input.decline_hw()) or 0:g}% per year')]
         return pd.DataFrame(rows, columns=["Item", "Value used (Base)"])
 
     @render.table
@@ -959,6 +969,17 @@ def server(input, output, session):
                          "Servers installed": b["fleet"][y]["servers"],
                          **{OPT_SHORT[o]: usd(b["yearly"][o][y]) for o in OPTIONS}})
         return pd.DataFrame(rows)
+
+    def _note(uid, res):
+        a = _names().get(uid)
+        bits = []
+        if not any(res["base"]["pv"].values()):
+            bits.append(f"below {D['gpu_threshold']['value']:g} GPU on its own: runs on existing servers, no extra cost")
+        if a and (A()[a["type"]].get("api_price") or {}).get("available") is False:
+            bits.append("not available as a cloud API: the API column prices it as rented GPUs")
+        if a and a["type"] == "biometric_dedup":
+            bits.append("compute only; identity-system (ABIS) licence not included")
+        return "; ".join(bits)
 
     @render.download(filename="ai_compute_full_calculation.zip")
     def dl_detail():
@@ -1034,7 +1055,9 @@ def server(input, output, session):
                          "gpus_for_llm": s_["gpus_llm"], "gpus_for_other_ai": s_["gpus_nontoken"] + s_["gpus_batch_extra"],
                          "servers_installed": f["servers"], "servers_bought": f["buy"], "gpus_installed": f["gpus"],
                          "it_load_kw": f["gpus"] * hw["kw_per_gpu"], "facility_load_kw": f["gpus"] * hw["kw_per_gpu"] * b["pue"],
-                         "utilisation": s_["utilisation"], "equivalent_tokens_per_year_m": s_["annual_eq_m"],
+                         "utilisation_of_gpus_needed": s_["utilisation"],
+                         "utilisation_of_gpus_installed": (s_["utilisation"] * s_["gpus"] / f["gpus"]) if f["gpus"] else 0.0,
+                         "equivalent_tokens_per_year_m": s_["annual_eq_m"],
                          "api_tokens_cost_usd": s_["api_llm"], "api_other_ai_cost_usd": s_["api_nt"]})
         files["4_capacity_by_year.csv"] = csv(rows)
         # 5. yearly cost by option and item
@@ -1056,6 +1079,7 @@ def server(input, output, session):
             for o in OPTIONS:
                 rows.append({"application": nm[uid]["name"] if uid in nm else "All together (shared capacity)",
                              "option": o, "pv_10y_usd": res["base"]["pv"][o], "cheapest": o == res["cheapest"],
+                             "note": _note(uid, res),
                              "hardware": res["base"]["hardware"],
                              "peak_servers": max(f["servers"] for f in res["base"]["fleet"].values())})
         files["6_options_per_application.csv"] = csv(rows)
@@ -1071,12 +1095,18 @@ def server(input, output, session):
                 *[(f"api_price_{k}_input_per_m", v["input"], API_PROV) for k, v in API_PRICES.items()],
                 *[(f"api_price_{k}_output_per_m", v["output"], API_PROV) for k, v in API_PRICES.items()],
                 ("electricity_usd_per_kwh", cp_["kwh"], "country / default"), ("pue", b["pue"], "facility.yaml"),
-                ("colocation_usd_per_kw_month", b["colo"]["value"], b["colo"]["src"]),
+                ("colocation_usd_per_kw_month", b["colo"]["value"],
+                 (f'{b["colo"]["wholesale"]:g} wholesale x {D["colocation"]["small_deployment_factor"]["value"]:g} '
+                  f'(deployment under {D["colocation"]["small_deployment_kw"]["value"]:g} kW); ' if b["colo"]["small"] else "wholesale; ")
+                 + b["colo"]["src"]),
                 ("facility_buffer", D["facility_buffer"]["value"], D["facility_buffer"]["source"]),
                 ("design_it_kw", b["design_it_kw"], "peak IT load x (1 + buffer)"),
                 ("build_usd_per_mw", b["build_per_mw"], "size curve x country factor"),
                 ("facility_build_usd", b["facility_capex"], ""), ("discount_rate_pct", num(input.disc()) or 0, "Setup"),
-                ("price_decline_pct", num(input.decline()) or 0, "Setup")]
+                ("api_price_decline_pct", num(input.decline()) or 0, "Setup (S82, S83)"),
+                ("hw_price_decline_pct", num(input.decline_hw()) or 0, "Setup (S84)"),
+                ("owned_infra_share", D["owned_infra_share"]["value"], D["owned_infra_share"]["source"]),
+                ("redundancy_spare_server", bool(input.redundancy()), "Setup")]
         for k, v in D.items():
             if isinstance(v, dict) and "value" in v:
                 rows.append((f"default.{k}", v["value"], v.get("source", "")))
@@ -1087,7 +1117,8 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
 1_inputs_applications.csv      What was entered, and the defaults used for each application type.
 2_tokens_per_application_at_start.csv
                                requests/day = volume x rate; tokens per request = (input + system prompt) x calls x retry
-                               for input, (output + reasoning) x calls x retry for output; cached = system prompt x cache hit.
+                               for input, (output + reasoning) x calls x retry for output;
+                               cached = system prompt x cache hit x calls x retry.
                                equivalent tokens = output + (input - cached) x prefill weight.
                                peak tokens/s = equivalent tokens/day x peak share / (window x 3600) x burst x headroom x seasonal.
 3_demand_by_application_and_year.csv
@@ -1096,6 +1127,8 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
 4_capacity_by_year.csv         All applications pooled each year: GPUs = summed peaks x pooling factor / tokens/s per GPU,
                                plus other AI work. Servers are bought when the need exceeds what is installed, replaced
                                after the refresh period, never sold. kW = GPUs x kW per GPU (x PUE for the facility).
+                               Energy uses the GPUs installed: (idle share + (1 - idle share) x utilisation of GPUs
+                               installed) x kW x 8,760 h x PUE x tariff.
 5_costs_by_year_and_item.csv   Yearly cost of each option by item, the discount factor and the present value.
                                API and GPU rental are shown as totals.
 6_options_per_application.csv  Each application priced alone, and the portfolio priced together.
@@ -1119,7 +1152,8 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
             rows.append({"application": a["name"], "start_year": a.get("start_year", 1),
                          "growth_per_year": a.get("growth", 0),
                          **{f"{OPT_SHORT[o]} (10-year, USD)": round(res["base"]["pv"][o]) for o in OPTIONS},
-                         "cheapest": OPT_SHORT[res["cheapest"]]})
+                         "cheapest": OPT_SHORT[res["cheapest"]] if any(res["base"]["pv"].values()) else "-",
+                         "note": _note(uid, res)})
         t = o_["total"]
         rows.append({"application": "All together (shared capacity)",
                      **{f"{OPT_SHORT[o]} (10-year, USD)": round(t["base"]["pv"][o]) for o in OPTIONS},
@@ -1171,7 +1205,8 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
     def scenario_dict():
         return {"version": "0.9", "own_dc_existing": bool(input.own_dc_existing()),
                 "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
-                "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline()},
+                "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline(), "decline_hw": input.decline_hw()},
+                "redundancy": bool(input.redundancy()),
                 "quotes": quotes(), "apps": apps.get(), "custom_types": custom.get()}
 
     @render.download(filename="scenario.json")
@@ -1189,7 +1224,8 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
         ui.update_select("hw", selected=sc.get("hw", "auto"))
         ui.update_radio_buttons("speed", selected=sc.get("speed", "base"))
         f = sc.get("finance", {})
-        for k in ("disc", "decline"):
+        ui.update_checkbox("redundancy", value=bool(sc.get("redundancy", False)))
+        for k in ("disc", "decline", "decline_hw"):
             if f.get(k) is not None:
                 ui.update_numeric(k, value=f[k])
         g_old = (num(f.get("growth")) or 0) / 100          # before v0.9 growth was one global rate
