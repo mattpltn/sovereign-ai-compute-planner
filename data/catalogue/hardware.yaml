@@ -32,13 +32,15 @@
   - S44
   - S10
   - S11
+  - S88
+  - S89
   evidence:
     L: 'DeepSeek R1: 625 / 819 / 1,591 tok/s per GPU at 128 / 89 / 50 tok/s per user, from the same InferenceX comparison as the B200 profile, so the two are measured at identical points (S44).'
     M: 'Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
     S: 'Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.'
     power: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
-    price: 'GPU rental $2.60/hour, market rental (S11). NVIDIA''s $1.41 (S02) and SemiAnalysis''s $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU:
-      placeholder, replace with vendor quote.'
+    price: 'GPU rental $2.60/hour, market rental (S11). NVIDIA''s $1.41 (S02) and SemiAnalysis''s $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex
+      $40,000 per GPU, confirmed: Supermicro lists the HGX H200 8-GPU SYS-821GE-TNHR from $319,421.64, about $39,900 per GPU (S89); Epoch chip prices (H200 ~$30k) x a server factor of ~1.35 give the same (S88).'
   gpus_per_server: 8
 - id: P3
   name: HGX B200 8-GPU, air-cooled
@@ -67,13 +69,17 @@
       high: 4852
   sources:
   - S44
+  - S88
+  - S90
+  - S91
+  - S94
   evidence:
     L: 'DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44). Same comparison as P1: B200 gains more than H200 at relaxed speeds (3.0x H200 at 50 tok/s per user, 1.8x at 89) because larger
       batches fit in its memory.'
     M: 'Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).'
     S: 'Derived: about 3x the 70B figure. Low confidence: derated.'
-    power: '2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage.'
-    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.'
+    power: '2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage. Consistent with ~2x the 1,000 W TDP per B200 GPU (S94), the same ratio as H200 (1.4 kW for 700 W).'
+    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex $50,000 per GPU, confirmed: new HGX B200 8-GPU nodes sell for $360K-$470K, midpoint $415,000 or about $51,900 per GPU (S90); street prices $300K-$500K+, Aivres from about $340K (S91); Epoch B200 chip price $25-32k (S88).'
   gpus_per_server: 8
 - id: P2
   name: GB300 NVL72, liquid-cooled rack
@@ -103,12 +109,15 @@
   - S44
   - S45
   - S02
+  - S88
+  - S92
+  - S93
   evidence:
     L: 'DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA''s own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely
       runs (S02).'
     M: 'Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active
       parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).'
     S: 'MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).'
-    power: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
-    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.'
+    power: '2.1 kW per GPU, implied by NVIDIA''s 2.8M tok/s per MW at 6,000 tok/s per GPU (S02). Confirmed: SemiAnalysis gives 2.12 kW all-in per GB300 chip at 1,400 W TDP (S92); HPE rates the 72-GPU rack at 132 kW nominal, 1.83 kW per GPU before networking and storage (S93).'
+    price: 'Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex $65,000 per GPU, consistent with the Epoch GB300 chip price of $38-49k (S88) x a rack-scale server factor of ~1.35-1.5 (NVLink switches, Grace CPUs, liquid cooling). Low confidence: no public rack price.'
   gpus_per_server: 72

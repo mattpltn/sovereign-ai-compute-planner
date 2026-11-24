@@ -5,6 +5,16 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-11-24
+Calibration against Epoch AI chip data and new price and power sources.
+### Added
+- Newer hardware does more per GPU: servers bought or refreshed in later years, and rented GPUs, do 25% more work per GPU for each year of purchase (`compute_gain_per_year`, Setup > Finance). Epoch AI: FLOP/s per dollar of ML GPUs +40% per year (S86), memory bandwidth +18% per year (S87). Set 0% to reproduce 0.9.6. The API option is unchanged.
+- Fleet chart shows installed capacity in year-1 servers; the export adds installed capacity, work per GPU by year of purchase and GPUs rented.
+- Methodology Annex B: cross-checks of hardware capex and power against independent sources (S88-S94). All confirm the values used.
+### Changed
+- B200 capex ($50,000 per GPU) is no longer a placeholder: new HGX B200 8-GPU nodes sell for $360K-$470K (S90, S91). H200 $40,000 confirmed by the Supermicro list price (S89); GB300 2.1 kW per GPU confirmed by SemiAnalysis, 2.12 kW all-in (S92). No hardware value changed.
+- Energy for owned servers uses the busy share of installed capacity, so newer, faster servers run at lower utilisation.
+
 ## [0.9.6] - 2026-11-24
 ### Changed
 - "Load example" now sizes the portfolio from the selected country: copilot for 50% of civil servants (+2% per year), citizen assistant for 2% of internet users (service users), agriculture advisory for 5% of agricultural workers, and population ratios for land registry, customs, court transcription and ID enrolment. A collapsed note lists the rule behind each figure; applications without country data are left out. Rules in `data/catalogue/example_portfolio.yaml` (assumptions, Low confidence).

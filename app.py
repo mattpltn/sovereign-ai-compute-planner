@@ -252,9 +252,11 @@ setup_panel = ui.nav_panel(
             ui.input_numeric("disc", "Discount rate (%/year)", value=round(D["discount_rate"]["value"] * 100, 1), min=0, max=20, step=0.5),
             ui.input_numeric("decline", "API price decline (%/year)", value=round(D["api_price_decline"]["value"] * 100, 1), min=0, max=80, step=5),
             ui.input_numeric("decline_hw", "GPU rental and hardware price decline (%/year)", value=round(D["hw_price_decline"]["value"] * 100, 1), min=-20, max=50, step=5),
+            ui.input_numeric("gain", "Newer hardware: more work per GPU (%/year)", value=round(D["compute_gain_per_year"]["value"] * 100, 1), min=0, max=60, step=5),
             col_widths=[6, 6]),
         ui.p("Costs are shown as present value over 10 years. Growth is set per application. Price decline applies to API "
-             "tokens, GPU rental and GPU purchases.",
+             "tokens, GPU rental and GPU purchases. Newer hardware: servers bought or refreshed in later years, and rented GPUs, "
+             "do more work per GPU at the same price (Epoch AI: +40% per year in FLOP/s per dollar, +18% in memory bandwidth).",
              class_="hint"),
     ),
     ui.accordion(
@@ -400,7 +402,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.9 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9.7 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -649,7 +651,8 @@ def server(input, output, session):
         p.gov_dc = "ready" if input.own_dc_existing() else "fitout"
         pct = lambda v: (num(v) or 0) / 100
         p.finance = {"discount_rate": pct(input.disc()), "demand_growth": 0.0, "price_decline": 0.0,
-                     "api_price_decline": pct(input.decline()), "hw_price_decline": pct(input.decline_hw())}
+                     "api_price_decline": pct(input.decline()), "hw_price_decline": pct(input.decline_hw()),
+                     "compute_gain_per_year": pct(input.gain())}
         p.redundancy = bool(input.redundancy())
         return p
 
@@ -823,10 +826,15 @@ def server(input, output, session):
         b = opt()["total"]["base"]
         yrs = list(b["fleet"])
         sv = [b["fleet"][y]["servers"] for y in yrs]
-        need = [b["sizing"][y]["gpu_need"] / D_GPS.get(b["hardware"], 8) for y in yrs]
+        kk = D_GPS.get(b["hardware"], 8)
+        need = [b["sizing"][y]["gpu_need"] / kk for y in yrs]
+        capy = [b["fleet"][y]["capacity"] / kk for y in yrs]
         fig, ax = plt.subplots(figsize=(7, 3))
         ax.bar(yrs, sv, width=0.6, color="#9db8d9", label="installed")
         ax.plot(yrs, need, color="#1f5fa8", lw=2, marker="o", ms=4, label="needed at the busiest hour")
+        if b["compute_gain"]:
+            ax.step(yrs, capy, where="mid", color="#64748b", lw=1.2, ls="--", label="capacity (in year-1 servers)")
+        sv = [max(a, c) for a, c in zip(sv, capy)]
         for y in yrs:
             if b["fleet"][y]["buy"]:
                 ax.text(y, b["fleet"][y]["servers"] + 0.03, f'+{b["fleet"][y]["buy"]}', ha="center", va="bottom", fontsize=7)
@@ -837,9 +845,9 @@ def server(input, output, session):
         ax.spines[["top", "right"]].set_visible(False)
         ax.grid(axis="y", color="#e5e7eb", lw=0.6)
         ax.set_axisbelow(True)
-        ax.legend(fontsize=7, frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.16), ncol=2)
-        ax.set_ylim(0, max(sv + [1]) * 1.2)
-        fig.subplots_adjust(left=0.07, right=0.98, top=0.95, bottom=0.25)
+        ax.legend(fontsize=7, frameon=False, loc="upper left", ncol=1)
+        ax.set_ylim(0, max(sv + [1]) * 1.6)
+        fig.subplots_adjust(left=0.07, right=0.98, top=0.95, bottom=0.12)
         return fig
 
     @render.ui
@@ -849,7 +857,8 @@ def server(input, output, session):
         b = opt()["total"]["base"]
         hw = {h["id"]: h["name"] for h in CAT["hardware"]}[b["hardware"]]
         return ui.p(f"Hardware: {hw}. Servers are bought when the combined need exceeds what is installed (+N), "
-                    f"replaced after {D['gpu_refresh_years']['value']} years, and never sold. Peak IT load "
+                    f"replaced after {D['gpu_refresh_years']['value']} years, and never sold. Servers bought in later years do "
+                    f"{b['compute_gain']:.0%} more work per GPU for each year of purchase, so fewer are needed. Peak IT load "
                     f"{b['peak_it_kw']:,.0f} kW ({b['peak_facility_kw']:,.0f} kW with cooling, PUE {b['pue']:.2f}). "
                     f"An own data centre is built for {b['design_it_kw']:,.0f} kW of IT: the peak plus "
                     f"{D['facility_buffer']['value']:.0%} spare capacity.",
@@ -975,7 +984,8 @@ def server(input, output, session):
                 ("Electricity", f'${cost_params(_run(input.ambition()), D, "base")["kwh"]:.3f} per kWh'),
                 ("API prices", API_PROV),
                 ("Discount rate", f'{num(input.disc()) or 0:g}% · API price decline {num(input.decline()) or 0:g}% per year · '
-                                   f'GPU rental and hardware {num(input.decline_hw()) or 0:g}% per year')]
+                                   f'GPU rental and hardware {num(input.decline_hw()) or 0:g}% per year'),
+                ("Newer hardware", f'{num(input.gain()) or 0:g}% more work per GPU per year of purchase (Epoch AI)')]
         return pd.DataFrame(rows, columns=["Item", "Value used (Base)"])
 
     @render.table
@@ -985,7 +995,8 @@ def server(input, output, session):
         b = opt()["total"]["base"]
         rows = []
         for y in b["fleet"]:
-            rows.append({"Year": y, "GPUs needed (busiest hour)": b["sizing"][y]["gpus"],
+            rows.append({"Year": y, "GPUs needed (busiest hour, year-1 GPUs)": b["sizing"][y]["gpus"],
+                         "GPUs rented (newer GPUs)": b["sizing"][y]["gpus_rented"],
                          "Servers installed": b["fleet"][y]["servers"],
                          **{OPT_SHORT[o]: usd(b["yearly"][o][y]) for o in OPTIONS}})
         return pd.DataFrame(rows)
@@ -1074,9 +1085,11 @@ def server(input, output, session):
                          "gpus_needed_fractional": s_["gpu_need"], "gpus_needed": s_["gpus"],
                          "gpus_for_llm": s_["gpus_llm"], "gpus_for_other_ai": s_["gpus_nontoken"] + s_["gpus_batch_extra"],
                          "servers_installed": f["servers"], "servers_bought": f["buy"], "gpus_installed": f["gpus"],
+                         "capacity_installed_year1_gpus": f["capacity"], "work_per_gpu_bought_this_year": b["gain"][y],
+                         "gpus_rented_gpu_as_a_service": s_["gpus_rented"],
                          "it_load_kw": f["gpus"] * hw["kw_per_gpu"], "facility_load_kw": f["gpus"] * hw["kw_per_gpu"] * b["pue"],
                          "utilisation_of_gpus_needed": s_["utilisation"],
-                         "utilisation_of_gpus_installed": (s_["utilisation"] * s_["gpus"] / f["gpus"]) if f["gpus"] else 0.0,
+                         "utilisation_of_gpus_installed": (s_["utilisation"] * s_["gpus"] / f["capacity"]) if f["gpus"] else 0.0,
                          "equivalent_tokens_per_year_m": s_["annual_eq_m"],
                          "api_tokens_cost_usd": s_["api_llm"], "api_other_ai_cost_usd": s_["api_nt"]})
         files["4_capacity_by_year.csv"] = csv(rows)
@@ -1125,6 +1138,7 @@ def server(input, output, session):
                 ("facility_build_usd", b["facility_capex"], ""), ("discount_rate_pct", num(input.disc()) or 0, "Setup"),
                 ("api_price_decline_pct", num(input.decline()) or 0, "Setup (S82, S83)"),
                 ("hw_price_decline_pct", num(input.decline_hw()) or 0, "Setup (S84)"),
+                ("compute_gain_per_year_pct", num(input.gain()) or 0, "Setup (S86, S87)"),
                 ("owned_infra_share", D["owned_infra_share"]["value"], D["owned_infra_share"]["source"]),
                 ("redundancy_spare_server", bool(input.redundancy()), "Setup")]
         for k, v in D.items():
@@ -1225,7 +1239,7 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
     def scenario_dict():
         return {"version": "0.9", "own_dc_existing": bool(input.own_dc_existing()),
                 "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
-                "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline(), "decline_hw": input.decline_hw()},
+                "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline(), "decline_hw": input.decline_hw(), "gain": input.gain()},
                 "redundancy": bool(input.redundancy()),
                 "quotes": quotes(), "apps": apps.get(), "custom_types": custom.get()}
 
@@ -1245,7 +1259,7 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
         ui.update_radio_buttons("speed", selected=sc.get("speed", "base"))
         f = sc.get("finance", {})
         ui.update_checkbox("redundancy", value=bool(sc.get("redundancy", False)))
-        for k in ("disc", "decline", "decline_hw"):
+        for k in ("disc", "decline", "decline_hw", "gain"):
             if f.get(k) is not None:
                 ui.update_numeric(k, value=f[k])
         g_old = (num(f.get("growth")) or 0) / 100          # before v0.9 growth was one global rate

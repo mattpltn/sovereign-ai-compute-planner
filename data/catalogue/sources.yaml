@@ -497,3 +497,57 @@
   url: https://www.amcompute.com/blog/ai-cluster-cost-breakdown-capex
   used_for: "GPU servers 60-70% of AI cluster capex, networking 10-25% (owned network, storage and security share)"
   type: Industry analysis
+- id: S86
+  title: "Trends in GPU price-performance"
+  publisher: Epoch AI (2022)
+  url: https://epoch.ai/blog/trends-in-gpu-price-performance
+  used_for: "FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year (upper reference for the compute gain per year)"
+  type: Research
+- id: S87
+  title: "Trends in machine learning hardware"
+  publisher: Epoch AI
+  url: https://epoch.ai/trends-in-machine-learning-hardware
+  used_for: "Memory bandwidth doubles every ~4.1 years, about +18% per year, slower than peak FLOP/s (lower reference for the compute gain per year, since LLM decoding is memory-bound)"
+  type: Research
+- id: S88
+  title: "AI chip sales (H100 equivalents, chip prices)"
+  publisher: Epoch AI (2026)
+  url: https://epoch.ai/data/ai-chip-sales
+  used_for: "Chip prices (H100 ~$25.6k in 2025, B200 $25-32k, GB300 $38-49k); cross-check of GPU server capex with a server factor of ~1.35-1.8"
+  type: Dataset
+- id: S89
+  title: "Supermicro 8U GPU SuperServer SYS-821GE-TNHR (HGX H200 8-GPU)"
+  publisher: Supermicro online store (2026)
+  url: https://store.supermicro.com/us_en/8u-gpu-superserver-sys-821ge-tnhr.html
+  used_for: "System starting price $319,421.64 for 8 H200 GPUs, about $39,900 per GPU (confirms H200 capex)"
+  type: Vendor list price
+- id: S90
+  title: "HGX B200 server value"
+  publisher: AM Compute (Rack Report, October 2026)
+  url: https://www.amcompute.com/gpu-server-values/b200
+  used_for: "$360K-$470K per new 8-GPU HGX B200 node, midpoint $415,000, about $51,900 per GPU (confirms B200 capex)"
+  type: Market price index
+- id: S91
+  title: "NVIDIA HGX B200 engineering datasheet (verified 2026-07-10)"
+  publisher: GPU Smith
+  url: https://gpusmith.com/datasheets/nvidia-hgx-b200-datasheet.pdf
+  used_for: "$300,000 to $500,000+ for a fully configured 8-GPU HGX B200 server; Aivres from about $340,000 (confirms B200 capex)"
+  type: Industry datasheet
+- id: S92
+  title: "NVIDIA GB300 NVL72 chip page"
+  publisher: SemiAnalysis InferenceX (2026)
+  url: https://inferencex.semianalysis.com/chips/gb300-nvl72
+  used_for: "1,400 W TDP and 2.12 kW all-in power per GB300 chip (confirms 2.1 kW per GPU)"
+  type: Benchmark and cost model
+- id: S93
+  title: "HPE NVIDIA GB300 NVL72 specification sheet"
+  publisher: Flopper.io (HPE data)
+  url: https://flopper.io/system/hpe-nvidia-gb300-nvl72
+  used_for: "132 kW nominal per 72-GPU rack (1.83 kW per GPU before networking and storage), ~155 kW electrical peak"
+  type: Vendor specification
+- id: S94
+  title: "Supermicro SYS-822GS-NBRT datasheet (HGX B200 8-GPU)"
+  publisher: Supermicro
+  url: https://www.supermicro.com/en/products/system/datasheet/sys-822gs-nbrt
+  used_for: "1000 W TDP per B200 GPU, air cooled (the 2.0 kW all-in figure is about 2x TDP, as for H200)"
+  type: Vendor datasheet
