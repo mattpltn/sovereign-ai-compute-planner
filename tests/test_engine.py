@@ -693,3 +693,16 @@ def test_owned_infrastructure_share_and_redundancy():
     assert y1["network_storage_security"] == pytest.approx(0.15 * y1["gpu_servers"])
     b = _opts(APPS3[:1], meta, redundancy=True)["total"]["base"]
     assert b["fleet"][1]["servers"] == a["fleet"][1]["servers"] + 1
+
+
+def test_example_portfolio_sized_from_country():
+    from engine.archetypes import example_portfolio
+    gha, notes = example_portfolio(dict(COUNTRIES_["GHA"], iso3="GHA"))
+    by = {a["type"]: a for a in gha}
+    cs = COUNTRIES_["GHA"]["civil_servants"]
+    assert by["staff_copilot"]["volume"] == pytest.approx(0.5 * cs, rel=0.05) and by["staff_copilot"]["growth"] == 0.02
+    assert by["citizen_assistant"]["population_basis"] == "users" and len(notes) == len(gha)
+    est, _ = example_portfolio(dict(COUNTRIES_["EST"], iso3="EST"))
+    assert {a["type"]: a for a in est}["staff_copilot"]["volume"] < by["staff_copilot"]["volume"] / 3
+    xex, notes_x = example_portfolio(default_profile("XEX").country)
+    assert "agriculture_advisory" not in {a["type"] for a in xex} and any("left out" in n for n in notes_x)

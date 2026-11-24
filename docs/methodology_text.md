@@ -287,6 +287,23 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 {{TYPES}}
 
+### Example portfolio, sized from the country
+
+*Load example* (Applications page) builds eight applications sized from the selected country's synced data. The rules are rough planning assumptions (Low confidence), meant to show the tool, not to forecast; every figure can be edited after loading, and a collapsed note lists the rule behind each one.
+
+| Application | Volume rule | Driver (source) | Start | Growth |
+|---|---|---|---|---|
+| Civil servant copilot | 50% of civil servants get access | Civil servants [S18] | Year 1 | 2% |
+| National services assistant (service users) | 2% of internet users register | Population × internet use [S16] | Year 2 | 25% |
+| Agriculture advisory (service users) | 5% of agricultural workers onboarded | Agricultural workers, ILO modeled [S68] | Year 2 | 20% |
+| Land registry intake | 1 document per working day per 3,000 people | Population | Year 1 | 0% |
+| Customs risk agent | 1 case per working day per 15,000 people | Population | Year 2 | 5% |
+| Legal research | 0.05% of civil servants | Civil servants | Year 3 | 10% |
+| Court transcription | 1 hour of hearings a day per 70,000 people | Population | Year 1 | 0% |
+| ID enrolment deduplication | 2.5% of the population enrols each year | Population | Year 1 | 0% |
+
+Volumes are rounded to two significant figures. An application whose driver is unknown for the country is left out, and the note says so. The rules are in `data/catalogue/example_portfolio.yaml`.
+
 ### Custom application types
 
 When no type fits, the user downloads a CSV template (one row per type), fills it and uploads it on the Applications page. `kind` = `llm` for language-model applications (usage rates, active days, token sizes, calls per task, retry, cache hit, model size, peak pattern) or `other` for other AI (GPU-seconds per unit, batch or interactive, peak pattern). Each row also states its data class, confidence (High / Medium / Low), basis (observed, derived, assumption, uncalibrated, client) and evidence. Rows with a missing or out-of-range value are skipped and listed; nothing is guessed. Custom types are marked "(custom)", appear under "Custom (uploaded)", and are saved with the scenario.
