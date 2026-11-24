@@ -5,6 +5,10 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.6] - 2026-11-24
+### Changed
+- "Load example" now sizes the portfolio from the selected country: copilot for 50% of civil servants (+2% per year), citizen assistant for 2% of internet users (service users), agriculture advisory for 5% of agricultural workers, and population ratios for land registry, customs, court transcription and ID enrolment. A collapsed note lists the rule behind each figure; applications without country data are left out. Rules in `data/catalogue/example_portfolio.yaml` (assumptions, Low confidence).
+
 ## [0.9.5] - 2026-11-23
 Changes after an external review of an exported calculation.
 ### Added

@@ -1,0 +1,72 @@
+# Example portfolio, sized from the selected country's data (v0.9.6).
+# Rough planning rules to show the tool, not forecasts: every share and ratio is an assumption (confidence Low)
+# unless a source is given. Volumes are rounded to 2 significant figures.
+# driver: civil_servants (World Bank WWBI, S18), population (S16), internet_users (population x internet use, S16),
+#         agri_workers (ILO modeled, S68). per: the volume is driver x share.
+apps:
+  - name: Civil servant copilot
+    type: staff_copilot
+    driver: civil_servants
+    share: 0.5
+    rule: "50% of civil servants get access"
+    data_class: 3
+    start_year: 1
+    growth: 0.02
+  - name: National services assistant
+    type: citizen_assistant
+    population_basis: users
+    driver: internet_users
+    share: 0.02
+    rule: "2% of internet users register in the first year"
+    data_class: 2
+    start_year: 2
+    growth: 0.25
+  - name: Agriculture advisory
+    type: agriculture_advisory
+    population_basis: users
+    driver: agri_workers
+    share: 0.05
+    rule: "5% of agricultural workers onboarded through extension or cooperatives"
+    data_class: 2
+    start_year: 2
+    growth: 0.20
+  - name: Land registry intake
+    type: document_extraction
+    driver: population
+    share: 0.00033
+    rule: "1 document per working day per 3,000 people"
+    data_class: 3
+    start_year: 1
+    growth: 0.0
+  - name: Customs risk agent
+    type: process_agent
+    driver: population
+    share: 0.000067
+    rule: "1 customs case per working day per 15,000 people"
+    data_class: 4
+    start_year: 2
+    growth: 0.05
+  - name: Legal research
+    type: research_agent
+    driver: civil_servants
+    share: 0.0005
+    rule: "0.05% of civil servants are legal or policy analysts with access"
+    data_class: 2
+    start_year: 3
+    growth: 0.10
+  - name: Court transcription
+    type: speech_to_text
+    driver: population
+    share: 0.0000143
+    rule: "1 hour of hearings recorded per day per 70,000 people"
+    data_class: 3
+    start_year: 1
+    growth: 0.0
+  - name: ID enrolment deduplication
+    type: biometric_dedup
+    driver: population
+    share: 0.0000685
+    rule: "2.5% of the population enrols each year (births and new adults), spread over 365 days"
+    data_class: 4
+    start_year: 1
+    growth: 0.0

@@ -259,3 +259,47 @@ def parse_custom_types(text: str, existing: dict | None = None) -> tuple[dict, l
         except (ValueError, TypeError) as e:
             errs.append(f"{where}: {e}")
     return out, errs
+
+
+# ---------------------------------------------------------------- example portfolio sized from country data (v0.9.6)
+EXAMPLE_RULES = Path(__file__).resolve().parent.parent / "data" / "catalogue" / "example_portfolio.yaml"
+
+
+def _sig2(v: float) -> float:
+    import math
+    if v <= 0:
+        return 0.0
+    k = 1 - int(math.floor(math.log10(v)))
+    return round(v, k) if k > 0 else float(round(v, k))
+
+
+def example_portfolio(country: dict) -> tuple[list, list]:
+    """Example applications sized from the country's data. Returns (apps, one explanation line per app).
+
+    Applications whose driver is unknown for the country are left out, and said so.
+    """
+    rules = yaml.safe_load(EXAMPLE_RULES.read_text())["apps"]
+    ref = reference_sizes(country)
+    pop = country.get("population")
+    drivers = {
+        "civil_servants": (ref["civil_servants"],
+                           "civil servants" + (" (estimated as 2% of population)" if ref["civil_servants_estimated"] else "")),
+        "population": (pop, "people"),
+        "internet_users": (pop * country["internet_share"] if pop and country.get("internet_share") else None, "internet users"),
+        "agri_workers": (ref["agri_workers"], "agricultural workers (ILO modeled)"),
+    }
+    apps, notes = [], []
+    for r in rules:
+        base, what = drivers[r["driver"]]
+        if not base:
+            notes.append(f'{r["name"]}: left out, no data on {what} for this country.')
+            continue
+        vol = max(1.0, _sig2(base * r["share"]))
+        a = {k: r[k] for k in ("name", "type", "data_class", "start_year", "growth")}
+        a["volume"] = int(vol) if vol >= 1 else vol
+        if r.get("population_basis"):
+            a["population_basis"] = r["population_basis"]
+        apps.append(a)
+        notes.append(f'{r["name"]}: {a["volume"]:,} = {r["rule"]} (~{_sig2(base):,.0f} {what}); '
+                     f'starts year {r["start_year"]}, {r["growth"] * 100:+.0f}% per year.')
+    return apps, notes

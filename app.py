@@ -16,7 +16,7 @@ from shiny import App, reactive, render, ui
 from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
 from engine.model import cost_params
 from engine.options import OPTIONS, colo_price, compare, with_no_placement
-from engine.archetypes import (EXAMPLE_PORTFOLIO, POPULATION_BASIS, basis_label, build_profile, is_llm,
+from engine.archetypes import (EXAMPLE_PORTFOLIO, POPULATION_BASIS, example_portfolio, basis_label, build_profile, is_llm,
                                load_archetypes, low_usage_note, normalize_app, parse_custom_types, rate_for,
                                reference_sizes, volume_warning, CUSTOM_TEMPLATE)
 import base64
@@ -317,6 +317,7 @@ apps_panel = ui.nav_panel(
                                   ui.span(ui.input_action_link("example", "Load example"), ui.span(" · "),
                                           ui.input_action_link("clear", "Clear all"), style="font-weight:400"),
                                   style="display:flex;justify-content:space-between;align-items:center")),
+            ui.output_ui("example_note"),
             ui.output_ui("app_list"),
         ),
         col_widths=[4, 8],
@@ -506,12 +507,31 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.example)
     def _example():
-        apps.set([dict(a, uid=uuid.uuid4().hex[:8]) for a in EXAMPLE_PORTFOLIO])
+        c, _ = country()
+        lst, notes = example_portfolio(c)
+        apps.set([dict(a, uid=uuid.uuid4().hex[:8]) for a in lst])
+        example_notes.set((c.get("name", input.iso()), notes))
+
+    example_notes = reactive.value(None)
 
     @reactive.effect
     @reactive.event(input.clear)
     def _clear():
         apps.set([])
+        example_notes.set(None)
+
+    @render.ui
+    def example_note():
+        n = example_notes.get()
+        if not n or not apps.get():
+            return None
+        name, notes = n
+        return ui.accordion(ui.accordion_panel(
+            f"How the example was sized for {name} (rough rules, edit any figure)",
+            ui.tags.ul(*[ui.tags.li(x, class_="hint") for x in notes]),
+            ui.p("Shares and ratios are planning assumptions (Low confidence), applied to the country's synced data. "
+                 "Change the country in Setup and load the example again to resize it.", class_="hint")),
+            open=False, style="margin-bottom:10px")
 
     @render.ui
     def app_list():
