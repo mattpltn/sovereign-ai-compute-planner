@@ -609,12 +609,39 @@ def test_pooled_capacity_never_exceeds_sum_of_standalone():
     assert r["total"]["base"]["pv"]["Owned + own data centre"] < 0.6 * r["sum_standalone"]["Owned + own data centre"]
 
 
+def _gain(g):
+    return {"compute_gain_per_year": g}
+
+
 def test_fleet_covers_need_and_refreshes():
     b = _opts(APPS3, META3)["total"]["base"]
-    k = 8
     for y, f in b["fleet"].items():
-        assert f["servers"] >= _m.ceil(b["sizing"][y]["gpus"] / k)
-    assert b["fleet"][6]["buy"] >= b["fleet"][1]["buy"]          # year-1 servers replaced after 5 years
+        assert f["capacity"] >= b["sizing"][y]["gpus"] - 1e-9      # installed work covers the need (year-1 GPUs)
+    assert b["fleet"][6]["buy"] >= 1                               # year-1 servers replaced after 5 years
+    z = _opts(APPS3, META3, finance=_gain(0.0))["total"]["base"]   # no compute gain: the v0.9.6 fleet
+    for y, f in z["fleet"].items():
+        assert f["servers"] >= _m.ceil(z["sizing"][y]["gpus"] / 8) and f["capacity"] == f["gpus"]
+    assert z["fleet"][6]["buy"] >= z["fleet"][1]["buy"]
+
+
+def test_compute_gain_lowers_rental_and_owned_costs():
+    flat = {"cop": {"start_year": 1, "growth": 0}}
+    a = _opts(APPS3[:1], flat, finance=_gain(0.0))["total"]["base"]
+    b = _opts(APPS3[:1], flat, finance=_gain(0.25))["total"]["base"]
+    assert b["gain"][6] == pytest.approx(1.25 ** 5)
+    assert b["pv"]["API"] == pytest.approx(a["pv"]["API"])        # API prices have their own decline
+    assert b["pv"]["GPU-as-a-service"] < a["pv"]["GPU-as-a-service"]
+    for o in ("Owned + colocation", "Owned + own data centre"):
+        assert b["pv"][o] <= a["pv"][o] + 1e-6
+    assert b["fleet"][1] == a["fleet"][1]                          # year 1 is unchanged
+    assert b["fleet"][6]["buy"] <= a["fleet"][6]["buy"]            # the refresh needs no more servers
+    for y in b["sizing"]:
+        assert b["sizing"][y]["gpus_rented"] == _m.ceil(b["sizing"][y]["gpus"] / 1.25 ** (y - 1) - 1e-9)
+
+
+def test_compute_gain_default_is_sourced():
+    g = D["compute_gain_per_year"]
+    assert g["value"] == 0.25 and "S86" in g["source"] and "S87" in g["source"]
 
 
 def test_colocation_price_lookup():

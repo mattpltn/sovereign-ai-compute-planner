@@ -409,7 +409,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| GPU rental (GPU-as-a-service) | GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -424,7 +424,21 @@ Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the sa
 - *API prices* (tokens and per-unit API prices): 20% per year by default (`api_price_decline`, Low confidence). The price of a fixed level of performance has fallen 9x to 900x per year depending on the task [S82], about 10x per year for an LLM of equivalent performance [S83]. A government does not keep paying for last year's capability: it moves to newer models, so its bill per token for a chosen tier falls far less. 20% is a conservative planning value.
 - *GPU rental and GPU server prices*: 0% by default (`hw_price_decline`). Rental prices fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 [S84]: there is no stable trend to project.
 
-With 0% on both, owning is favoured, because API and rental are paid every year while servers are bought upfront.
+**Newer hardware does more per GPU.** A GPU bought or rented in year y does `(1 + gain)^(y − 1)` times the work of a year-1 GPU, at the same price per GPU (`compute_gain_per_year`, 25% by default, Medium confidence). Sizing stays in year-1 GPUs; the conversion happens when capacity is bought or rented:
+
+```
+work per GPU bought in year y   = (1 + gain)^(y − 1)
+GPUs rented in year y           = ceil(GPUs needed (year-1 GPUs) / work per GPU of year y)
+installed capacity (year-1 GPUs)= Σ over cohorts still in service: servers × GPUs per server × work per GPU of their year
+servers bought in year y        = ceil((need + spare − installed capacity) / (GPUs per server × work per GPU of year y))
+energy                          = installed GPUs × kW per GPU × (idle + (1 − idle) × need / installed capacity) × 8,760 × PUE × tariff
+```
+
+So a refresh in year 6 replaces year-1 servers with fewer, newer ones, and growth later in the period needs fewer added servers. Power per GPU is kept constant, which is consistent with the profiles (H200 1.4 kW, B200 2.0 kW, GB300 2.1 kW all-in, Annex B). The API option is unaffected: its prices have their own decline.
+
+Evidence: Epoch AI finds that FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year [S86]. Memory bandwidth, which limits LLM decoding, doubles only every ~4.1 years, about +18% per year [S87]. 25% sits between the two; lower-precision formats (FP8, then FP4) push the real gain for inference above the bandwidth trend. Set 0% to reproduce version 0.9.6.
+
+With 0% on both price declines, owning is favoured, because API and rental are paid every year while servers are bought upfront.
 
 **Own data centre: build and maintenance.**
 
@@ -549,6 +563,21 @@ Each synced value keeps its indicator code and year. The app reads stored snapsh
 Evidence per profile:
 
 {{HARDWARE_EVIDENCE}}
+
+### Cross-checks against new sources (v0.9.7)
+
+The hardware defaults were checked against chip prices from Epoch AI [S88], vendor list prices and independent power figures. Every check confirms the values already used; none was changed.
+
+| Figure | Value used | Independent evidence | Result |
+|---|---|---|---|
+| H200 capex per GPU | $40,000 | Supermicro HGX H200 8-GPU server from $319,421.64, about $39,900 per GPU [S89]; Epoch chip price × server factor ~1.35 [S88] | Confirmed |
+| B200 capex per GPU | $50,000 (was marked placeholder) | New HGX B200 8-GPU nodes $360K-$470K, midpoint about $51,900 per GPU [S90]; street prices $300K-$500K+, Aivres from about $340K [S91] | Confirmed; no longer a placeholder |
+| GB300 capex per GPU | $65,000 | Epoch chip price $38-49k [S88] × rack-scale server factor ~1.35-1.5 | Consistent; Low confidence (no public rack price) |
+| GB300 power per GPU | 2.1 kW all-in | 2.12 kW all-in per chip at 1,400 W TDP [S92]; HPE rack 132 kW nominal for 72 GPUs, 1.83 kW per GPU before network and storage [S93] | Confirmed |
+| B200 power per GPU | 2.0 kW all-in | 1,000 W TDP per GPU [S94]; all-in is about 2x TDP, as for H200 (1.4 kW for 700 W) | Consistent |
+| GB300 vs H200 throughput | 4.6-7.3x per GPU (large model) | InferenceX at fixed interactivity [S44]; MLPerf about 5x [S45] | Unchanged; vendor 65x rejected (below) |
+
+Server factor = server price per GPU ÷ chip price: it covers CPUs, memory, NVLink switches, network cards, chassis and margin.
 
 ### Vendor claims versus independent benchmarks
 

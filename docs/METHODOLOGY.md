@@ -555,7 +555,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | GPUs needed that year × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| GPU rental (GPU-as-a-service) | GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -570,7 +570,21 @@ Staff follow Section 11 (2 FTE minimum per site + 1 per 100 GPUs) and are the sa
 - *API prices* (tokens and per-unit API prices): 20% per year by default (`api_price_decline`, Low confidence). The price of a fixed level of performance has fallen 9x to 900x per year depending on the task [S82], about 10x per year for an LLM of equivalent performance [S83]. A government does not keep paying for last year's capability: it moves to newer models, so its bill per token for a chosen tier falls far less. 20% is a conservative planning value.
 - *GPU rental and GPU server prices*: 0% by default (`hw_price_decline`). Rental prices fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 [S84]: there is no stable trend to project.
 
-With 0% on both, owning is favoured, because API and rental are paid every year while servers are bought upfront.
+**Newer hardware does more per GPU.** A GPU bought or rented in year y does `(1 + gain)^(y − 1)` times the work of a year-1 GPU, at the same price per GPU (`compute_gain_per_year`, 25% by default, Medium confidence). Sizing stays in year-1 GPUs; the conversion happens when capacity is bought or rented:
+
+```
+work per GPU bought in year y   = (1 + gain)^(y − 1)
+GPUs rented in year y           = ceil(GPUs needed (year-1 GPUs) / work per GPU of year y)
+installed capacity (year-1 GPUs)= Σ over cohorts still in service: servers × GPUs per server × work per GPU of their year
+servers bought in year y        = ceil((need + spare − installed capacity) / (GPUs per server × work per GPU of year y))
+energy                          = installed GPUs × kW per GPU × (idle + (1 − idle) × need / installed capacity) × 8,760 × PUE × tariff
+```
+
+So a refresh in year 6 replaces year-1 servers with fewer, newer ones, and growth later in the period needs fewer added servers. Power per GPU is kept constant, which is consistent with the profiles (H200 1.4 kW, B200 2.0 kW, GB300 2.1 kW all-in, Annex B). The API option is unaffected: its prices have their own decline.
+
+Evidence: Epoch AI finds that FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year [S86]. Memory bandwidth, which limits LLM decoding, doubles only every ~4.1 years, about +18% per year [S87]. 25% sits between the two; lower-precision formats (FP8, then FP4) push the real gain for inference above the bandwidth trend. Set 0% to reproduce version 0.9.6.
+
+With 0% on both price declines, owning is favoured, because API and rental are paid every year while servers are bought upfront.
 
 **Own data centre: build and maintenance.**
 
@@ -727,6 +741,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | facility_buffer | 0.3 | analyst (best practice) | Own data centre: built with 30% spare capacity above the peak installed IT load |
 | api_price_decline | 0.2 | assumption (confidence Low), S82, S83 | Yearly fall in API token and per-unit API prices for the model tier chosen. Prices for a fixed capability fall about 10x per year (S82, S83), but clients move to newer, more capable models, so the bill per token for a chosen tier falls far less. 20% is a conservative planning value |
 | hw_price_decline | 0.0 | S84 | Yearly fall in GPU rental and GPU server prices. H100 rental fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 (S84): no stable trend, so 0% by default |
+| compute_gain_per_year | 0.25 | S86, S87, assumption (confidence Medium) | Yearly gain in inference work per GPU for hardware bought or rented later, at the same price per GPU. Epoch AI: FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year (S86); memory bandwidth doubles every ~4.1 years, about +18% per year (S87). LLM decoding is mostly memory-bound, so 25% is taken between the two |
 | owned_infra_share | 0.15 | S85, assumption (confidence Medium) | Owned options: network switches, storage, firewalls and security appliances (incl. key management), bought with each server batch, as a share of the GPU server price. AI cluster bills of materials put networking at 10-25% of capex (S85); a small inference deployment needs little storage |
 
 **Cost ranges (replaced by client quotes when entered)**
@@ -845,24 +860,39 @@ Evidence per profile:
 - *M*: Llama 3.3 70B: 1,152 / 1,930 / 2,978 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
 - *S*: Derived: about 4x the 70B figure for an 8B model. Low confidence: derated and to calibrate with AIConfigurator.
 - *power*: 1.4 kW per GPU all-in, implied by InferenceX tokens per MW for H200 (S44). The DGX H200 server alone is 10.2 kW per 8 GPUs = 1.275 kW (S10); the difference is the share of networking, storage and management.
-- *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex per GPU: placeholder, replace with vendor quote.
+- *price*: GPU rental $2.60/hour, market rental (S11). NVIDIA's $1.41 (S02) and SemiAnalysis's $1.22 (S44) are ownership costs per chip-hour, not rental prices; they are used only as ratios between profiles. Capex $40,000 per GPU, confirmed: Supermicro lists the HGX H200 8-GPU SYS-821GE-TNHR from $319,421.64, about $39,900 per GPU (S89); Epoch chip prices (H200 ~$30k) x a server factor of ~1.35 give the same (S88).
 
 **P3 · HGX B200 8-GPU, air-cooled**
 
 - *L*: DeepSeek R1: 1,051 / 1,461 / 4,852 tok/s per GPU at 128 / 89 / 50 tok/s per user (S44). Same comparison as P1: B200 gains more than H200 at relaxed speeds (3.0x H200 at 50 tok/s per user, 1.8x at 89) because larger batches fit in its memory.
 - *M*: Llama 3.3 70B: 2,352 / 3,981 / 5,994 tok/s per GPU at 108 / 76 / 45 tok/s per user (S44).
 - *S*: Derived: about 3x the 70B figure. Low confidence: derated.
-- *power*: 2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage.
-- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex: placeholder.
+- *power*: 2.0 kW per GPU all-in: the DGX B200 system draws ~14.3 kW max for 8 GPUs = 1.79 kW per GPU for the server alone (S60), plus the share of networking and storage. Consistent with ~2x the 1,000 W TDP per B200 GPU (S94), the same ratio as H200 (1.4 kW for 700 W).
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $1.73 vs $1.22 per chip-hour (S44). Capex $50,000 per GPU, confirmed: new HGX B200 8-GPU nodes sell for $360K-$470K, midpoint $415,000 or about $51,900 per GPU (S90); street prices $300K-$500K+, Aivres from about $340K (S91); Epoch B200 chip price $25-32k (S88).
 
 **P2 · GB300 NVL72, liquid-cooled rack**
 
 - *L*: DeepSeek R1: 3,404 / 5,667 / 8,552 tok/s per GPU at 130 / 94 / 57 tok/s per user (S44): 5.6-7.3x H200 at the same interactivity. NVIDIA's own comparison (6,000 vs 90, 65x) uses an operating point where H200 barely runs (S02).
 - *M*: Derived: B200 70B figures x ~1.3 for Blackwell Ultra; a dense 70B model gains little from the 72-GPU NVLink domain. Low confidence: derated. Lower than L is not an error: L is a mixture-of-experts model with ~37B active parameters per token, so on a 72-GPU NVLink rack it can generate faster than a dense 70B model (InferenceX: gpt-oss 120B reaches >40,000 tok/s per GPU on GB200) (S44).
 - *S*: MLPerf Inference v5.1 Llama 3.1 8B: 16,099 tok/s per GPU server, 18,370 offline (S45); low is an assumption. Derated (not at a fixed interactivity).
-- *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02).
-- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex: placeholder.
+- *power*: 2.1 kW per GPU, implied by NVIDIA's 2.8M tok/s per MW at 6,000 tok/s per GPU (S02). Confirmed: SemiAnalysis gives 2.12 kW all-in per GB300 chip at 1,400 W TDP (S92); HPE rates the 72-GPU rack at 132 kW nominal, 1.83 kW per GPU before networking and storage (S93).
+- *price*: Rental scaled from H200 by the SemiAnalysis ownership cost ratio, $2.31 vs $1.22 per chip-hour (S44); NVIDIA gives a similar 1.9x ratio (S02). Capex $65,000 per GPU, consistent with the Epoch GB300 chip price of $38-49k (S88) x a rack-scale server factor of ~1.35-1.5 (NVLink switches, Grace CPUs, liquid cooling). Low confidence: no public rack price.
 
+
+### Cross-checks against new sources (v0.9.7)
+
+The hardware defaults were checked against chip prices from Epoch AI [S88], vendor list prices and independent power figures. Every check confirms the values already used; none was changed.
+
+| Figure | Value used | Independent evidence | Result |
+|---|---|---|---|
+| H200 capex per GPU | $40,000 | Supermicro HGX H200 8-GPU server from $319,421.64, about $39,900 per GPU [S89]; Epoch chip price × server factor ~1.35 [S88] | Confirmed |
+| B200 capex per GPU | $50,000 (was marked placeholder) | New HGX B200 8-GPU nodes $360K-$470K, midpoint about $51,900 per GPU [S90]; street prices $300K-$500K+, Aivres from about $340K [S91] | Confirmed; no longer a placeholder |
+| GB300 capex per GPU | $65,000 | Epoch chip price $38-49k [S88] × rack-scale server factor ~1.35-1.5 | Consistent; Low confidence (no public rack price) |
+| GB300 power per GPU | 2.1 kW all-in | 2.12 kW all-in per chip at 1,400 W TDP [S92]; HPE rack 132 kW nominal for 72 GPUs, 1.83 kW per GPU before network and storage [S93] | Confirmed |
+| B200 power per GPU | 2.0 kW all-in | 1,000 W TDP per GPU [S94]; all-in is about 2x TDP, as for H200 (1.4 kW for 700 W) | Consistent |
+| GB300 vs H200 throughput | 4.6-7.3x per GPU (large model) | InferenceX at fixed interactivity [S44]; MLPerf about 5x [S45] | Unchanged; vendor 65x rejected (below) |
+
+Server factor = server price per GPU ÷ chip price: it covers CPUs, memory, NVLink switches, network cards, chassis and margin.
 
 ### Vendor claims versus independent benchmarks
 
@@ -962,5 +992,14 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s83"></a>S83 | Welcome to LLMflation - LLM inference cost is going down fast | Andreessen Horowitz (a16z) | Cost of an LLM of equivalent performance falls about 10x per year (context for the API price decline) | https://a16z.com/llmflation-llm-inference-cost/ |
 | <a id="src-s84"></a>S84 | Nvidia H100 GPU rental costs surge 50% in six months as AI demand outpaces supply | Crypto Briefing (citing SemiAnalysis) | GPU rental prices fell more than 60% in 2025, then rose about 40% from October 2025 to March 2026 (no stable trend) | https://cryptobriefing.com/nvidia-h100-gpu-rental-costs-surge/ |
 | <a id="src-s85"></a>S85 | AI Cluster Cost Breakdown: CapEx (2026) | AM Compute | GPU servers 60-70% of AI cluster capex, networking 10-25% (owned network, storage and security share) | https://www.amcompute.com/blog/ai-cluster-cost-breakdown-capex |
+| <a id="src-s86"></a>S86 | Trends in GPU price-performance | Epoch AI (2022) | FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year (upper reference for the compute gain per year) | https://epoch.ai/blog/trends-in-gpu-price-performance |
+| <a id="src-s87"></a>S87 | Trends in machine learning hardware | Epoch AI | Memory bandwidth doubles every ~4.1 years, about +18% per year, slower than peak FLOP/s (lower reference for the compute gain per year, since LLM decoding is memory-bound) | https://epoch.ai/trends-in-machine-learning-hardware |
+| <a id="src-s88"></a>S88 | AI chip sales (H100 equivalents, chip prices) | Epoch AI (2026) | Chip prices (H100 ~$25.6k in 2025, B200 $25-32k, GB300 $38-49k); cross-check of GPU server capex with a server factor of ~1.35-1.8 | https://epoch.ai/data/ai-chip-sales |
+| <a id="src-s89"></a>S89 | Supermicro 8U GPU SuperServer SYS-821GE-TNHR (HGX H200 8-GPU) | Supermicro online store (2026) | System starting price $319,421.64 for 8 H200 GPUs, about $39,900 per GPU (confirms H200 capex) | https://store.supermicro.com/us_en/8u-gpu-superserver-sys-821ge-tnhr.html |
+| <a id="src-s90"></a>S90 | HGX B200 server value | AM Compute (Rack Report, October 2026) | $360K-$470K per new 8-GPU HGX B200 node, midpoint $415,000, about $51,900 per GPU (confirms B200 capex) | https://www.amcompute.com/gpu-server-values/b200 |
+| <a id="src-s91"></a>S91 | NVIDIA HGX B200 engineering datasheet (verified 2026-07-10) | GPU Smith | $300,000 to $500,000+ for a fully configured 8-GPU HGX B200 server; Aivres from about $340,000 (confirms B200 capex) | https://gpusmith.com/datasheets/nvidia-hgx-b200-datasheet.pdf |
+| <a id="src-s92"></a>S92 | NVIDIA GB300 NVL72 chip page | SemiAnalysis InferenceX (2026) | 1,400 W TDP and 2.12 kW all-in power per GB300 chip (confirms 2.1 kW per GPU) | https://inferencex.semianalysis.com/chips/gb300-nvl72 |
+| <a id="src-s93"></a>S93 | HPE NVIDIA GB300 NVL72 specification sheet | Flopper.io (HPE data) | 132 kW nominal per 72-GPU rack (1.83 kW per GPU before networking and storage), ~155 kW electrical peak | https://flopper.io/system/hpe-nvidia-gb300-nvl72 |
+| <a id="src-s94"></a>S94 | Supermicro SYS-822GS-NBRT datasheet (HGX B200 8-GPU) | Supermicro | 1000 W TDP per B200 GPU, air cooled (the 2.0 kW all-in figure is about 2x TDP, as for H200) | https://www.supermicro.com/en/products/system/datasheet/sys-822gs-nbrt |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.
