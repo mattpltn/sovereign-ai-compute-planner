@@ -357,7 +357,10 @@ results_panel = ui.nav_panel(
             ui.p("Each row prices the application alone, so owned options carry their own servers, staff and facility. "
                  "The last two rows show the portfolio bought together and the sum of the rows: the gap is what sharing saves. "
                  "† Not available as a cloud API (e.g. national biometric deduplication): the API column prices it as rented GPUs. "
-                 "Other non-language-model work uses per-unit cloud API prices (per audio hour, page, verification or chunk).",
+                 "Other non-language-model work uses per-unit cloud API prices (per audio hour, page, verification or chunk). "
+                 "‡ Too small to need a GPU of its own (below 0.25 GPU): bought alone, the API is the only option with a price. "
+                 "If the government owns or rents GPUs for other applications, this work runs on their spare capacity at no "
+                 "extra cost.",
                  class_="hint")),
     ui.h4("3 · What owning means", class_="sec"),
     ui.layout_columns(
@@ -413,7 +416,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.9.9 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9.10 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -807,9 +810,9 @@ def server(input, output, session):
             # Work below the GPU threshold costs nothing extra on GPUs: say so instead of showing $0 as a price.
             spare = pv["API"] > 0 and not any(pv[o] for o in OPTIONS if o != "API")
             cell = lambda o: ("spare capacity" if spare and o != "API" else usd(pv[o])) + (" †" if no_api and o == "API" else "")
-            best_txt = (f"Runs on spare capacity (below {D['gpu_threshold']['value']:g} GPU)" if spare else OPT_SHORT[best])
+            best_txt = OPT_SHORT[best] + (" ‡" if spare else "")
             return ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
-                              *[ui.tags.td(cell(o), style=("font-weight:700" if o == best and not spare else "")
+                              *[ui.tags.td(cell(o), style=("font-weight:700" if o == best else "")
                                            + (";color:#64748b" if spare and o != "API" else "")) for o in OPTIONS],
                               ui.tags.td(best_txt), style=style)
         rows = []
