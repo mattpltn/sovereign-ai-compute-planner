@@ -683,3 +683,9 @@
   url: https://arxiv.org/abs/2509.18101
   used_for: "Owning is found cheaper against GPT-4o / frontier APIs (up to 4.1x, ESG) and hyperscaler on-demand instances (break-even in about 4 months above 20% utilisation, Lenovo); break-even from months (small models) to 5 years (large models) against commercial APIs (Pan et al.)"
   type: Industry and academic studies
+- id: S117
+  title: "GPU server values and residual value bands (Rack Report, October 2026; GPU residual value report, June 2026)"
+  publisher: American Compute
+  url: https://www.amcompute.com/gpu-server-values
+  used_for: "Residual value of used 8-GPU servers, % of the price new, conservative bands: HGX H100 27-53% (2026), 11-42% (2027), 5-14% (2028), 2-6% (2029), 1-3% (2030); HGX B200 6-11% after 48 months"
+  type: Market price index

@@ -95,6 +95,17 @@ def api_reference_prices(d, ref, market):
 
 def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     """Year-by-year cost of each option for the applications in `ids` (all if None), pooled together."""
+    f0 = p.finance or {}
+    policy = f0.get("server_end_policy") or d["server_end_policy"]["value"]
+    if policy == "auto":
+        # The cheaper of keeping servers in service and replacing them at the refresh period with an auction sale.
+        runs = []
+        for pol in ("keep", "sell"):
+            q_ = dataclasses.replace(p, finance=dict(f0, server_end_policy=pol))
+            runs.append(evaluate(q_, d, hw, api_prices, meta, scenario, ids))
+        best = min(runs, key=lambda e: e["pv"]["Owned + colocation"])
+        best["end_policy_auto"] = True
+        return best
     um = d.get("throughput_uncertainty", {}).get(scenario, 1.0)
     dem_all, nt_all = demand_rows(p, d), nontoken_rows(p, d)
     dem = [r for r in dem_all if ids is None or r["id"] in ids]
@@ -121,7 +132,9 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     rate_od = base_rate * (rm["on_demand"] if not q.get("gpu_hour_usd") else 1.0)   # rented only when needed
     od_util = d["on_demand_utilisation"]["value"]
     software_gpu = 0.0 if pick("software_stack") == "open_source" else hw["software_per_gpu_year_usd"]
-    life = int(pick("server_life_years"))                    # servers kept in service this long (>= refresh period)
+    end_policy = policy                                      # keep in service, or replace and sell at auction
+    life = int(pick("server_life_years")) if end_policy == "keep" else R
+    resale = d["resale_share"]["value"] if end_policy == "sell" else 0.0
     maint_old = d["maintenance_after_warranty_multiplier"]["value"]
     share_night = pick("idle_sharing_share")                 # share of idle GPU-hours opened to universities/research
     night_rate = base_rate * d["idle_sharing_price_share"]["value"]
@@ -170,8 +183,9 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
 
     # Owned fleet: whole servers bought when the pooled need exceeds the installed capacity; each cohort is
     # replaced after the refresh period if still needed, by newer servers that do more per GPU. Never sold.
-    cohorts, fleet = [], {}
+    cohorts, fleet, sold = [], {}, {}
     for y in yrs:
+        sold[y] = sum(n * k * capex_gpu * price[b] for b, n in cohorts if y - b >= max(life, R)) * resale
         cohorts = [(b, n) for b, n in cohorts if y - b < max(life, R)]
         need_cap = (sz[y]["gpus"] + spare * k * gain[y]) if sz[y]["gpus"] else 0
         have_cap = sum(n * k * gain[b] for b, n in cohorts)
@@ -219,6 +233,8 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
                       maintenance_gpu=maint * capex_gpu * ((g - f["gpus_old"]) + maint_old * f["gpus_old"]),
                       staff=staff_fte(g, d) * fte_cost if g else 0.0,
                       energy=it_kwh * pue * cp["kwh"])
+        if resale:
+            common["resale"] = -sold[y]
         if share_night:
             common["shared_capacity_value"] = -night_h * night_rate * price[y]
         s["night_hours"], s["night_hours_rented"] = night_h, night_rent
@@ -240,7 +256,8 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
                 facility_capex=build, facility_maint_year=fac_maint, build_per_mw=per_mw, build_curve=bc,
                 gpu_hour=rate, gpu_hour_on_demand=rate_od, rental_reference=rent_ref, rental_mode=rent_mode,
-                api_reference=ref, api_prices_used=prices, server_life=max(life, R), night_share=share_night, night_rate=night_rate,
+                api_reference=ref, api_prices_used=prices, server_life=max(life, R),
+                end_policy=end_policy, resale_share=resale, night_share=share_night, night_rate=night_rate,
                 capex_gpu=capex_gpu, first_year=first, compute_gain=cg, gain=gain,
                 tokens_pv_m=sum(disc[y] * sz[y]["annual_eq_m"] for y in yrs))
 

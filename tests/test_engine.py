@@ -852,7 +852,7 @@ def test_software_stack_and_server_life():
     run_ = lambda **f: _opts(APPS3[:1], FLAT, finance=dict(_gain(0.0), **f))["total"]["base"]
     nv, os_ = run_(), run_(software_stack="open_source")
     assert nv["pv_parts"]["Owned + colocation"]["software"] > 0 and os_["pv_parts"]["Owned + colocation"]["software"] == 0
-    keep, repl = run_(server_life_years=8), run_(server_life_years=5)
+    keep, repl = run_(server_end_policy="keep", server_life_years=8), run_(server_end_policy="keep", server_life_years=5)
     assert keep["fleet"][6]["buy"] == 0 and repl["fleet"][6]["buy"] > 0          # kept, not replaced
     assert keep["fleet"][6]["gpus_old"] == keep["fleet"][6]["gpus"]             # all out of warranty in year 6
     assert keep["pv_parts"]["Owned + colocation"]["gpu_servers"] < repl["pv_parts"]["Owned + colocation"]["gpu_servers"]
@@ -869,3 +869,15 @@ def test_idle_hours_shared_with_universities():
     assert on["pv"]["Owned + colocation"] < off["pv"]["Owned + colocation"]
     assert on["pv_parts"]["Owned + colocation"]["energy"] > off["pv_parts"]["Owned + colocation"]["energy"]
     assert on["pv"]["GPU-as-a-service"] < off["pv"]["GPU-as-a-service"]           # reserved GPUs idle too
+
+
+def test_resale_at_auction_and_auto_policy():
+    big = [dict(COP, uid="cop", volume=400000)]
+    run_ = lambda pol: _opts(big, FLAT, finance={"server_end_policy": pol})["total"]["base"]
+    keep, sell, auto = run_("keep"), run_("sell"), run_("auto")
+    y1 = sell["yearly_parts"]["Owned + colocation"][1]["gpu_servers"]
+    assert sell["yearly_parts"]["Owned + colocation"][6]["resale"] == pytest.approx(-0.05 * y1)   # 5% at auction [S117]
+    assert sell["fleet"][6]["buy"] > 0 and keep["fleet"][6]["buy"] == 0
+    assert "resale" not in keep["pv_parts"]["Owned + colocation"]
+    assert auto["pv"]["Owned + colocation"] == pytest.approx(min(keep["pv"]["Owned + colocation"], sell["pv"]["Owned + colocation"]))
+    assert auto["end_policy"] in ("keep", "sell") and D["server_end_policy"]["value"] == "auto"

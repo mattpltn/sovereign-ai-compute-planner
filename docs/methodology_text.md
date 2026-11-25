@@ -499,9 +499,12 @@ The same multiples are applied to B200 and GB300 (assumption). *Reserved* (defau
 
 **Serving software on owned GPUs.** By default the NVIDIA AI Enterprise licence, $4,500 per GPU per year [S115], because serving skills are scarce in most low- and middle-income countries. The open-source option (vLLM or SGLang on Kubernetes) has no licence fee; staff is unchanged, which may understate the skills it needs.
 
-**Servers kept in service.** Governments rarely sell servers. Owned servers stay in service for 8 years by default (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). After the 5-year refresh period they are out of warranty, so their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity. Set 5 years to replace servers at the refresh period, as before v0.9.11.
+**After the 5-year refresh period: keep or sell.** Two policies, and by default the tool takes the cheaper of the two for the portfolio (by the cost of owning with colocation), and says which one it chose:
 
-Keeping servers is not always cheaper. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. When demand is flat, replacing year-1 servers in year 6 by fewer, newer ones can cost less than keeping them to year 8. Both settings can be compared.
+- *Keep in service.* Servers stay in service until year 8 (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). Out of warranty, their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity.
+- *Replace and sell at auction.* At the refresh period the servers are replaced by newer ones and sold at a public auction for 5% of their purchase price (assumption, Low). A 5-year-old HGX H100 server sits at 5-14% of its price new in American Compute's conservative band for 2028, and 2-6% a year later [S117]; a quick public sale gets the low end.
+
+Keeping servers is often the dearer policy. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. For a copilot for 1 million civil servants with flat demand, keeping costs $5.40M and replacing and selling $4.77M over 10 years (own + colocation); the auction itself brings little ($0.04M in present value): the saving comes from running fewer, newer GPUs. Keeping wins when demand grows fast enough to use the old servers alongside the new ones.
 
 **Idle hours opened to universities and research (option).** Owned or reserved GPUs sized for office-hour peaks are idle most of the night and at weekends: typical government use leaves 85-90% of GPU-hours idle. A share of those idle hours (Setup, 30% when ticked) can be opened to universities and research. The shared hours are valued at half the neocloud rental price (what they would otherwise pay, at an academic rate; assumption, Low) and shown as a negative cost; their electricity is added. This is the strongest economic case for owning: the same servers serve two communities.
 
@@ -510,9 +513,9 @@ Keeping servers is not always cheaper. Newer GPUs do much more work each (25% pe
 | Settings | API | GPU rental | Own + colocation |
 |---|---|---|---|
 | Before v0.9.11 (open market, neocloud, servers replaced at 5 years) | $2.57M | $2.35M | $4.81M |
-| v0.9.11 defaults (hyperscaler API and rental, servers kept 8 years) | $3.04M | $5.21M | $5.40M |
-| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $4.12M |
-| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $4.12M |
+| v0.9.11 defaults (hyperscaler API and rental; servers replaced and sold, the cheaper policy here) | $3.04M | $5.21M | $4.77M |
+| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $3.74M |
+| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $3.74M |
 
 Independent studies that find owning cheaper compare it with frontier APIs or hyperscaler on-demand prices; against the cheapest open-model APIs, owning rarely wins [S116]. The tool shows both, by its choice of reference.
 
