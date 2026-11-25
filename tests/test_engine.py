@@ -694,7 +694,7 @@ def test_api_option_uses_per_unit_prices_for_non_llm():
     r = _opts(stt, {"stt": {"start_year": 1, "growth": 0}})["total"]["base"]
     assert r["yearly"]["API"][1] == pytest.approx(500 * 365 * 0.185)            # batch by default: average of 8 list prices
     ded = [dict(uid="bd", name="Dedup", type="biometric_dedup", volume=500000, data_class=4)]
-    rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}})["total"]["base"]
+    rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}}, finance={"gpu_rental_mode": "reserved"})["total"]["base"]
     assert rb["yearly"]["API"][1] == pytest.approx(rb["yearly"]["GPU-as-a-service"][1])   # no API: rented GPUs
 
 
@@ -709,7 +709,7 @@ def test_citizen_assistant_population_basis():
 
 def test_api_and_hardware_price_declines_are_separate():
     meta = {"cop": {"start_year": 1, "growth": 0}}
-    r = _opts(APPS3[:1], meta)["total"]["base"]
+    r = _opts(APPS3[:1], meta, finance={"gpu_rental_mode": "reserved"})["total"]["base"]          # GPUs rented all year
     assert r["yearly"]["API"][2] == pytest.approx(r["yearly"]["API"][1] * 0.8)                       # 20% default
     assert r["yearly"]["GPU-as-a-service"][2] == pytest.approx(r["yearly"]["GPU-as-a-service"][1])     # 0% default
 
@@ -829,7 +829,7 @@ def test_api_reference_prices():
     assert api_reference_prices(D, "open_market", m) is m
     assert api_reference_prices(D, "hyperscaler", m)["L"] == {"input": 0.74, "output": 2.22}          # Bedrock [S109]
     assert api_reference_prices(D, "frontier", m)["M"]["output"] == pytest.approx(4.50 * 1.10)       # +10% regional [S110]
-    assert D["api_reference"]["value"] == "hyperscaler"
+    assert D["api_reference"]["value"] == "hyperscaler" and D["gpu_rental_mode"]["value"] == "on_demand"
     r = lambda ref, disc=0.0: _opts(APPS3[:1], FLAT, finance={"api_reference": ref, "api_commit_discount": disc}
                                     )["total"]["base"]["pv"]["API"]
     assert r("open_market") < r("frontier") and r("hyperscaler") < r("frontier")
@@ -838,7 +838,8 @@ def test_api_reference_prices():
 
 def test_gpu_rental_reference_and_on_demand():
     run_ = lambda **f: _opts(APPS3[:1], FLAT, finance=f)["total"]["base"]
-    neo, hyp = run_(gpu_rental_reference="neocloud"), run_(gpu_rental_reference="hyperscaler")
+    neo, hyp = (run_(gpu_rental_reference="neocloud", gpu_rental_mode="reserved"),
+                run_(gpu_rental_reference="hyperscaler", gpu_rental_mode="reserved"))
     assert hyp["gpu_hour"] == pytest.approx(neo["gpu_hour"] * 2.216)
     assert hyp["pv"]["GPU-as-a-service"] == pytest.approx(neo["pv"]["GPU-as-a-service"] * 2.216)
     od = run_(gpu_rental_reference="hyperscaler", gpu_rental_mode="on_demand")
@@ -862,7 +863,7 @@ def test_software_stack_and_server_life():
 
 
 def test_idle_hours_shared_with_universities():
-    run_ = lambda sh: _opts(APPS3[:1], FLAT, finance={"idle_sharing_share": sh})["total"]["base"]
+    run_ = lambda sh: _opts(APPS3[:1], FLAT, finance={"idle_sharing_share": sh, "gpu_rental_mode": "reserved"})["total"]["base"]
     off, on = run_(0.0), run_(0.3)
     assert "shared_capacity_value" not in off["pv_parts"]["Owned + colocation"]
     assert on["pv_parts"]["Owned + colocation"]["shared_capacity_value"] < 0

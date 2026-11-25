@@ -81,7 +81,7 @@ api_reference_prices:
     source: "S110, S109"
 api_commit_discount: {value: 0.0, source: "S111, client", note: "Discount negotiated for a multi-year API commitment. 0 by default: published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% monthly, 70% yearly, against the hourly provisioned rate, S111), not to the per-token price. Set it from a real offer"}
 gpu_rental_reference: {value: hyperscaler, source: "S112, S113, S11", note: "hyperscaler (default): Azure or AWS, as most governments would rent. neocloud: specialised GPU cloud, the hardware profile price"}
-gpu_rental_mode: {value: reserved, source: "S112, S113", note: "reserved: GPUs rented all year on a 1-year commitment (24/7). on_demand: rented only for the hours of work, at the on-demand price"}
+gpu_rental_mode: {value: on_demand, source: "S112, S113", note: "on_demand (default): rented only for the hours of work, at the on-demand price, switched off when not needed. reserved: GPUs rented all year on a 1-year commitment (24/7)"}
 gpu_rental_multipliers:
   value:
     neocloud: {reserved: 1.0, on_demand: 1.0}

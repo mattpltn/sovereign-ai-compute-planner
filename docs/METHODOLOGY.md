@@ -563,7 +563,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | Reserved (default): GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. On demand: hours of work ÷ 0.6 × on-demand price, never more than renting all year. Rented capacity follows demand year by year. |
+| GPU rental (GPU-as-a-service) | On demand (default): hours of work ÷ 0.6 × on-demand price, never more than renting all year. Reserved: GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. Rented capacity follows demand year by year. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -641,7 +641,7 @@ A government can also commit for several years and negotiate a discount. Publish
 | AWS p5en | $7.91 [S113] | up to -40% [S113] |
 | Average used | $9.255 = 3.56 × neocloud | $5.76 = 2.216 × neocloud |
 
-The same multiples are applied to B200 and GB300 (assumption). *Reserved* (default) rents the GPUs all year, 24/7. *On demand* bills only the hours of work, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
+The same multiples are applied to B200 and GB300 (assumption). *On demand* (default) bills only the hours of work, switching GPUs off when they are not needed, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. *Reserved* rents the GPUs all year, 24/7, at the reserved price. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
 
 **Serving software on owned GPUs.** By default the NVIDIA AI Enterprise licence, $4,500 per GPU per year [S115], because serving skills are scarce in most low- and middle-income countries. The open-source option (vLLM or SGLang on Kubernetes) has no licence fee; staff is unchanged, which may understate the skills it needs.
 
@@ -659,9 +659,12 @@ Keeping servers is often the dearer policy. Newer GPUs do much more work each (2
 | Settings | API | GPU rental | Own + colocation |
 |---|---|---|---|
 | Before v0.9.11 (open market, neocloud, servers replaced at 5 years) | $2.57M | $2.35M | $4.81M |
-| v0.9.11 defaults (hyperscaler API and rental; servers replaced and sold, the cheaper policy here) | $3.04M | $5.21M | $4.77M |
-| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $3.74M |
-| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $3.74M |
+| v0.9.11 defaults (hyperscaler API; hyperscaler GPUs on demand; servers replaced and sold, the cheaper policy here) | $3.04M | $1.53M | $4.77M |
+| Same, GPUs reserved all year | $3.04M | $5.21M | $4.77M |
+| Defaults + open-source software + 30% of idle hours shared | $3.04M | $1.53M | $3.74M |
+| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $1.53M | $3.74M |
+
+On demand is the cheapest way to serve office-hour demand: GPUs are paid only while they work, even at 3.56 times the neocloud price. It assumes the hyperscaler has the capacity when needed, which is not guaranteed for large fleets; reserving removes that risk at a higher cost. Shared idle hours apply to owned and reserved GPUs only.
 
 Independent studies that find owning cheaper compare it with frontier APIs or hyperscaler on-demand prices; against the cheapest open-model APIs, owning rarely wins [S116]. The tool shows both, by its choice of reference.
 
@@ -830,7 +833,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | api_reference | hyperscaler | S109, S110, S111 | Which API prices the API option uses. hyperscaler (default): open models on a hyperscaler in a regional data centre, as most governments would buy. open_market: synced median of the same open models on OpenRouter (S21), the cheapest. frontier: proprietary frontier models (GPT-5.4 family) with the 10% regional-processing uplift |
 | api_commit_discount | 0.0 | S111, client | Discount negotiated for a multi-year API commitment. 0 by default: published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% monthly, 70% yearly, against the hourly provisioned rate, S111), not to the per-token price. Set it from a real offer |
 | gpu_rental_reference | hyperscaler | S112, S113, S11 | hyperscaler (default): Azure or AWS, as most governments would rent. neocloud: specialised GPU cloud, the hardware profile price |
-| gpu_rental_mode | reserved | S112, S113 | reserved: GPUs rented all year on a 1-year commitment (24/7). on_demand: rented only for the hours of work, at the on-demand price |
+| gpu_rental_mode | on_demand | S112, S113 | on_demand (default): rented only for the hours of work, at the on-demand price, switched off when not needed. reserved: GPUs rented all year on a 1-year commitment (24/7) |
 | gpu_rental_multipliers | {'neocloud': {'reserved': 1.0, 'on_demand': 1.0}, 'hyperscaler': {'reserved': 2.216, 'on_demand': 3.56}} | S112, S113, S11 | Multiple of the hardware profile price (neocloud H200 $2.60, S11). Hyperscaler H200 on demand: Azure ND H200 v5 $84.80 per 8-GPU hour = $10.60 per GPU-hour (S112); AWS p5en $63.296 = $7.91 (S113); average $9.255 = 3.56x. Reserved 1 year: Azure 1-year reservation -35% (ND H100 v5 $7.93 vs $12.29, S112), AWS 1-year savings plan up to -40% (S113); average -37.75%, $5.76 = 2.216x. Applied to every hardware profile (assumption for B200 and GB300) |
 | on_demand_utilisation | 0.6 | assumption (confidence Low) | On-demand GPUs are billed for the hours of work divided by this share: autoscaling keeps headroom and GPUs start before the load arrives |
 | software_stack | nvidia | S115, assumption | nvidia (default): NVIDIA AI Enterprise licence per GPU per year, the usual choice where serving skills are scarce. open_source: vLLM / SGLang on Kubernetes, no licence fee (staff unchanged) |
