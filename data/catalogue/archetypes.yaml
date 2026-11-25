@@ -408,16 +408,26 @@
   unit: items
   unit_label: Audio hours per day
   gpu_seconds_per_unit: 12
-  api_price: {low: 0.18, base: 0.36, high: 1.44, unit: "per audio hour", source: "S76, S77", note: "Batch and low-cost tiers $0.003/min, OpenAI transcription $0.006/min, AWS Transcribe standard $0.024/min"}
+  api_price: {low: 0.04, base: 0.185, high: 0.36, unit: "per audio hour", source: "S95, S76, S97, S98, S99, S100, S77", note: "Batch (recorded audio). Base is the simple average of eight list prices, November 2026: Groq Whisper large-v3 turbo $0.04, Groq Whisper large-v3 $0.111, AssemblyAI Universal-2 $0.15, Azure batch $0.18, Google dynamic batch $0.18, ElevenLabs Scribe v3 $0.20, Deepgram Nova-3 $0.258, OpenAI Whisper $0.36. Low and High are the cheapest and dearest of the eight"}
+  processing:
+    default: batch
+    batch:
+      label: "Batch: recorded audio, transcribed within hours (hearings, archives, call recordings)"
+      mode: Batch
+      api_price: {low: 0.04, base: 0.185, high: 0.36, unit: "per audio hour", source: "S95, S76, S97, S98, S99, S100, S77", note: "Average of eight batch list prices (see type note)"}
+    realtime:
+      label: "Real-time: live captions or voice services, text needed within seconds"
+      mode: Interactive
+      api_price: {low: 0.15, base: 0.705, high: 1.44, unit: "per audio hour", source: "S76, S99, S100, S98, S97, S77", note: "Streaming. Base is the simple average of six list prices, November 2026: AssemblyAI Universal-Streaming $0.15, ElevenLabs Scribe v3 Live $0.22, Deepgram Nova-3 streaming $0.462, Google standard $0.96, Azure real-time $1.00, AWS Transcribe $1.44"}
   basis: {gpu: derived}
-  mode: Interactive
+  mode: Batch
   peak_share: 0.7
   peak_window_h: 10
   burst: 1.5
   data_class: 3
   confidence: {volume: High, tokens: Medium}
   evidence:
-    gpu: "12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node (S55); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) (S56): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45)."
+    gpu: "12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node (S55); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) (S56); streaming servers batch concurrent streams, so real-time keeps 12 but is sized for the busy hours. Derated 0.6. MLPerf Inference v5.1 now includes Whisper (S45). Confirmed by price: Groq sells Whisper large-v3 turbo at $0.04 per audio hour at ~216x real time (S95), close to our rented-GPU cost of about $0.04 per audio hour."
 
 - id: ocr
   label: OCR and layout extraction

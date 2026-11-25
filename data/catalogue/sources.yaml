@@ -441,7 +441,7 @@
   title: "Speech-to-text API pricing guide (2026): per-hour rates, add-ons and hidden costs"
   publisher: AssemblyAI
   url: https://assemblyai.com/blog/speech-to-text-api-pricing
-  used_for: "Speech-to-text API price: Google Cloud dynamic batch $0.003/min, standard $0.016/min"
+  used_for: "Speech-to-text API price: AssemblyAI Universal-2 $0.15 per hour batch and Universal-Streaming $0.15 per hour (prices as of 3 November 2026, linked to each vendor's pricing page)"
   type: Price comparison (vendor blog)
 - id: S77
   title: "Speech-to-Text API Pricing 2026: Real Costs Compared"
@@ -551,3 +551,39 @@
   url: https://www.supermicro.com/en/products/system/datasheet/sys-822gs-nbrt
   used_for: "1000 W TDP per B200 GPU, air cooled (the 2.0 kW all-in figure is about 2x TDP, as for H200)"
   type: Vendor datasheet
+- id: S95
+  title: "Groq ASR model guide: Whisper Large v3, Whisper Large v3 Turbo, Distil-Whisper"
+  publisher: Groq
+  url: https://groq.com/GroqDocs/Groq%20ASR%20Model%20Guide.pdf
+  used_for: "Speech-to-text API price: Whisper large-v3 $0.111, large-v3 turbo $0.04 per hour (~216x real time); file-based only, no streaming. Also confirms our GPU throughput"
+  type: Vendor price list
+- id: S96
+  title: "Speech-to-text API comparison: Whisper API options in 2026"
+  publisher: DEV Community
+  url: https://dev.to/pietrus914/speech-to-text-api-comparison-whisper-api-options-in-2026-400h
+  used_for: "Cross-check of per-hour prices: OpenAI $0.36, Deepgram Nova-3 $0.26 batch / $0.46 stream, AssemblyAI"
+  type: Industry comparison
+- id: S97
+  title: "Azure AI Speech: speech-to-text models and prices (read from azure.microsoft.com, 18 October 2026)"
+  publisher: Developers Digest
+  url: https://www.developersdigest.tech/models/speech/azure
+  used_for: "Speech-to-text API price: Azure batch transcription $0.18 per hour, real-time $1 per hour (Azure's own page renders prices only after region selection)"
+  type: Price tracker
+- id: S98
+  title: "Speech-to-Text pricing (V2 API)"
+  publisher: Google Cloud
+  url: https://cloud.google.com/speech-to-text/pricing
+  used_for: "Speech-to-text API price: dynamic batch $0.003 per minute ($0.18 per hour, results within 24 hours); standard $0.016 per minute ($0.96 per hour) up to 500,000 minutes a month"
+  type: Vendor price list
+- id: S99
+  title: "ElevenLabs API pricing"
+  publisher: ElevenLabs
+  url: https://elevenlabs.io/pricing/api
+  used_for: "Speech-to-text API price: Scribe v3 $0.20 per hour, Scribe v3 Live $0.22 per hour (90+ languages)"
+  type: Vendor price list
+- id: S100
+  title: "Deepgram speech-to-text models and prices (read from deepgram.com, 18 October 2026)"
+  publisher: Developers Digest
+  url: https://www.developersdigest.tech/models/speech/deepgram
+  used_for: "Speech-to-text API price: Nova-3 monolingual $0.0043 per minute pre-recorded ($0.258 per hour), $0.0077 per minute streaming ($0.462 per hour)"
+  type: Price tracker

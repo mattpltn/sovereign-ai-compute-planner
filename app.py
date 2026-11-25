@@ -16,7 +16,7 @@ from shiny import App, reactive, render, ui
 from engine import TIERS, load_api_prices, load_catalogue, load_countries, load_defaults, run
 from engine.model import cost_params
 from engine.options import OPTIONS, colo_price, compare, with_no_placement
-from engine.archetypes import (EXAMPLE_PORTFOLIO, POPULATION_BASIS, example_portfolio, basis_label, build_profile, is_llm,
+from engine.archetypes import (processing_for, processing_key, EXAMPLE_PORTFOLIO, POPULATION_BASIS, example_portfolio, basis_label, build_profile, is_llm,
                                load_archetypes, low_usage_note, normalize_app, parse_custom_types, rate_for,
                                reference_sizes, volume_warning, CUSTOM_TEMPLATE)
 import base64
@@ -291,6 +291,13 @@ apps_panel = ui.nav_panel(
                              "reached through extension or cooperatives)"},
                     selected="eligible"),
             ),
+            ui.panel_conditional(
+                "input.a_type == 'speech_to_text'",
+                ui.input_radio_buttons("a_proc", "How is the audio processed?", {
+                    "batch": ARCH["speech_to_text"]["processing"]["batch"]["label"],
+                    "realtime": ARCH["speech_to_text"]["processing"]["realtime"]["label"]},
+                    selected=ARCH["speech_to_text"]["processing"]["default"]),
+            ),
             ui.layout_columns(
                 ui.input_select("a_start", "Start year", {str(y): f"Year {y}" for y in range(1, 11)}, selected="1"),
                 ui.input_numeric("a_growth", "Growth per year (%)", value=0, min=-50, max=200, step=5),
@@ -402,7 +409,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.9.7 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9.8 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -493,7 +500,8 @@ def server(input, output, session):
         new = dict(uid=uuid.uuid4().hex[:8], name=input.a_name().strip() or t["label"], type=t["id"], volume=vol,
                    data_class=int(t.get("data_class", 1)), rate_override=rate, model_class=input.a_model() or None,
                    start_year=int(input.a_start()), growth=(num(input.a_growth()) or 0) / 100,
-                   population_basis=input.a_basis() if t.get("rate_by_basis") else "eligible")
+                   population_basis=input.a_basis() if t.get("rate_by_basis") else "eligible",
+                   processing=input.a_proc() if t.get("processing") else None)
         w = volume_warning(new, country()[0], A(), D["agri_volume_tolerance"]["value"])
         if w:
             ui.notification_show(w, type="warning", duration=10)
@@ -809,7 +817,7 @@ def server(input, output, session):
                                                   "servers (CPU or a shared GPU). In the portfolio it uses spare GPU time.",
                                                   colspan=len(OPTIONS) + 1, class_="hint")))
                 continue
-            ap = A()[a["type"]].get("api_price") or {}
+            ap = processing_for(a, A()[a["type"]])[1] or {}
             rows.append(row(label, sub, res["base"]["pv"], res["cheapest"], no_api=ap.get("available") is False))
         t = o_["total"]
         rows.append(row(ui.tags.b("All together (shared capacity)"), "", t["base"]["pv"], t["cheapest"],
@@ -898,6 +906,12 @@ def server(input, output, session):
             "sector rules for each application: whether the data may be processed by an API provider or a cloud outside "
             "the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a "
             "government data centre.",
+            ui.br(), ui.br(),
+            ui.tags.b("API prices do not fix where the data is processed. "),
+            "Every API price in this tool (language models, transcription, OCR and the others) is a public list price "
+            "from providers that mostly process data outside the country, often in the United States, and may move it "
+            "between regions. In-region or in-country processing, where a provider offers it, can cost more and must be "
+            "agreed in the contract.",
             class_="warn", style="margin-top:14px")
 
     @render.ui
@@ -1040,8 +1054,9 @@ def server(input, output, session):
                             cache_hit=t["cache_hit"], peak_share=t["peak_share"], peak_window_h=t["peak_window_h"],
                             burst=t["burst"], sla_headroom=t["sla_headroom"], seasonal=t["seasonal"])
             else:
-                ap = t.get("api_price") or {}
-                row_.update(gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=t["mode"], peak_share=t["peak_share"],
+                mode_, ap = processing_for(a, t)
+                ap = ap or {}
+                row_.update(gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=mode_, processing=processing_key(a, t) or "", peak_share=t["peak_share"],
                             peak_window_h=t["peak_window_h"], burst=t["burst"],
                             api_price_base=ap.get("base", "not available"), api_price_unit=ap.get("unit", ""))
             rows.append(row_)

@@ -691,7 +691,7 @@ def test_build_cost_size_curve():
 def test_api_option_uses_per_unit_prices_for_non_llm():
     stt = [dict(uid="stt", name="Courts", type="speech_to_text", volume=500, data_class=3)]
     r = _opts(stt, {"stt": {"start_year": 1, "growth": 0}})["total"]["base"]
-    assert r["yearly"]["API"][1] == pytest.approx(500 * 365 * 0.36)             # $0.006 per minute
+    assert r["yearly"]["API"][1] == pytest.approx(500 * 365 * 0.185)            # batch by default: average of 8 list prices
     ded = [dict(uid="bd", name="Dedup", type="biometric_dedup", volume=500000, data_class=4)]
     rb = _opts(ded, {"bd": {"start_year": 1, "growth": 0}})["total"]["base"]
     assert rb["yearly"]["API"][1] == pytest.approx(rb["yearly"]["GPU-as-a-service"][1])   # no API: rented GPUs
@@ -733,3 +733,29 @@ def test_example_portfolio_sized_from_country():
     assert {a["type"]: a for a in est}["staff_copilot"]["volume"] < by["staff_copilot"]["volume"] / 3
     xex, notes_x = example_portfolio(default_profile("XEX").country)
     assert "agriculture_advisory" not in {a["type"] for a in xex} and any("left out" in n for n in notes_x)
+
+
+# ---------------------------------------------------------------- speech-to-text batch / real-time (v0.9.8)
+def test_stt_batch_and_realtime_prices_and_sizing():
+    t = ARCH["speech_to_text"]
+    b = t["processing"]["batch"]["api_price"]
+    assert b["base"] == pytest.approx(round((0.04 + 0.111 + 0.15 + 0.18 + 0.18 + 0.20 + 0.258 + 0.36) / 8, 3))
+    rt = t["processing"]["realtime"]["api_price"]
+    assert rt["base"] == pytest.approx(round((0.15 + 0.22 + 0.462 + 0.96 + 1.00 + 1.44) / 6, 3))
+    meta = {"s": {"start_year": 1, "growth": 0}}
+    run_ = lambda proc: _opts([dict(uid="s", name="S", type="speech_to_text", volume=20000, data_class=3,
+                                    processing=proc)], meta)["total"]["base"]
+    rb, rr, old = run_("batch"), run_("realtime"), run_(None)
+    assert rb["yearly"]["API"][1] == pytest.approx(20000 * 365 * 0.185)
+    assert rr["yearly"]["API"][1] == pytest.approx(20000 * 365 * 0.705)
+    assert old["yearly"]["API"][1] == rb["yearly"]["API"][1]                        # missing value: type default (batch)
+    assert rb["sizing"][1]["gpus"] < rr["sizing"][1]["gpus"]                         # batch spreads load over 24 h
+
+
+def test_stt_label_and_example_is_batch():
+    from engine.archetypes import basis_label
+    assert basis_label(dict(type="speech_to_text", processing="realtime"), ARCH) == "real-time"
+    assert basis_label(dict(type="speech_to_text"), ARCH) == "batch"
+    from engine.archetypes import EXAMPLE_RULES
+    rules = yaml.safe_load(EXAMPLE_RULES.read_text())["apps"]
+    assert next(r for r in rules if r["type"] == "speech_to_text")["processing"] == "batch"
