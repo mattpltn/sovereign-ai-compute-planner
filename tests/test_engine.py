@@ -149,13 +149,13 @@ def test_copilot_volume_from_user_input():
                       [dict(uid="a", name="x", type="staff_copilot", volume=1000, data_class=3)],
                       ARCH, dict(D["class_to_tier"]))
     r = run(p, CAT, D)
-    assert r["demand"][0]["sessions"] == pytest.approx(1400)   # 1.4 requests per person with access [S36]
+    assert r["demand"][0]["sessions"] == pytest.approx(1140)   # 1.14 actions per licence, measured [S103]
     assert r["demand"][0]["tier"] == "T3"
 
 
 def test_scenario_and_override_change_result():
     c = default_profile("XEX").country
-    app = dict(uid="a", name="x", type="staff_copilot", volume=50000, data_class=3)
+    app = dict(uid="a", name="x", type="staff_copilot", volume=200000, data_class=3)
     g = lambda amb, a: run(build_profile(c, amb, [a], ARCH, dict(D["class_to_tier"])), CAT, D)["totals"]["gpus"]
     assert g("Low", app) < g("Base", app) < g("High", app)
     assert g("Base", dict(app, rate_override=10)) > g("Base", app)
@@ -374,7 +374,7 @@ def test_evidence_based_rates():
 
 def test_agent_token_totals_include_retry():
     tok = lambda t: (t["isl"] + t["system_prompt_tokens"] + t["osl"] + t["reasoning_tokens"]) * t["agent_steps"] * t["retry"]
-    assert tok(ARCH["staff_copilot"]) == pytest.approx(3740)     # 3,400 before the x1.1 retry
+    assert tok(ARCH["staff_copilot"]) == pytest.approx(4455)     # 4,050 before the x1.1 retry (meeting mix, S103)
     assert tok(ARCH["research_agent"]) == pytest.approx(55000)   # 50,000 before the x1.1 retry
 
 
@@ -759,3 +759,27 @@ def test_stt_label_and_example_is_batch():
     from engine.archetypes import EXAMPLE_RULES
     rules = yaml.safe_load(EXAMPLE_RULES.read_text())["apps"]
     assert next(r for r in rules if r["type"] == "speech_to_text")["processing"] == "batch"
+
+
+# ---------------------------------------------------------------- calibration (v0.9.9)
+def test_customs_example_uses_trade_then_population():
+    from engine.archetypes import example_portfolio
+    base = dict(population=30_000_000, internet_share=0.6, civil_servants=500_000)
+    apps, notes = example_portfolio(dict(base, merch_imports_usd=15e9, merch_exports_usd=20e9))
+    cus = next(a for a in apps if a["name"] == "Customs risk agent")
+    assert cus["volume"] == 2200                                    # 35e9 x 16 / 1e6 / 250 = 2,240 -> 2 sig. figures
+    apps, notes = example_portfolio(base)
+    cus = next(a for a in apps if a["name"] == "Customs risk agent")
+    assert cus["volume"] == 2000                                    # population fallback: 30M x 0.000067
+    assert any("no data on US$ of merchandise" in n for n in notes)
+
+
+def test_calibrated_defaults_v099():
+    assert ARCH["staff_copilot"]["rate"]["base"] == 1.14 and ARCH["staff_copilot"]["isl"] == 2650
+    assert ARCH["biometric_dedup"]["gpu_seconds_per_unit"] == 0.1
+    assert "NOT VALIDATED" in ARCH["agriculture_advisory"]["evidence"]["rate"]
+
+
+def test_processing_for_language_model_types():
+    from engine.archetypes import processing_for
+    assert processing_for(dict(type="staff_copilot"), ARCH["staff_copilot"]) == (None, None)   # v0.9.8 crashed here

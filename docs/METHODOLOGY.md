@@ -92,6 +92,8 @@ The volume is always something a client can give: staff with access, people in t
 
 **Who is counted in the volume?** Agriculture advisory and the citizen assistant have two usage rates, chosen per application. For the citizen assistant, *everyone eligible* keeps the Kisan e-Mitra rates and *service users* (people registered or onboarded to the service) uses 0.05 / 0.1 / 0.3 queries per user per day, a Low-confidence assumption. For agriculture advisory: *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. 
 
+**Agriculture service-user rate: not validated, likely high.** The open FarmerChat dataset has 1,446,866 questions from August 2024 to June 2026 for a service that reaches 1.2 million farmers or more [S107]: about 0.0017 questions per farmer reached per day, 60 times below the service-user Base of 0.1. Farmers reached includes farmers served through extension agents, and the dataset has no user ID, so it cannot give a rate per active user. Until Digital Green or a pilot gives monthly active users, treat agriculture results on the service-user basis as an upper bound.
+
 **Very low usage note.** For citizen assistant, agriculture advisory and tutor, the tool shows an information note (not a warning, no effect on results) when an application makes fewer than 100 requests per day: the volume may be the whole eligible population rather than service users.
 
 ### 3.2 What the tool provides
@@ -284,14 +286,14 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 - **observed**: a measured usage figure or benchmark, used with its stated denominator and hardware.
 - **derived**: computed from observed data with stated assumptions (for example a survey frequency turned into a daily rate, or a benchmark on one GPU applied to another).
 - **assumption**: a planning value with no direct measurement.
-- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, biometric deduplication, satellite and image analysis).
+- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, satellite and image analysis).
 - **client**: the volume comes from the client and the rate is 1 per item.
 
 ### Generative AI types
 
 | Type | Volume entered by user | Requests per unit per active day (Low / Base / High) | Active days per year | Basis (rate / size) | Input + system / output / reasoning tokens per call | Calls per task | Model | Peak share / window (h) | Burst / SLA headroom / seasonal | Default data class | Confidence (volume / size) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.4 / 3.6 | 250 | derived / derived | 2,000 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
+| Staff copilot (drafting, summarising, Q&A) | Staff with access | 0.7 / 1.14 / 3.6 | 250 | observed (S103) / derived | 2,650 + 1,000 / 400 / 0 | 1 x retry 1.1 | M | 80% / 8 | 2 / 1.1 / 1.1 | 3 | High / Medium |
 | Citizen assistant (chat or voice) | People who can use it (target population) | 0.00015 / 0.0005 / 0.002 | 365 | observed (Low), assumption (Base, High) / derived | 1,500 + 800 / 300 / 0 | 1 x retry 1.1 | M | 60% / 10 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
 | Learning tutor (students) | Students with access | 0.1 / 0.27 / 1.5 | 190 | derived / derived | 1,500 + 800 / 400 / 0 | 1 x retry 1.1 | M | 70% / 8 | 2 / 1.1 / 1.3 | 2 | Medium / Medium |
 | Clinical decision support (frontline health workers) | Health workers with access | 0.3 / 1 / 3 | 365 | derived / derived | 2,000 + 1,000 / 400 / 1,000 | 1 x retry 1.1 | M | 70% / 10 | 1.5 / 1.1 / 1.5 | 4 | Low / Medium |
@@ -313,7 +315,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 | Speech-to-text | Audio hours per day | 12 | derived | Batch | 3 | Medium |
 | OCR and layout extraction | Pages per day | 0.75 | observed | Batch | 3 | Low |
 | Face verification (1:1 authentication) | Verifications per day | 0.02 | derived | Interactive | 4 | Low |
-| Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | uncalibrated | Batch | 4 | Low |
+| Biometric deduplication (1:N at enrolment) | Enrolments per day | 0.1 | derived (S106, S65), Low | Batch | 4 | Low |
 | Satellite or image analysis | Image chips per day (fixed size for the chosen model, e.g. 512 x 512 pixels) | 0.1 | uncalibrated | Batch | 1 | Low |
 | Model fine-tuning and evaluation | GPU-hours per year | 3600 | client | Batch | 3 | Medium |
 | Text-to-speech (voice replies) | Audio hours generated per day | 40 | derived | Interactive | 3 | Low |
@@ -323,8 +325,8 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Staff copilot (drafting, summarising, Q&A)**
 
-- *rate*: Requests per person with access per WORKING day (250 per year). Base 1.4 is a scenario estimate derived from survey frequency categories and an assumed adjustment for adoption; it is not an observed requests-per-licence rate. UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week ([S36](#src-s36)). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is multiplied by 0.8, the share of licence holders active in the last 30 days (usage data, [S36](#src-s36)): 1.78 x 0.8 = 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias. DWP's later trial (3,500+ licences) also found most users engaged daily or weekly ([S67](#src-s67)). Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents ([S37](#src-s37)), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users ([S39](#src-s39)), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users ([S38](#src-s38)); the period is not published, so it is not used to set the rate.
-- *tokens*: Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) ([S31](#src-s31)); OpenRouter average >6,000 in / ~400 out by late 2025 ([S32](#src-s32)). Work copilots attach documents, so input sits between the two.
+- *rate*: Requests per person with access per WORKING day (250 per year). Base 1.14 is MEASURED: the UK Department for Business and Trade pilot (1,000 licences, Oct-Dec 2024) recorded an average of 72 Copilot actions per licence over 63 working days in Microsoft's usage dashboard, i.e. 1.14 per licence per working day, including idle licences; about 30% of licence holders were active on a working day and 64% in a week ([S103](#src-s103)). One action can involve more than one model call, so 1.14 is a floor on model requests. Low 0.7: Australian trial, 1 in 3 used Copilot daily ([S37](#src-s37)); at the Australian Treasury most participants used it two or three times a week or less ([S104](#src-s104)). High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users ([S39](#src-s39)), i.e. everyone with access active every week. Earlier survey-based estimate (v0.9.8 and before): 1.4, from the UK cross-government trial frequency categories x 0.8 ([S36](#src-s36)), about 23% above the measured rate.
+- *tokens*: Input 2,650 + system 1,000, output 400. Mix of uses measured in the DBT diary study ([S103](#src-s103)): of 1,424 recorded uses, 234 (16%) were transcribing or summarising a meeting, 167 writing an email, 153 summarising written communication. A 30-minute meeting transcript is ~6,000 tokens (150 words a minute, ~1.3 tokens a word; meeting length is an assumption). 16% x 6,000 + 84% x 2,000 = 2,650. The 2,000 for other uses: Azure production chat median 1,020 in / 129 out (2023) ([S31](#src-s31)); OpenRouter average >6,000 in / ~400 out by late 2025 ([S32](#src-s32)); work copilots attach documents, so input sits between the two.
 - *cache*: System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% ([S34](#src-s34)).
 - *burst*: Burst 2.0: production LLM traffic is bursty ([S33](#src-s33)). Peak share and window: office-hours assumption.
 
@@ -368,12 +370,12 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 **Process agent (single agent, e.g. tax or customs risk check)**
 
 - *rate*: One task per case. Volume comes from the client.
-- *tokens*: About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat ([S35](#src-s35)). Reasoning 1,000 per call ([S43](#src-s43)).
+- *tokens*: About 4x a copilot request (≈18.2k vs ≈4.5k tokens per task, 4.1x; 4.9x against the pre-v0.9.9 copilot). Anthropic: agents use ~4x the tokens of chat ([S35](#src-s35)). Reasoning 1,000 per call ([S43](#src-s43)).
 
 **Research agent (multi-agent, e.g. legal or policy analysis)**
 
 - *rate*: UNCALIBRATED. Research tasks per analyst per working day: assumption. Replace with pilot data.
-- *tokens*: About 15x a copilot request: ≈55,000 vs ≈3,740 tokens per task (14.7x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈3,400. Anthropic: multi-agent systems use ~15x the tokens of chat ([S35](#src-s35)). Reasoning 2,000 per call ([S43](#src-s43)).
+- *tokens*: About 12x a copilot request: ≈55,000 vs ≈4,455 tokens per task (12.3x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈4,050. Confirmed by a measured agent benchmark: 48k input and 6.9k output tokens per Level 2 GAIA task ([S105](#src-s105)). Anthropic: multi-agent systems use ~15x the tokens of chat ([S35](#src-s35)). Reasoning 2,000 per call ([S43](#src-s43)).
 
 **Clinical safety net (runs automatically on every patient visit)**
 
@@ -387,7 +389,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Agriculture advisory for farmers (chat or voice)**
 
-- *rate*: Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries ([S40](#src-s40)); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here ([S61](#src-s61)). If the client knows registered users and their frequency, override the rate.
+- *rate*: Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries ([S40](#src-s40)); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here ([S61](#src-s61)). If the client knows registered users and their frequency, override the rate. NOT VALIDATED, LIKELY HIGH (v0.9.9): the open FarmerChat dataset has 1,446,866 questions from August 2024 to June 2026 (Kenya 858,674, Nigeria 296,671, India 238,030) for a service Digital Green says reaches 1.2M+ farmers ([S107](#src-s107)). That is ~0.0017 questions per farmer reached per day, 60x below the service-user Base. The dataset has no user ID, and farmers reached includes farmers served through extension agents, so it cannot give a rate per active user. Ask Digital Green for monthly active users before relying on the service-user rates.
 - *tokens*: Chat shape ([S31](#src-s31), [S32](#src-s32)). Pair with Speech-to-text and Text-to-speech for voice channels.
 - *seasonal*: 2.0 for planting season: assumption.
 
@@ -410,7 +412,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Biometric deduplication (1:N at enrolment)**
 
-- *gpu*: UNCALIBRATED PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark. Compute only: the identity-system (ABIS) licence and matching software, usually the larger cost, are not included.
+- *gpu*: 0.1 GPU-seconds per enrolment (was an uncalibrated 2 before v0.9.9). Deduplication has two steps. (1) Template extraction from the face and iris images, the deep-learning step that runs on GPUs: a face template takes ~0.02 GPU-seconds (detection + embedding, unbatched, [S65](#src-s65)); 0.1 allows for face plus two irises and image-quality checks. Fingerprint extraction usually runs on CPUs in the ABIS. (2) The 1:N search, which runs on CPUs: NIST measured one face algorithm returning candidates from a gallery of 691,282 identities in 590 microseconds on one core of a 2016 server CPU, with search time growing much more slowly than the gallery (30x the gallery, 3x the time) ([S106](#src-s106)). The search servers are therefore CPU servers and are not modelled. Low confidence: use the vendor's sizing. The ABIS licence and matching software, usually the larger cost, are not included.
 
 **Satellite or image analysis**
 
@@ -438,13 +440,18 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 | Civil servant copilot | 50% of civil servants get access | Civil servants [S18] | Year 1 | 2% |
 | National services assistant (service users) | 2% of internet users register | Population × internet use [S16] | Year 2 | 25% |
 | Agriculture advisory (service users) | 5% of agricultural workers onboarded | Agricultural workers, ILO modeled [S68] | Year 2 | 20% |
-| Land registry intake | 1 document per working day per 3,000 people | Population | Year 1 | 0% |
-| Customs risk agent | 1 case per working day per 15,000 people | Population | Year 2 | 5% |
+| Land registry intake | 1 document per working day per 3,000 people | Population [S108 check] | Year 1 | 0% |
+| Customs risk agent | 16 declarations per $1 million of merchandise trade a year, over 250 working days | Merchandise imports + exports [S16, S101, S102]; population rule if trade is missing | Year 2 | 5% |
 | Legal research | 0.05% of civil servants | Civil servants | Year 3 | 10% |
 | Court transcription | 1 hour of hearings a day per 70,000 people | Population | Year 1 | 0% |
 | ID enrolment deduplication | 2.5% of the population enrols each year | Population | Year 1 | 0% |
 
-Volumes are rounded to two significant figures. An application whose driver is unknown for the country is left out, and the note says so. The rules are in `data/catalogue/example_portfolio.yaml`.
+Volumes are rounded to two significant figures. An application whose driver is unknown for the country is left out, and the note says so.
+
+**Checks against measured volumes (v0.9.9).**
+
+- *Customs.* The risk agent screens every declaration. Declarations follow trade, not population: the WCO counted 610 million declarations a year (excluding postal and express) [S101] when world merchandise exports were $18.95 trillion [S102], with imports about the same. That is 16 declarations per $1 million of trade, applied to the country's merchandise imports plus exports (World Bank TM.VAL.MRCH.CD.WT and TX.VAL.MRCH.CD.WT, synced). Where trade data is missing, the earlier population rule is used and the note says so.
+- *Land registry.* The rule gives 83 documents per 1,000 people a year. England and Wales processed 4.6 million register change applications in a year [S108], about 75 per 1,000 people. The rule matches a mature registry, so it is an upper end where less land is formally registered. The rules are in `data/catalogue/example_portfolio.yaml`.
 
 ### Custom application types
 
@@ -456,7 +463,7 @@ Each save creates a new link with a timestamp, so several versions can be kept. 
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request and the research agent at 14.7 times. Per task, the copilot uses ≈3,740 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈3,400, ≈16,500 and ≈50,000. The ratios are the same either way. The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.1 times a copilot request and the research agent at 12.3 times. Per task, the copilot uses ≈4,455 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈4,050, ≈16,500 and ≈50,000. The copilot rose from ≈3,740 in v0.9.9, when meeting summaries were added to its input mix; the agents did not change. A measured agent benchmark confirms the research agent: 48,000 input and 6,900 output tokens per medium-difficulty task (GAIA Level 2) [S105]. The ratios are the same either way. The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 
@@ -715,13 +722,13 @@ A staff copilot for **1,000 staff with access**, data class 3, Base scenario, ha
 
 | Step | Calculation | Result |
 |---|---|---|
-| Requests per day | 1,000 x 1.4 | 1,400 |
-| Input tokens per request | (2,000 + 1,000) x 1.1 | 3,300 |
+| Requests per day | 1,000 x 1.14 | 1,140 |
+| Input tokens per request | (2,650 + 1,000) x 1.1 | 4,015 |
 | Cached input per request | 1,000 x 0.5 x 1.1 | 550 |
 | Output tokens per request | (400 + 0) x 1.1 | 440 |
-| Daily equivalent tokens | output + (input - cached) x 0.15 | 1,193,500 |
-| Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 80.2 |
-| Pooling in tier T3 | one application, so D = 1 | 80.2 |
+| Daily equivalent tokens | output + (input - cached) x 0.15 | 1,094,115 |
+| Peak equivalent tokens/s | daily eq x 0.8 / (8 x 3,600) x burst 2 x SLA 1.1 x seasonal 1.1 | 73.5 |
+| Pooling in tier T3 | one application, so D = 1 | 73.5 |
 | GPUs | roundup(peak / 1,930 tok/s per GPU, measured at Standard speed, no derating) | 1 |
 | IT load / facility | GPUs x 1.4 kW; x PUE 1.56 (global average; example country has no region) | 1.4 kW / 2.2 kW |
 | Cheapest allowed option (T3, in-country provider available) | min(GPU-as-a-service, Owned), present value over 10 years at 8%, rounded | GPU-as-a-service, about $170,000 |
@@ -1029,5 +1036,13 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s98"></a>S98 | Speech-to-Text pricing (V2 API) | Google Cloud | Speech-to-text API price: dynamic batch $0.003 per minute ($0.18 per hour, results within 24 hours); standard $0.016 per minute ($0.96 per hour) up to 500,000 minutes a month | https://cloud.google.com/speech-to-text/pricing |
 | <a id="src-s99"></a>S99 | ElevenLabs API pricing | ElevenLabs | Speech-to-text API price: Scribe v3 $0.20 per hour, Scribe v3 Live $0.22 per hour (90+ languages) | https://elevenlabs.io/pricing/api |
 | <a id="src-s100"></a>S100 | Deepgram speech-to-text models and prices (read from deepgram.com, 18 October 2026) | Developers Digest | Speech-to-text API price: Nova-3 monolingual $0.0043 per minute pre-recorded ($0.258 per hour), $0.0077 per minute streaming ($0.462 per hour) | https://www.developersdigest.tech/models/speech/deepgram |
+| <a id="src-s101"></a>S101 | WCO Annual Report 2014-2015 | World Customs Organization | 610 million customs declarations a year worldwide, excluding postal items and express consignments; declarations by region | https://www.wcoomd.org/-/media/wco/public/global/pdf/about-us/annual-reports/annual-report-2014_2015.pdf |
+| <a id="src-s102"></a>S102 | World trade statistics and outlook, April 2015 | WTO (via tralac) | World merchandise exports $18.95 trillion in 2014 (imports about the same): with S101, 16 declarations per $1 million of merchandise trade | https://www.tralac.org/images/docs/7270/wto-trade-statistics-and-outlook-april-2015.pdf |
+| <a id="src-s103"></a>S103 | Microsoft 365 Copilot evaluation, Department for Business and Trade | UK Department for Business and Trade (2025) | Measured usage: 1,000 licences, 72 Copilot actions per licence over 63 working days (1.14 per working day); 30% of licence holders active per working day, 64% per week; top uses: meeting summaries 234, emails 167, summarising written communication 153 of 1,424 | https://assets.publishing.service.gov.uk/media/68adbe409e1cebdd2c96a19d/dbt-microsoft-365-copilot-evaluation.pdf |
+| <a id="src-s104"></a>S104 | Evaluation of a trial of generative AI (Copilot) in the Department of the Treasury | Australian Centre for Evaluation (2025) | Usage lower than expected: most participants used Copilot two or three times a week, or less (copilot Low) | https://evaluation.treasury.gov.au/publications/evaluation-generative-artificial-intelligence |
+| <a id="src-s105"></a>S105 | Memento: Fine-tuning LLM Agents without Fine-tuning LLMs | arXiv 2508.16153 | Measured tokens per deep-research task on GAIA: Level 1 26k in / 4.7k out, Level 2 48k / 6.9k, Level 3 121k / 9.8k (confirms the research agent at ~55k) | https://arxiv.org/pdf/2508.16153 |
+| <a id="src-s106"></a>S106 | NIST IR 8197: Face Recognition Prize Challenge 2017 | NIST | 1:N face search over 691,282 identities in 590 microseconds on one core of a 2016 server CPU; 30x gallery size gives 3x search time (deduplication search runs on CPUs) | https://nvlpubs.nist.gov/nistpubs/ir/2017/NIST.IR.8197.pdf |
+| <a id="src-s107"></a>S107 | FarmerChat Agricultural Q&A Dataset (Large) | Digital Green, Hugging Face (CC-BY 4.0) | 1,446,866 farmer questions, August 2024 to June 2026 (Kenya 858,674, Nigeria 296,671, India 238,030, Ethiopia 38,114); service reaches 1.2M+ farmers; no user ID | https://huggingface.co/datasets/DigiGreen/farmerchat-queries-large |
+| <a id="src-s108"></a>S108 | HM Land Registry Annual Report and Accounts 2025 to 2026 | HM Land Registry | 4.6 million register change applications (dealings and new titles) a year for England and Wales: ~75 per 1,000 people, close to the example rule (83 per 1,000) | https://www.gov.uk/government/publications/hm-land-registry-annual-report-and-accounts-2025-to-2026/annual-report-and-accounts-2025-to-2026-html |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.

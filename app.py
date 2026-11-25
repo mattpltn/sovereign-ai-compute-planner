@@ -290,6 +290,10 @@ apps_panel = ui.nav_panel(
                     "users": "Service users (people registered or onboarded to the service: app users, or farmers "
                              "reached through extension or cooperatives)"},
                     selected="eligible"),
+                ui.panel_conditional(
+                    "input.a_type == 'agriculture_advisory' && input.a_basis == 'users'",
+                    ui.p("Not yet validated and probably high: FarmerChat's open data gives far fewer questions per "
+                         "farmer reached. Treat the result as an upper bound (see the methodology).", class_="hint")),
             ),
             ui.panel_conditional(
                 "input.a_type == 'speech_to_text'",
@@ -409,7 +413,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.9.8 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9.9 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
@@ -800,10 +804,14 @@ def server(input, output, session):
                           *[ui.tags.th(OPT_SHORT[o]) for o in OPTIONS], ui.tags.th("Cheapest"))
 
         def row(label, sub, pv, best, style="", no_api=False):
-            cell = lambda o: usd(pv[o]) + (" †" if no_api and o == "API" else "")
+            # Work below the GPU threshold costs nothing extra on GPUs: say so instead of showing $0 as a price.
+            spare = pv["API"] > 0 and not any(pv[o] for o in OPTIONS if o != "API")
+            cell = lambda o: ("spare capacity" if spare and o != "API" else usd(pv[o])) + (" †" if no_api and o == "API" else "")
+            best_txt = (f"Runs on spare capacity (below {D['gpu_threshold']['value']:g} GPU)" if spare else OPT_SHORT[best])
             return ui.tags.tr(ui.tags.td(label), ui.tags.td(sub, class_="hint"),
-                              *[ui.tags.td(cell(o), style="font-weight:700" if o == best else "") for o in OPTIONS],
-                              ui.tags.td(OPT_SHORT[best]), style=style)
+                              *[ui.tags.td(cell(o), style=("font-weight:700" if o == best and not spare else "")
+                                           + (";color:#64748b" if spare and o != "API" else "")) for o in OPTIONS],
+                              ui.tags.td(best_txt), style=style)
         rows = []
         for uid, res in o_["apps"].items():
             a = nm.get(uid)

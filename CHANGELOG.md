@@ -5,6 +5,20 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.9] - 2026-11-25
+Calibration against measured usage and volume data (S101-S108).
+### Changed
+- Civil servant copilot: Base rate 1.14 requests per person with access per working day, measured in the UK Department for Business and Trade pilot (S103), replacing the survey-based 1.4. Input per request 2,650 tokens (was 2,000): 16% of uses are meeting summaries (~6,000 tokens). Net: about 3% fewer tokens per person and about 5% lower API cost than before.
+- Biometric deduplication: 0.1 GPU-seconds per enrolment (was an uncalibrated 2). GPUs only extract face and iris templates; the 1:N search runs on CPUs (NIST, S106). Low confidence.
+- Example portfolio, customs: sized from merchandise trade (16 declarations per $1 million, WCO and WTO, S101, S102), with the population rule as fallback.
+### Added
+- Sync: World Bank merchandise imports and exports (TM.VAL.MRCH.CD.WT, TX.VAL.MRCH.CD.WT).
+- Agriculture advisory, service users: flagged as not validated and probably high (FarmerChat open data, S107), with a note on the Applications page.
+- Confirming evidence in the methodology: research agent tokens match a measured agent benchmark (S105); the land registry rule matches England and Wales volumes (S108).
+### Fixed
+- Results page crashed on the per-application table when the portfolio mixed language-model and speech-to-text applications (v0.9.8 regression).
+- Applications below 0.25 GPU that have an API price now read "spare capacity" in the GPU columns instead of $0.
+
 ## [0.9.8] - 2026-11-25
 ### Added
 - Speech-to-text: "How is the audio processed?" choice, batch (default) or real-time. Batch is sized as steady work over 24 hours; real-time for the busy hours.

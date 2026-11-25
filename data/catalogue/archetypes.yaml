@@ -15,10 +15,10 @@
   group: Generative AI
   unit: users
   unit_label: Staff with access
-  rate: {low: 0.7, base: 1.4, high: 3.6}
+  rate: {low: 0.7, base: 1.14, high: 3.6}
   active_days_per_year: 250
-  basis: {rate: derived, size: derived}
-  isl: 2000
+  basis: {rate: observed (S103), size: derived}
+  isl: 2650
   system_prompt_tokens: 1000
   osl: 400
   reasoning_tokens: 0
@@ -34,8 +34,8 @@
   data_class: 3
   confidence: {volume: High, tokens: Medium}
   evidence:
-    rate: "Requests per person with access per WORKING day (250 per year). Base 1.4 is a scenario estimate derived from survey frequency categories and an assumed adjustment for adoption; it is not an observed requests-per-licence rate. UK cross-government trial, 20,000 civil servants: among 7,115 survey respondents, 39% used it several times a day and 43% several times a week (S36). At ~4 and ~0.5 requests per day: 0.39x4 + 0.43x0.5 = 1.78 per respondent. Respondents over-represent active users, so this is multiplied by 0.8, the share of licence holders active in the last 30 days (usage data, S36): 1.78 x 0.8 = 1.4. The 0.8 is a scenario adjustment, not a validated correction for respondent bias. DWP's later trial (3,500+ licences) also found most users engaged daily or weekly (S67). Low 0.7: Australian trial, 1 in 3 daily and 46% a few times a week among respondents (S37), same correction. High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. assumes everyone with access is active every week. Third government reference: Singapore's Pair, 9.66M messages from 50,409 users (S38); the period is not published, so it is not used to set the rate."
-    tokens: "Input 2,000 + system 1,000, output 400. Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32). Work copilots attach documents, so input sits between the two."
+    rate: "Requests per person with access per WORKING day (250 per year). Base 1.14 is MEASURED: the UK Department for Business and Trade pilot (1,000 licences, Oct-Dec 2024) recorded an average of 72 Copilot actions per licence over 63 working days in Microsoft's usage dashboard, i.e. 1.14 per licence per working day, including idle licences; about 30% of licence holders were active on a working day and 64% in a week (S103). One action can involve more than one model call, so 1.14 is a floor on model requests. Low 0.7: Australian trial, 1 in 3 used Copilot daily (S37); at the Australian Treasury most participants used it two or three times a week or less (S104). High 3.6: ChatGPT, ~2.5B messages per day for ~700M weekly active users (S39), i.e. everyone with access active every week. Earlier survey-based estimate (v0.9.8 and before): 1.4, from the UK cross-government trial frequency categories x 0.8 (S36), about 23% above the measured rate."
+    tokens: "Input 2,650 + system 1,000, output 400. Mix of uses measured in the DBT diary study (S103): of 1,424 recorded uses, 234 (16%) were transcribing or summarising a meeting, 167 writing an email, 153 summarising written communication. A 30-minute meeting transcript is ~6,000 tokens (150 words a minute, ~1.3 tokens a word; meeting length is an assumption). 16% x 6,000 + 84% x 2,000 = 2,650. The 2,000 for other uses: Azure production chat median 1,020 in / 129 out (2023) (S31); OpenRouter average >6,000 in / ~400 out by late 2025 (S32); work copilots attach documents, so input sits between the two."
     cache: "System prompt cache hit 50%: Kimi/Mooncake production trace, up to ~50% (S34)."
     burst: "Burst 2.0: production LLM traffic is bursty (S33). Peak share and window: office-hours assumption."
 
@@ -259,7 +259,7 @@
   confidence: {volume: High, tokens: Medium}
   evidence:
     rate: "One task per case. Volume comes from the client."
-    tokens: "About 5x a copilot request (≈18.2k vs ≈3.7k tokens per task, 4.9x). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43)."
+    tokens: "About 4x a copilot request (≈18.2k vs ≈4.5k tokens per task, 4.1x; 4.9x against the pre-v0.9.9 copilot). Anthropic: agents use ~4x the tokens of chat (S35). Reasoning 1,000 per call (S43)."
 
 - id: research_agent
   label: Research agent (multi-agent, e.g. legal or policy analysis)
@@ -286,7 +286,7 @@
   confidence: {volume: Low, tokens: Medium}
   evidence:
     rate: "UNCALIBRATED. Research tasks per analyst per working day: assumption. Replace with pilot data."
-    tokens: "About 15x a copilot request: ≈55,000 vs ≈3,740 tokens per task (14.7x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈3,400. Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
+    tokens: "About 12x a copilot request: ≈55,000 vs ≈4,455 tokens per task (12.3x), both INCLUDING the x1.1 retry; without it they are ≈50,000 and ≈4,050. Confirmed by a measured agent benchmark: 48k input and 6.9k output tokens per Level 2 GAIA task (S105). Anthropic: multi-agent systems use ~15x the tokens of chat (S35). Reasoning 2,000 per call (S43)."
 
 - id: clinical_safety_net
   label: Clinical safety net (runs automatically on every patient visit)
@@ -370,7 +370,7 @@
   data_class: 1
   confidence: {volume: Medium, tokens: Medium}
   evidence:
-    rate: "Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate."
+    rate: "Two bases, chosen per application. EVERYONE ELIGIBLE (default): queries per farmer in the whole target population per day, as for the citizen assistant. India's Kisan e-Mitra answers 8,000-20,000 queries/day for ~93 million PM-KISAN beneficiaries (S40); those farmers are registered in a cash-transfer scheme, most never use the chatbot, and it mainly answers scheme questions. Low = 0.00015, the midpoint; Base and High (~3x, ~13x) are assumptions. SERVICE USERS: farmers onboarded through extension agents, cooperatives or an app: 0.05 / 0.1 / 0.3 per farmer per day. ASSUMPTION, Low confidence. Base 0.1 assumes ~1 in 6 onboarded farmers is active on a given day at ~0.6 queries per active user per day. Upper anchor: Digital Green reports ~18 consultations per month per active Farmer.Chat user (~0.6 per day): TO VERIFY, primary publication not found. Digital Green's own v2 launch page reports 2.1-3.5 questions per active farmer by market, with the period not stated clearly: also to verify. Digital Green's Farmer.Chat study (60 Decibels) reports that 61% of surveyed users are 'meaningful users', an impact measure combining satisfaction and benefit, not a usage frequency, so it is not used here (S61). If the client knows registered users and their frequency, override the rate. NOT VALIDATED, LIKELY HIGH (v0.9.9): the open FarmerChat dataset has 1,446,866 questions from August 2024 to June 2026 (Kenya 858,674, Nigeria 296,671, India 238,030) for a service Digital Green says reaches 1.2M+ farmers (S107). That is ~0.0017 questions per farmer reached per day, 60x below the service-user Base. The dataset has no user ID, and farmers reached includes farmers served through extension agents, so it cannot give a rate per active user. Ask Digital Green for monthly active users before relying on the service-user rates."
     tokens: "Chat shape (S31, S32). Pair with Speech-to-text and Text-to-speech for voice channels."
     seasonal: "2.0 for planting season: assumption."
 
@@ -468,9 +468,9 @@
   group: Other AI (non-LLM)
   unit: items
   unit_label: Enrolments per day
-  gpu_seconds_per_unit: 2
+  gpu_seconds_per_unit: 0.1
   api_price: {available: false, note: "No general cloud API for national-scale 1:N deduplication; bought from an ABIS vendor and run in-country. The API option prices it as rented GPUs"}
-  basis: {gpu: uncalibrated}
+  basis: {gpu: "derived (S106, S65), Low"}
   mode: Batch
   peak_share: 0.6
   peak_window_h: 10
@@ -478,7 +478,7 @@
   data_class: 4
   confidence: {volume: High, tokens: Low}
   evidence:
-    gpu: "UNCALIBRATED PLACEHOLDER. Depends on gallery size and the ABIS vendor: use the vendor benchmark. Compute only: the identity-system (ABIS) licence and matching software, usually the larger cost, are not included."
+    gpu: "0.1 GPU-seconds per enrolment (was an uncalibrated 2 before v0.9.9). Deduplication has two steps. (1) Template extraction from the face and iris images, the deep-learning step that runs on GPUs: a face template takes ~0.02 GPU-seconds (detection + embedding, unbatched, S65); 0.1 allows for face plus two irises and image-quality checks. Fingerprint extraction usually runs on CPUs in the ABIS. (2) The 1:N search, which runs on CPUs: NIST measured one face algorithm returning candidates from a gallery of 691,282 identities in 590 microseconds on one core of a 2016 server CPU, with search time growing much more slowly than the gallery (30x the gallery, 3x the time) (S106). The search servers are therefore CPU servers and are not modelled. Low confidence: use the vendor's sizing. The ABIS licence and matching software, usually the larger cost, are not included."
 
 - id: image_analysis
   label: Satellite or image analysis
