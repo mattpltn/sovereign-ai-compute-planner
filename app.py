@@ -454,7 +454,7 @@ app_ui = ui.page_navbar(
     setup_panel, apps_panel, results_panel, evidence_panel, saved_panel,
     title="Sovereign AI Compute Planner",
     header=ui.TagList(ui.tags.style(CSS), ui.tags.script(SAVE_JS)),
-    footer=ui.div("v0.9.11 draft · planning-grade estimates · every default is sourced in the Evidence tab",
+    footer=ui.div("v0.9.12 draft · planning-grade estimates · every default is sourced in the Evidence tab",
                   class_="hint", style="text-align:center;padding:16px"),
     fillable=False,
 )
