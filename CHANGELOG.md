@@ -5,6 +5,25 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.11] - 2026-11-25
+Price references that match what governments buy, and ownership choices.
+### Added
+- Setup, "Price references and ownership choices": API prices from a hyperscaler in region (default, S109), the open market (OpenRouter median) or proprietary frontier models with the 10% regional-processing uplift (S110); a negotiated API discount for multi-year commitments (0% by default, S111).
+- GPU rental from a hyperscaler (default; reserved 2.216x and on demand 3.56x the neocloud price, S112, S113) or a neocloud; reserved all year (default) or on demand, billed for the hours of work.
+- Serving software: NVIDIA AI Enterprise licence (default, $4,500 per GPU per year, S115) or open source with no licence.
+- Owned servers kept in service 8 years by default (S114, assumption), out of warranty after 5 with maintenance x2; new servers only when the need exceeds what is installed.
+- Option to open idle GPU hours to universities and research, valued at half the neocloud price, with its electricity.
+- Results: a note that export controls, sanctions and GPU supply can rule out or delay an option. Methodology: price references, the effect on a large example, the studies that favour owning (S116) and an availability section.
+### Changed
+- Hardware is chosen on the cheapest GPU option (rental or owned); the API no longer takes part in the choice, so the profile is not picked at random when the API is cheapest.
+### Included from open pull requests
+- 0.9.10 (below): merged into this release.
+- 0.9.4: the World Bank sync retries rate limits (HTTP 429), server errors and timeouts (Retry-After honoured, otherwise backoff up to 5 minutes, about 13 minutes in total) and pauses 1 second between calls; main only had 3 short retries.
+
+## [0.9.10] - 2026-11-25
+### Fixed
+- Cost per application: an application below 0.25 GPU with an API price no longer shows a GPU option as cheapest. The API is the cheapest priced option; the GPU columns read "spare capacity" (‡), with a note that it runs at no extra cost on GPUs bought for other applications. The exports follow.
+
 ## [0.9.9] - 2026-11-25
 Calibration against measured usage and volume data (S101-S108).
 ### Changed

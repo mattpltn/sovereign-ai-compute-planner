@@ -635,3 +635,51 @@
   url: https://www.gov.uk/government/publications/hm-land-registry-annual-report-and-accounts-2025-to-2026/annual-report-and-accounts-2025-to-2026-html
   used_for: "4.6 million register change applications (dealings and new titles) a year for England and Wales: ~75 per 1,000 people, close to the example rule (83 per 1,000)"
   type: Government annual report
+- id: S109
+  title: "Amazon Bedrock pricing"
+  publisher: AWS (November 2026)
+  url: https://aws.amazon.com/bedrock/pricing/
+  used_for: "Hyperscaler API prices for open models, per 1M tokens: Ministral 8B $0.15 / $0.15; Llama 3.3 70B Instruct $0.72 / $0.72 (also on llmreference.com, October 2026); DeepSeek v3.2 $0.74 / $2.22 in Mumbai, Sao Paulo, Jakarta, Tokyo and Stockholm ($0.62 / $1.85 in the US); Claude Sonnet 5 $3 / $15"
+  type: Vendor price list
+- id: S110
+  title: "OpenAI API pricing: GPT-5.4, GPT-5.4 mini, GPT-5.4 nano"
+  publisher: OpenAI (2026)
+  url: https://developers.openai.com/api/docs/models/gpt-5.4-mini
+  used_for: "Frontier API prices per 1M tokens: GPT-5.4 $2.50 / $15, GPT-5.4 mini $0.75 / $4.50, GPT-5.4 nano $0.20 / $1.25; regional processing (data residency) endpoints +10%"
+  type: Vendor price list
+- id: S111
+  title: "Azure OpenAI Service provisioned reservations"
+  publisher: Microsoft
+  url: https://techcommunity.microsoft.com/blog/aiazureaiservicesblog/unveiling-azure-openai-service-provisioned-reservations-and/4214560
+  used_for: "Commitment discounts on reserved API capacity: up to 64% (1 month) and 70% (1 year) against the hourly provisioned rate"
+  type: Vendor documentation
+- id: S112
+  title: "Best Azure GPU VMs for AI training in 2026 (Azure Retail Prices API, 14 November 2026); Azure ND H100 v5 reserved prices"
+  publisher: Qovery; Spheron
+  url: https://www.qovery.com/blog/best-azure-gpu-vms-ai-training-2026
+  used_for: "Azure ND H200 v5: $84.80 per hour for 8 GPUs ($10.60 per GPU-hour) pay-as-you-go, East US 2; ND H100 v5 1-year reserved $7.93 vs $12.29 pay-as-you-go per GPU-hour (-35%, spheron.network/blog/azure-h100-pricing)"
+  type: Price tracker
+- id: S113
+  title: "Amazon EC2 p5en.48xlarge pricing; One-year EC2 Instance Savings Plans for P5 and P5en"
+  publisher: Vantage; AWS
+  url: https://instances.vantage.sh/aws/ec2/p5en.48xlarge
+  used_for: "AWS p5en (8 x H200): $63.296 per hour on demand ($7.91 per GPU-hour); 1-year Savings Plans save up to 40% (aws.amazon.com/about-aws/whats-new/2025/06/one-year-ec2-instance-savings-plans-p5-p5en-instances)"
+  type: Price tracker; vendor announcement
+- id: S114
+  title: "Hyperscalers lengthen server lifespans; depreciation lives of servers"
+  publisher: The Stack; Fortune (2026)
+  url: https://thestack.technology/meta-extends-server-life-again-saving-it-2-9-billion
+  used_for: "Microsoft and Amazon depreciate servers over 6 years, Meta 5.5; AI hardware physically runs longer than its accounting life (Fortune, April 2026)"
+  type: Press
+- id: S115
+  title: "NVIDIA AI Enterprise licensing guide: pricing"
+  publisher: NVIDIA
+  url: https://docs.nvidia.com/ai-enterprise/planning-resource/licensing-guide/latest/pricing.html
+  used_for: "Software licence $4,500 per GPU for 1 year ($18,000 for 5 years); a 5-year subscription is included with H100 PCIe/NVL and H200 NVL, not with HGX servers"
+  type: Vendor price list
+- id: S116
+  title: "Studies on on-premises versus cloud and API costs: ESG for Dell (2025); Lenovo GenAI TCO 2026 edition; Pan et al., Cost-Benefit Analysis of On-Premise LLM Deployment (arXiv 2509.18101)"
+  publisher: Enterprise Strategy Group; Lenovo; Carnegie Mellon University
+  url: https://arxiv.org/abs/2509.18101
+  used_for: "Owning is found cheaper against GPT-4o / frontier APIs (up to 4.1x, ESG) and hyperscaler on-demand instances (break-even in about 4 months above 20% utilisation, Lenovo); break-even from months (small models) to 5 years (large models) against commercial APIs (Pan et al.)"
+  type: Industry and academic studies

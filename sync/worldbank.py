@@ -61,20 +61,44 @@ CANDIDATES = {
 }
 
 
+SESSION = requests.Session()
+SESSION.headers["User-Agent"] = "sovereign-ai-compute-planner data sync (World Bank; weekly, low volume)"
+RETRY_STATUS = {429, 500, 502, 503, 504}
+PAUSE_S = 1.0          # between successful calls, to stay under the API's rate limit
+MAX_ATTEMPTS = 7       # waits 15, 30, 60, 120, 240, 300 s: about 13 minutes in total before giving up
+
+
+def fetch(url: str, params: dict, sleep=time.sleep) -> requests.Response:
+    """GET with retries on rate limits (429), server errors and timeouts.
+
+    Honours the Retry-After header when the API sends one; otherwise backs off exponentially.
+    """
+    last = None
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            r = SESSION.get(url, params=params, timeout=180)
+            if r.status_code in RETRY_STATUS:
+                raise requests.HTTPError(f"{r.status_code} for {r.url}", response=r)
+            r.raise_for_status()
+            sleep(PAUSE_S)
+            return r
+        except (requests.HTTPError, requests.ConnectionError, requests.Timeout) as e:
+            code = getattr(getattr(e, "response", None), "status_code", None)
+            if code is not None and code not in RETRY_STATUS:
+                raise                                   # 404 and the like: retrying will not help
+            last = e
+            if attempt == MAX_ATTEMPTS - 1:
+                break
+            ra = getattr(getattr(e, "response", None), "headers", {}).get("Retry-After") if code else None
+            wait = float(ra) if ra and str(ra).isdigit() else min(300, 15 * 2 ** attempt)
+            print(f"  {code or type(e).__name__} on {url}: retry {attempt + 1}/{MAX_ATTEMPTS - 1} in {wait:.0f}s", flush=True)
+            sleep(wait)
+    raise last
+
+
 def get(path: str, **params) -> list:
     params = {"format": "json", "per_page": 20000, **params}
-    last = None
-    for attempt in range(3):
-        try:
-            r = requests.get(f"{API}/{path}", params=params, timeout=180)
-            r.raise_for_status()
-            data = r.json()
-            break
-        except requests.RequestException as e:  # timeouts are common on large sources
-            last = e
-            time.sleep(10 * (attempt + 1))
-    else:
-        raise last
+    data = fetch(f"{API}/{path}", params).json()
     if not isinstance(data, list) or len(data) < 2 or data[1] is None:
         raise ValueError(f"no data for {path}: {str(data)[:200]}")
     return data[1]
@@ -113,8 +137,7 @@ def check_metadata(code: str, payload, pattern: str) -> dict:
 
 
 def verify(code: str, pattern: str) -> dict:
-    r = requests.get(f"{API}/indicator/{code}", params={"format": "json"}, timeout=180)
-    r.raise_for_status()
+    r = fetch(f"{API}/indicator/{code}", {"format": "json"})
     return check_metadata(code, r.json(), pattern)
 
 
@@ -166,8 +189,7 @@ def discover(pattern: str) -> list[tuple[str, int | None]]:
     found = []
     page, pages = 1, 1
     while page <= pages and page <= 40:
-        r = requests.get(f"{API}/indicator", params={"format": "json", "per_page": 1000, "page": page}, timeout=180)
-        r.raise_for_status()
+        r = fetch(f"{API}/indicator", {"format": "json", "per_page": 1000, "page": page})
         head, rows = r.json()
         pages = head.get("pages", 1)
         for x in rows or []:

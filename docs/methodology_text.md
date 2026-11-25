@@ -18,6 +18,7 @@ Version 0.5 (draft). Planning-grade estimates for early discussions with governm
 - *1 · 10-year cost of the portfolio, four ways* compares the options for all applications together. Capacity is sized each year on the combined, pooled load: spare capacity of one application serves the others.
 - *2 · Cost per application* prices each application on its own under each option, then shows the portfolio together and the sum of the standalone costs. The gap is what sharing saves.
 - *3 · What owning means* shows the servers installed by year (bought as the combined need grows, replaced after five years) and where the money goes for each owned option.
+- *2 · Cost per application*: an application that needs less than 0.25 GPU on its own reads "spare capacity" in the GPU columns, marked ‡. Bought alone, only the API has a price, so the API is shown as the cheapest; if GPUs are bought for other applications, the work runs on their spare capacity at no extra cost.
 - *Download* gives two files. Applications below 0.25 GPU on their own show $0 with a note (they run on existing servers); types with no cloud API carry a note in the API column.
 - The two files: The **summary** (CSV) has the 10-year cost of each application and of the portfolio under the four options. The **full calculation** (ZIP of CSV files with a README) has every step: inputs and type defaults, requests and tokens per application, demand by application and year, GPUs, servers, kW, utilisation and energy by year, yearly cost by option and item with discount factors, and every price, factor and default used with its source.
 - *For specialists: tokens and sizing factors* (closed by default) shows, per application, the model size, requests per day, tokens per request (input and output, cached share), tokens per day at start and per year in year 10, peak equivalent tokens per second and active days; for other AI applications, GPU-seconds per unit and GPU-hours per day. It also lists the factors applied: retries and agent steps, the prefill weight, peak factors, pooling, throughput per GPU and API prices.
@@ -96,7 +97,7 @@ The volume is always something a client can give: staff with access, people in t
 
 ### 3.2 What the tool provides
 
-Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
+Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population, merchandise imports and exports) is synced weekly from the World Bank API; when the API limits requests (HTTP 429) or times out, the sync waits and retries (honouring the API's Retry-After, otherwise 15 s doubling to 5 min, up to about 13 minutes) and pauses 1 s between calls; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
 
 ## 4. Layer 0: requests per day
 
@@ -416,7 +417,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| GPU rental (GPU-as-a-service) | Reserved (default): GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. On demand: hours of work ÷ 0.6 × on-demand price, never more than renting all year. Rented capacity follows demand year by year. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -471,6 +472,57 @@ Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.
 **Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
 
 **Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
+
+### Price references and ownership choices (v0.9.11)
+
+The cost of each option depends on what the government actually buys. The defaults follow what a government usually buys, not the cheapest offer on the market; every choice is in Setup.
+
+**API prices.** Three references, per model class (dollars per million tokens, input / output):
+
+| Reference | Small (8B) | Medium (70B) | Large (DeepSeek class) | Source |
+|---|---|---|---|---|
+| Hyperscaler in region (default): the same open models on AWS or Azure | 0.15 / 0.15 (Ministral 8B) | 0.72 / 0.72 (Llama 3.3 70B) | 0.74 / 2.22 (DeepSeek v3.2, Mumbai, São Paulo, Jakarta) | [S109] |
+| Open market: median of the cheapest providers | synced weekly | synced weekly | synced weekly | [S21] |
+| Proprietary frontier models, regional processing (+10%) | 0.22 / 1.375 (GPT-5.4 nano) | 0.825 / 4.95 (GPT-5.4 mini) | 2.75 / 16.50 (GPT-5.4) | [S110] |
+
+A government can also commit for several years and negotiate a discount. Published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% for a month, 70% for a year, against the hourly provisioned rate [S111]), not to the per-token price, so the default is 0% and the discount is set from a real offer.
+
+**GPU rental.** The hardware profiles carry a specialised-cloud (neocloud) price, $2.60 per H200 GPU-hour [S11]. Hyperscalers, which governments usually choose, cost more:
+
+| H200, per GPU-hour | On demand | Reserved 1 year |
+|---|---|---|
+| Azure ND H200 v5 | $10.60 [S112] | -35% (ND H100 v5: $7.93 vs $12.29) [S112] |
+| AWS p5en | $7.91 [S113] | up to -40% [S113] |
+| Average used | $9.255 = 3.56 × neocloud | $5.76 = 2.216 × neocloud |
+
+The same multiples are applied to B200 and GB300 (assumption). *Reserved* (default) rents the GPUs all year, 24/7. *On demand* bills only the hours of work, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
+
+**Serving software on owned GPUs.** By default the NVIDIA AI Enterprise licence, $4,500 per GPU per year [S115], because serving skills are scarce in most low- and middle-income countries. The open-source option (vLLM or SGLang on Kubernetes) has no licence fee; staff is unchanged, which may understate the skills it needs.
+
+**Servers kept in service.** Governments rarely sell servers. Owned servers stay in service for 8 years by default (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). After the 5-year refresh period they are out of warranty, so their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity. Set 5 years to replace servers at the refresh period, as before v0.9.11.
+
+Keeping servers is not always cheaper. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. When demand is flat, replacing year-1 servers in year 6 by fewer, newer ones can cost less than keeping them to year 8. Both settings can be compared.
+
+**Idle hours opened to universities and research (option).** Owned or reserved GPUs sized for office-hour peaks are idle most of the night and at weekends: typical government use leaves 85-90% of GPU-hours idle. A share of those idle hours (Setup, 30% when ticked) can be opened to universities and research. The shared hours are valued at half the neocloud rental price (what they would otherwise pay, at an academic rate; assumption, Low) and shown as a negative cost; their electricity is added. This is the strongest economic case for owning: the same servers serve two communities.
+
+**Effect on a large example** (copilot for 1 million civil servants, India, present value over 10 years):
+
+| Settings | API | GPU rental | Own + colocation |
+|---|---|---|---|
+| Before v0.9.11 (open market, neocloud, servers replaced at 5 years) | $2.57M | $2.35M | $4.81M |
+| v0.9.11 defaults (hyperscaler API and rental, servers kept 8 years) | $3.04M | $5.21M | $5.40M |
+| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $4.12M |
+| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $4.12M |
+
+Independent studies that find owning cheaper compare it with frontier APIs or hyperscaler on-demand prices; against the cheapest open-model APIs, owning rarely wins [S116]. The tool shows both, by its choice of reference.
+
+### Availability: export controls, sanctions and supply (context only)
+
+Not every option is open to every country, whatever its cost. The tool does not model this, because the rules change several times a year and no maintained dataset exists; the results page reminds the user to check.
+
+- **Buying GPUs** depends on export licences. Some countries need a licence for advanced GPUs, some get only older generations under quotas, and sanctioned countries are closed. New GPUs also have long delivery times when supply is short.
+- **Renting GPUs** abroad is being brought under the same controls for customers from restricted countries; renting in-country means the provider imports the GPUs, with the same constraints.
+- **APIs** from some providers are not offered in, or to entities owned from, some countries, and a provider can suspend access to a model at short notice. Open models served by several providers reduce that risk.
 
 **Where API data is processed.** Every API price in the tool (language models, transcription, OCR, face verification, embeddings) is a public list price. These providers mostly process data outside the client's country, often in the United States, and may move it between regions; the price does not fix the location. In-region or in-country processing, where offered, can cost more and must be agreed in the contract. The results page says so in its footnote.
 

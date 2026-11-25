@@ -81,6 +81,18 @@ def _years(d):
     return range(1, int(d["horizon_years"]["value"]) + 1)
 
 
+def api_reference_prices(d, ref, market):
+    """Token prices per model class for the chosen API reference (v0.9.11).
+
+    open_market: synced median of open models (OpenRouter); hyperscaler: the same kind of open models on a
+    hyperscaler in a regional data centre; frontier: proprietary frontier models with the regional-processing uplift."""
+    if ref == "open_market" or ref not in d["api_reference_prices"]:
+        return market
+    t = d["api_reference_prices"][ref]
+    up = 1 + t.get("regional_uplift", 0.0)
+    return {c: {"input": t[c]["input"] * up, "output": t[c]["output"] * up} for c in ("S", "M", "L")}
+
+
 def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     """Year-by-year cost of each option for the applications in `ids` (all if None), pooled together."""
     um = d.get("throughput_uncertainty", {}).get(scenario, 1.0)
@@ -100,9 +112,23 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     idle = d["idle_power_fraction"]["value"]
     fac = facility_for(p.country, hw, d, scenario)
     pue = fac["pue"]
-    rate = (q.get("gpu_hour_usd") or hw["gpu_hour_usd"]) * cp["hour_mult"]
+    # GPU rental: the hardware profile price is a specialised (neocloud) on-demand price; a hyperscaler costs a
+    # multiple of it, reserved (1-year commitment) or on demand (v0.9.11).
+    base_rate = (q.get("gpu_hour_usd") or hw["gpu_hour_usd"]) * cp["hour_mult"]
+    rent_ref, rent_mode = pick("gpu_rental_reference"), pick("gpu_rental_mode")
+    rm = d["gpu_rental_multipliers"]["value"][rent_ref]
+    rate = base_rate * (rm["reserved"] if not q.get("gpu_hour_usd") else 1.0)       # rented all year (and API fallback)
+    rate_od = base_rate * (rm["on_demand"] if not q.get("gpu_hour_usd") else 1.0)   # rented only when needed
+    od_util = d["on_demand_utilisation"]["value"]
+    software_gpu = 0.0 if pick("software_stack") == "open_source" else hw["software_per_gpu_year_usd"]
+    life = int(pick("server_life_years"))                    # servers kept in service this long (>= refresh period)
+    maint_old = d["maintenance_after_warranty_multiplier"]["value"]
+    share_night = pick("idle_sharing_share")                 # share of idle GPU-hours opened to universities/research
+    night_rate = base_rate * d["idle_sharing_price_share"]["value"]
     capex_gpu = (q.get("gpu_capex_usd") or hw["capex_per_gpu_usd"]) * cp["capex_mult"]
-    prices = q.get("api_prices") or api_prices
+    ref = pick("api_reference")
+    prices = q.get("api_prices") or api_reference_prices(d, ref, api_prices)
+    api_disc = 1 - pick("api_commit_discount")               # negotiated multi-year commitment
     k = hw.get("gpus_per_server", 1)
     kw_gpu = hw["kw_per_gpu"]
     fte_cost = d["cost_per_fte_usd"]["value"]
@@ -146,7 +172,7 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     # replaced after the refresh period if still needed, by newer servers that do more per GPU. Never sold.
     cohorts, fleet = [], {}
     for y in yrs:
-        cohorts = [(b, n) for b, n in cohorts if y - b < R]
+        cohorts = [(b, n) for b, n in cohorts if y - b < max(life, R)]
         need_cap = (sz[y]["gpus"] + spare * k * gain[y]) if sz[y]["gpus"] else 0
         have_cap = sum(n * k * gain[b] for b, n in cohorts)
         buy = _roundup((need_cap - have_cap) / (k * gain[y])) if need_cap > have_cap + 1e-9 else 0
@@ -154,7 +180,8 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
             cohorts.append((y, buy))
         active = sum(n for _, n in cohorts) if (need_cap or cohorts) else 0
         cap = sum(n * k * gain[b] for b, n in cohorts)
-        fleet[y] = dict(servers=active, gpus=active * k, buy=buy, capacity=cap)
+        old = sum(n for b, n in cohorts if y - b >= R)       # past the refresh period: kept, out of warranty
+        fleet[y] = dict(servers=active, gpus=active * k, buy=buy, capacity=cap, gpus_old=old * k)
     peak_it_kw = max((f["gpus"] for f in fleet.values()), default=0) * kw_gpu
     first = next((y for y in yrs if fleet[y]["gpus"]), None)
     # Own data centre: built once, in the first year of use, for the peak installed IT load plus a spare buffer.
@@ -169,16 +196,32 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
     for y in yrs:
         s, f = sz[y], fleet[y]
         # API: tokens priced per million; non-LLM rented as cloud GPU-hours
-        yearly["API"][y] = (s["api_llm"] + s["api_units"]) * price_api[y] + s["api_gpu_fallback"] * price[y]
-        # GPU-as-a-service: the GPUs needed this year, rented all year
-        yearly["GPU-as-a-service"][y] = s["gpus_rented"] * 8760 * rate * price[y]
+        yearly["API"][y] = (s["api_llm"] + s["api_units"]) * price_api[y] * api_disc + s["api_gpu_fallback"] * price[y]
+        # GPU-as-a-service: reserved = the GPUs needed this year, rented all year; on demand = only the GPU-hours
+        # of work, with autoscaling headroom (od_util), never more than renting all year.
+        work_h = s["busy_h"] * 365 / gain[y]                 # GPU-hours of work on GPUs of that year
+        if rent_mode == "on_demand":
+            rent = min(s["gpus_rented"] * 8760, work_h / od_util) * rate_od
+            idle_rent = 0.0
+        else:
+            rent = s["gpus_rented"] * 8760 * rate
+            idle_rent = max(0.0, s["gpus_rented"] * 8760 - work_h)
+        night_rent = share_night * idle_rent
+        yearly["GPU-as-a-service"][y] = (rent - night_rent * night_rate) * price[y]
+        s["gpu_hours_billed"] = rent / (rate_od if rent_mode == "on_demand" else rate) if rent else 0.0
         g = f["gpus"]
         util = min(1.0, s["busy_h"] / (f["capacity"] * 24)) if g else 0.0   # busy share of installed capacity
-        it_kwh = g * kw_gpu * (idle + (1 - idle) * util) * 8760
+        idle_h = (1 - util) * g * 8760                       # idle GPU-hours of the installed fleet
+        night_h = share_night * idle_h                       # opened to universities and research (optional)
+        it_kwh = g * kw_gpu * (idle + (1 - idle) * util) * 8760 + night_h * kw_gpu * (1 - idle)
         gpu_capex = f["buy"] * k * capex_gpu * price[y]
-        common = dict(gpu_servers=gpu_capex, network_storage_security=infra * gpu_capex, software=g * hw["software_per_gpu_year_usd"],
-                      maintenance_gpu=maint * g * capex_gpu, staff=staff_fte(g, d) * fte_cost if g else 0.0,
+        common = dict(gpu_servers=gpu_capex, network_storage_security=infra * gpu_capex, software=g * software_gpu,
+                      maintenance_gpu=maint * capex_gpu * ((g - f["gpus_old"]) + maint_old * f["gpus_old"]),
+                      staff=staff_fte(g, d) * fte_cost if g else 0.0,
                       energy=it_kwh * pue * cp["kwh"])
+        if share_night:
+            common["shared_capacity_value"] = -night_h * night_rate * price[y]
+        s["night_hours"], s["night_hours_rented"] = night_h, night_rent
         cpr = colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw)
         colo = dict(common, colocation=g * kw_gpu * cpr["value"] * 12)
         fb = build if y == first else 0.0
@@ -196,12 +239,17 @@ def evaluate(p, d, hw, api_prices, meta, scenario="base", ids=None) -> dict:
                 peak_it_kw=peak_it_kw, peak_facility_kw=peak_it_kw * pue, pue=pue, design_it_kw=design_kw,
                 colo=colo_price(dict(p.country, _quotes=q), d, scenario, peak_it_kw),
                 facility_capex=build, facility_maint_year=fac_maint, build_per_mw=per_mw, build_curve=bc,
-                gpu_hour=rate, capex_gpu=capex_gpu, first_year=first, compute_gain=cg, gain=gain,
+                gpu_hour=rate, gpu_hour_on_demand=rate_od, rental_reference=rent_ref, rental_mode=rent_mode,
+                api_reference=ref, api_prices_used=prices, server_life=max(life, R), night_share=share_night, night_rate=night_rate,
+                capex_gpu=capex_gpu, first_year=first, compute_gain=cg, gain=gain,
                 tokens_pv_m=sum(disc[y] * sz[y]["annual_eq_m"] for y in yrs))
 
 
 def _hardware(p, catalogue, d, api_prices, meta, ids=None):
-    """Hardware with the lowest cheapest-option cost for this set of applications."""
+    """Hardware with the lowest cost among the GPU options (rental and owned) for this set of applications.
+
+    The API option does not depend on the hardware, so it is left out of the choice (v0.9.11: when the API was the
+    cheapest, every profile tied and the first one was kept)."""
     hw_list = catalogue["hardware"]
     air = next(h for h in hw_list if h["weak_grid_ok"])
     dem = demand_rows(p, d)
@@ -211,7 +259,7 @@ def _hardware(p, catalogue, d, api_prices, meta, ids=None):
     best = None
     for h in candidate_hardware(p, hw_list, probe["it_kw"] / 1000, d):
         e = evaluate(p, d, h, api_prices, meta, "base", ids)
-        key = min(e["pv"].values())
+        key = min(v for o, v in e["pv"].items() if o != "API")
         if best is None or key < best[0]:
             best = (key, h)
     return best[1]
@@ -226,8 +274,12 @@ def compare(p, catalogue, d, api_prices=None, meta=None) -> dict:
     def run_set(sel):
         hw = _hardware(p, catalogue, d, api_prices, meta, sel)
         res = {sc: evaluate(p, d, hw, api_prices, meta, sc, sel) for sc in SCENARIOS}
+        pv = res["base"]["pv"]
+        # Below the GPU threshold the GPU options cost nothing extra: the work fits on spare capacity of GPUs bought
+        # for other applications. That is not a price, so the cheapest priced option is the API.
+        spare = pv["API"] > 0 and not any(pv[o] for o in OPTIONS if o != "API")
         return dict(base=res["base"], range={o: {sc: res[sc]["pv"][o] for sc in SCENARIOS} for o in OPTIONS},
-                    cheapest=min(res["base"]["pv"], key=res["base"]["pv"].get))
+                    cheapest="API" if spare else min(pv, key=pv.get), spare_capacity=spare)
 
     apps = {i: run_set({i}) for i in ids}
     total = run_set(set(ids)) if ids else None
