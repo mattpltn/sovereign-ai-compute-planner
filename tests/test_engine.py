@@ -783,3 +783,9 @@ def test_calibrated_defaults_v099():
 def test_processing_for_language_model_types():
     from engine.archetypes import processing_for
     assert processing_for(dict(type="staff_copilot"), ARCH["staff_copilot"]) == (None, None)   # v0.9.8 crashed here
+
+
+def test_spare_capacity_rows_are_api_cheapest():
+    meta = {"s": {"start_year": 1, "growth": 0}}
+    r = _opts([dict(uid="s", name="S", type="speech_to_text", volume=5, data_class=3)], meta)["apps"]["s"]
+    assert r["spare_capacity"] and r["cheapest"] == "API"          # GPU options are $0 (spare), not cheapest

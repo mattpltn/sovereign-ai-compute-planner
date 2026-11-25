@@ -226,8 +226,12 @@ def compare(p, catalogue, d, api_prices=None, meta=None) -> dict:
     def run_set(sel):
         hw = _hardware(p, catalogue, d, api_prices, meta, sel)
         res = {sc: evaluate(p, d, hw, api_prices, meta, sc, sel) for sc in SCENARIOS}
+        pv = res["base"]["pv"]
+        # Below the GPU threshold the GPU options cost nothing extra: the work fits on spare capacity of GPUs bought
+        # for other applications. That is not a price, so the cheapest priced option is the API.
+        spare = pv["API"] > 0 and not any(pv[o] for o in OPTIONS if o != "API")
         return dict(base=res["base"], range={o: {sc: res[sc]["pv"][o] for sc in SCENARIOS} for o in OPTIONS},
-                    cheapest=min(res["base"]["pv"], key=res["base"]["pv"].get))
+                    cheapest="API" if spare else min(pv, key=pv.get), spare_capacity=spare)
 
     apps = {i: run_set({i}) for i in ids}
     total = run_set(set(ids)) if ids else None

@@ -5,6 +5,10 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.10] - 2026-11-25
+### Fixed
+- Cost per application: an application below 0.25 GPU with an API price no longer shows a GPU option as cheapest. The API is the cheapest priced option; the GPU columns read "spare capacity" (‡), with a note that it runs at no extra cost on GPUs bought for other applications. The exports follow.
+
 ## [0.9.9] - 2026-11-25
 Calibration against measured usage and volume data (S101-S108).
 ### Changed
