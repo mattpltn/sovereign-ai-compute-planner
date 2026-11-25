@@ -291,7 +291,7 @@ setup_panel = ui.nav_panel(
             ui.panel_conditional("input.night",
                 ui.input_numeric("night_share", "Share of idle hours used (%)", value=30, min=0, max=100, step=10)),
             col_widths=[6, 6]),
-        ui.p("Defaults reflect what a government usually buys: a hyperscaler in its region, reserved GPUs and the NVIDIA "
+        ui.p("Defaults reflect what a government usually buys: a hyperscaler in its region, on-demand GPUs and the NVIDIA "
              "software licence. After the 5-year refresh period, servers are either kept in service out of warranty "
              "(maintenance x2; new servers only when the need exceeds what is installed) or replaced and sold at auction for 5% "
              "of their price; by default the tool takes the cheaper of the two. "

@@ -9,7 +9,7 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 Price references that match what governments buy, and ownership choices.
 ### Added
 - Setup, "Price references and ownership choices": API prices from a hyperscaler in region (default, S109), the open market (OpenRouter median) or proprietary frontier models with the 10% regional-processing uplift (S110); a negotiated API discount for multi-year commitments (0% by default, S111).
-- GPU rental from a hyperscaler (default; reserved 2.216x and on demand 3.56x the neocloud price, S112, S113) or a neocloud; reserved all year (default) or on demand, billed for the hours of work.
+- GPU rental from a hyperscaler (default; reserved 2.216x and on demand 3.56x the neocloud price, S112, S113) or a neocloud; on demand (default), billed for the hours of work and switched off when not needed, or reserved all year.
 - Serving software: NVIDIA AI Enterprise licence (default, $4,500 per GPU per year, S115) or open source with no licence.
 - Owned servers after the 5-year refresh period: kept in service up to 8 years (S114, assumption; out of warranty, maintenance x2, new servers only when the need exceeds what is installed) or replaced and sold at auction for 5% of their price (S117, assumption). By default the tool takes the cheaper of the two and says which.
 - Option to open idle GPU hours to universities and research, valued at half the neocloud price, with its electricity.
