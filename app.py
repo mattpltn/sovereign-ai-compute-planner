@@ -279,15 +279,22 @@ setup_panel = ui.nav_panel(
                 "nvidia": "NVIDIA AI Enterprise licence ($4,500 per GPU per year)",
                 "open_source": "Open source (vLLM, Kubernetes): no licence"},
                 selected=D["software_stack"]["value"]),
-            ui.input_numeric("life", "Owned servers kept in service (years)", value=D["server_life_years"]["value"],
-                             min=5, max=10, step=1),
+            ui.input_select("endpol", "Owned servers after the 5-year refresh period", {
+                "auto": "The cheaper of keeping or selling (automatic)",
+                "keep": "Keep in service, out of warranty",
+                "sell": "Replace and sell at auction (5% of the purchase price)"},
+                selected=D["server_end_policy"]["value"]),
+            ui.panel_conditional("input.endpol != 'sell'",
+                ui.input_numeric("life", "If kept: years in service", value=D["server_life_years"]["value"],
+                                 min=5, max=10, step=1)),
             ui.input_checkbox("night", "Open idle GPU hours (nights, weekends) to universities and research", False),
             ui.panel_conditional("input.night",
                 ui.input_numeric("night_share", "Share of idle hours used (%)", value=30, min=0, max=100, step=10)),
             col_widths=[6, 6]),
         ui.p("Defaults reflect what a government usually buys: a hyperscaler in its region, reserved GPUs and the NVIDIA "
-             "software licence. Servers are not sold: after the 5-year refresh period they stay in service, out of warranty "
-             "(maintenance x2), until the end of their life; new servers are bought only when the need exceeds what is installed. "
+             "software licence. After the 5-year refresh period, servers are either kept in service out of warranty "
+             "(maintenance x2; new servers only when the need exceeds what is installed) or replaced and sold at auction for 5% "
+             "of their price; by default the tool takes the cheaper of the two. "
              "Shared idle hours are valued at half the neocloud rental price and add their electricity.", class_="hint"),
     ),
     ui.accordion(
@@ -702,6 +709,7 @@ def server(input, output, session):
                      "api_reference": input.api_ref(), "api_commit_discount": pct(input.api_disc()),
                      "gpu_rental_reference": input.rent_ref(), "gpu_rental_mode": input.rent_mode(),
                      "software_stack": input.sw(), "server_life_years": int(num(input.life()) or 5),
+                     "server_end_policy": input.endpol(),
                      "idle_sharing_share": pct(input.night_share()) if input.night() else 0.0}
         p.redundancy = bool(input.redundancy())
         return p
@@ -929,6 +937,7 @@ def server(input, output, session):
                  ("GPU maintenance", "maintenance_gpu"), ("Staff", "staff"), ("Energy", "energy"),
                  ("Colocation fee", "colocation"), ("Facility build (peak IT load + buffer)", "facility_build"),
                  ("Facility maintenance", "maintenance_facility"),
+                 ("Servers sold at auction after 5 years", "resale"),
                  ("Idle hours shared with universities (value)", "shared_capacity_value")]
         rows = [ui.tags.tr(ui.tags.td(lbl), ui.tags.td(usd(pc[k]) if pc.get(k) else "-"),
                            ui.tags.td(usd(po[k]) if po.get(k) else "-")) for lbl, k in items]
@@ -1060,7 +1069,10 @@ def server(input, output, session):
                 ("GPU rental", f'{"Hyperscaler" if b["rental_reference"] == "hyperscaler" else "Neocloud"}, '
                                + (f'reserved all year at ${b["gpu_hour"]:.2f} per GPU-hour' if b["rental_mode"] == "reserved"
                                   else f'on demand at ${b["gpu_hour_on_demand"]:.2f} per GPU-hour, billed for the hours of work')),
-                ("Owned servers", f'kept {b["server_life"]} years · software: '
+                ("Owned servers", ("after 5 years: " + ("sold at auction for " + f'{b["resale_share"]:.0%} of their price'
+                                   if b["end_policy"] == "sell" else f'kept in service, {b["server_life"]} years in total')
+                                   + (" (the cheaper option, chosen automatically)" if b.get("end_policy_auto") else ""))
+                                  + ' · software: '
                                   + ("NVIDIA AI Enterprise" if input.sw() == "nvidia" else "open source, no licence")
                                   + (f' · {b["night_share"]:.0%} of idle hours opened to universities at ${b["night_rate"]:.2f} per GPU-hour'
                                      if b["night_share"] else ""))]
@@ -1225,6 +1237,8 @@ def server(input, output, session):
                 ("gpu_hour_usd_reserved", b["gpu_hour"], ""), ("gpu_hour_usd_on_demand", b["gpu_hour_on_demand"], ""),
                 ("software_stack", input.sw(), "Setup (S115)"),
                 ("server_life_years", b["server_life"], "Setup (S114)"),
+                ("server_end_policy", b["end_policy"] + (" (auto)" if b.get("end_policy_auto") else ""), "Setup"),
+                ("resale_share", b["resale_share"], "S117"),
                 ("idle_sharing_share", b["night_share"], "Setup"),
                 ("owned_infra_share", D["owned_infra_share"]["value"], D["owned_infra_share"]["source"]),
                 ("redundancy_spare_server", bool(input.redundancy()), "Setup")]
@@ -1328,7 +1342,7 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
                 "iso": input.iso(), "ambition": input.ambition(), "grid": input.grid(), "hw": input.hw(),
                 "speed": input.speed(), "finance": {"disc": input.disc(), "decline": input.decline(), "decline_hw": input.decline_hw(), "gain": input.gain(),
                             "api_ref": input.api_ref(), "api_disc": input.api_disc(), "rent_ref": input.rent_ref(),
-                            "rent_mode": input.rent_mode(), "sw": input.sw(), "life": input.life(),
+                            "rent_mode": input.rent_mode(), "sw": input.sw(), "life": input.life(), "endpol": input.endpol(),
                             "night": bool(input.night()), "night_share": input.night_share()},
                 "redundancy": bool(input.redundancy()),
                 "quotes": quotes(), "apps": apps.get(), "custom_types": custom.get()}
@@ -1352,7 +1366,7 @@ Base prices, the adoption scenario chosen in Setup, US dollars, present value at
         for k in ("disc", "decline", "decline_hw", "gain", "api_disc", "life", "night_share"):
             if f.get(k) is not None:
                 ui.update_numeric(k, value=f[k])
-        for k in ("api_ref", "rent_ref", "sw"):
+        for k in ("api_ref", "rent_ref", "sw", "endpol"):
             if f.get(k):
                 ui.update_select(k, selected=f[k])
         if f.get("rent_mode"):
