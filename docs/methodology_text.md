@@ -90,6 +90,8 @@ The volume is always something a client can give: staff with access, people in t
 
 **Who is counted in the volume?** Agriculture advisory and the citizen assistant have two usage rates, chosen per application. For the citizen assistant, *everyone eligible* keeps the Kisan e-Mitra rates and *service users* (people registered or onboarded to the service) uses 0.05 / 0.1 / 0.3 queries per user per day, a Low-confidence assumption. For agriculture advisory: *Everyone eligible* (all farmers, or all beneficiaries of a scheme; most will not use the AI service) keeps the Kisan e-Mitra rates, 0.00015 / 0.0005 / 0.002 queries per farmer per day [S40]. *Farmers using the advisory service* (onboarded through extension, cooperatives or an app) uses 0.05 / 0.1 / 0.3, a Low-confidence assumption: Base assumes about 1 in 6 onboarded farmers is active on a given day at about 0.6 queries per active user per day. The choice is saved with the scenario (`population_basis`); older scenarios load as *everyone eligible* and give the same results. 
 
+**Agriculture service-user rate: not validated, likely high.** The open FarmerChat dataset has 1,446,866 questions from August 2024 to June 2026 for a service that reaches 1.2 million farmers or more [S107]: about 0.0017 questions per farmer reached per day, 60 times below the service-user Base of 0.1. Farmers reached includes farmers served through extension agents, and the dataset has no user ID, so it cannot give a rate per active user. Until Digital Green or a pilot gives monthly active users, treat agriculture results on the service-user basis as an upper bound.
+
 **Very low usage note.** For citizen assistant, agriculture advisory and tutor, the tool shows an information note (not a warning, no effect on results) when an application makes fewer than 100 requests per day: the volume may be the whole eligible population rather than service users.
 
 ### 3.2 What the tool provides
@@ -282,7 +284,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 - **observed**: a measured usage figure or benchmark, used with its stated denominator and hardware.
 - **derived**: computed from observed data with stated assumptions (for example a survey frequency turned into a daily rate, or a benchmark on one GPU applied to another).
 - **assumption**: a planning value with no direct measurement.
-- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, biometric deduplication, satellite and image analysis).
+- **uncalibrated**: a placeholder that must be replaced with client, pilot or vendor data before results are relied on (coding assistant, research agent, satellite and image analysis).
 - **client**: the volume comes from the client and the rate is 1 per item.
 
 {{TYPES}}
@@ -296,13 +298,18 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 | Civil servant copilot | 50% of civil servants get access | Civil servants [S18] | Year 1 | 2% |
 | National services assistant (service users) | 2% of internet users register | Population × internet use [S16] | Year 2 | 25% |
 | Agriculture advisory (service users) | 5% of agricultural workers onboarded | Agricultural workers, ILO modeled [S68] | Year 2 | 20% |
-| Land registry intake | 1 document per working day per 3,000 people | Population | Year 1 | 0% |
-| Customs risk agent | 1 case per working day per 15,000 people | Population | Year 2 | 5% |
+| Land registry intake | 1 document per working day per 3,000 people | Population [S108 check] | Year 1 | 0% |
+| Customs risk agent | 16 declarations per $1 million of merchandise trade a year, over 250 working days | Merchandise imports + exports [S16, S101, S102]; population rule if trade is missing | Year 2 | 5% |
 | Legal research | 0.05% of civil servants | Civil servants | Year 3 | 10% |
 | Court transcription | 1 hour of hearings a day per 70,000 people | Population | Year 1 | 0% |
 | ID enrolment deduplication | 2.5% of the population enrols each year | Population | Year 1 | 0% |
 
-Volumes are rounded to two significant figures. An application whose driver is unknown for the country is left out, and the note says so. The rules are in `data/catalogue/example_portfolio.yaml`.
+Volumes are rounded to two significant figures. An application whose driver is unknown for the country is left out, and the note says so.
+
+**Checks against measured volumes (v0.9.9).**
+
+- *Customs.* The risk agent screens every declaration. Declarations follow trade, not population: the WCO counted 610 million declarations a year (excluding postal and express) [S101] when world merchandise exports were $18.95 trillion [S102], with imports about the same. That is 16 declarations per $1 million of trade, applied to the country's merchandise imports plus exports (World Bank TM.VAL.MRCH.CD.WT and TX.VAL.MRCH.CD.WT, synced). Where trade data is missing, the earlier population rule is used and the note says so.
+- *Land registry.* The rule gives 83 documents per 1,000 people a year. England and Wales processed 4.6 million register change applications in a year [S108], about 75 per 1,000 people. The rule matches a mature registry, so it is an upper end where less land is formally registered. The rules are in `data/catalogue/example_portfolio.yaml`.
 
 ### Custom application types
 
@@ -314,7 +321,7 @@ Each save creates a new link with a timestamp, so several versions can be kept. 
 
 ### How the agent sizes were checked
 
-Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.9 times a copilot request and the research agent at 14.7 times. Per task, the copilot uses ≈3,740 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈3,400, ≈16,500 and ≈50,000. The ratios are the same either way. The test suite enforces both ranges.
+Anthropic reports that a single agent uses about 4 times the tokens of a chat interaction, and a multi-agent system about 15 times [S35]. The process agent is sized at 4.1 times a copilot request and the research agent at 12.3 times. Per task, the copilot uses ≈4,455 tokens, the process agent ≈18,150 and the research agent ≈55,000. These totals **include the ×1.1 retry multiplier**; without it they are ≈4,050, ≈16,500 and ≈50,000. The copilot rose from ≈3,740 in v0.9.9, when meeting summaries were added to its input mix; the agents did not change. A measured agent benchmark confirms the research agent: 48,000 input and 6,900 output tokens per medium-difficulty task (GAIA Level 2) [S105]. The ratios are the same either way. The test suite enforces both ranges.
 
 ### How the citizen assistant rate was checked
 

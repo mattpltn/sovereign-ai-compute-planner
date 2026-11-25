@@ -37,6 +37,9 @@ INDICATORS = {
     # Agriculture (v0.7): employment share is % of total employment, ILO modeled estimate.
     "agri_employment_share": ("SL.AGR.EMPL.ZS", None, lambda v: v / 100),
     "rural_population": ("SP.RUR.TOTL", None, lambda v: v),   # context only
+    # Trade (v0.9.9): driver for the customs example (declarations follow trade value).
+    "merch_imports_usd": ("TM.VAL.MRCH.CD.WT", None, lambda v: v),
+    "merch_exports_usd": ("TX.VAL.MRCH.CD.WT", None, lambda v: v),
 }
 
 # Indicators whose code is confirmed against live API metadata before use. If the name returned by the API
@@ -45,6 +48,8 @@ VERIFY = {
     "labour_force": r"^labor force, total$",
     "agri_employment_share": r"^employment in agriculture \(% of total employment\)",
     "rural_population": r"^rural population$",
+    "merch_imports_usd": r"^merchandise imports \(current us\$\)$",
+    "merch_exports_usd": r"^merchandise exports \(current us\$\)$",
 }
 AGRI_MIN_YEAR = 2015
 

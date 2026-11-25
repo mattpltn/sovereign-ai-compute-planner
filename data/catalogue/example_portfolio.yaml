@@ -34,15 +34,21 @@ apps:
     type: document_extraction
     driver: population
     share: 0.00033
+    # = 83 per 1,000 people a year. England and Wales: 4.6M register change applications for ~61M people,
+    # ~75 per 1,000 (S108). A mature registry: the upper end for countries where less land is registered.
     rule: "1 document per working day per 3,000 people"
     data_class: 3
     start_year: 1
     growth: 0.0
   - name: Customs risk agent
     type: process_agent
-    driver: population
-    share: 0.000067
-    rule: "1 customs case per working day per 15,000 people"
+    # v0.9.9: every declaration is screened. Declarations follow trade, not population: 610 million declarations
+    # a year (WCO, S101) for ~$38 trillion of merchandise trade (exports $18.95T, S102, imports about the same)
+    # = 16 declarations per $1 million of trade. Per working day: trade x 16 / 1e6 / 250 = trade x 6.4e-8.
+    driver: merchandise_trade
+    share: 0.000000064
+    rule: "16 declarations per $1 million of merchandise trade a year (WCO, WTO), over 250 working days"
+    fallback: {driver: population, share: 0.000067, rule: "1 declaration per working day per 15,000 people"}
     data_class: 4
     start_year: 2
     growth: 0.05

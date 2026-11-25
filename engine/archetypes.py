@@ -70,7 +70,7 @@ def processing_for(app: dict, t: dict) -> tuple[str, dict | None]:
     """GPU sizing mode and per-unit API price for an application."""
     k = processing_key(app, t)
     if k is None:
-        return t["mode"], t.get("api_price")
+        return t.get("mode"), t.get("api_price")
     o = t["processing"][k]
     return o["mode"], o["api_price"]
 
@@ -314,10 +314,19 @@ def example_portfolio(country: dict) -> tuple[list, list]:
         "population": (pop, "people"),
         "internet_users": (pop * country["internet_share"] if pop and country.get("internet_share") else None, "internet users"),
         "agri_workers": (ref["agri_workers"], "agricultural workers (ILO modeled)"),
+        "merchandise_trade": ((country.get("merch_imports_usd") or 0) + (country.get("merch_exports_usd") or 0) or None,
+                              "US$ of merchandise imports and exports a year"),
     }
     apps, notes = [], []
     for r in rules:
         base, what = drivers[r["driver"]]
+        rule = r["rule"]
+        if not base and r.get("fallback"):
+            fb = r["fallback"]
+            missing = what
+            base, what = drivers[fb["driver"]]
+            r = {**r, "share": fb["share"]}
+            rule = f'{fb["rule"]} (no data on {missing})'
         if not base:
             notes.append(f'{r["name"]}: left out, no data on {what} for this country.')
             continue
@@ -329,6 +338,6 @@ def example_portfolio(country: dict) -> tuple[list, list]:
         if r.get("population_basis"):
             a["population_basis"] = r["population_basis"]
         apps.append(a)
-        notes.append(f'{r["name"]}: {a["volume"]:,} = {r["rule"]} (~{_sig2(base):,.0f} {what}); '
+        notes.append(f'{r["name"]}: {a["volume"]:,} = {rule} (~{_sig2(base):,.0f} {what}); '
                      f'starts year {r["start_year"]}, {r["growth"] * 100:+.0f}% per year.')
     return apps, notes

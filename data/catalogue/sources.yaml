@@ -587,3 +587,51 @@
   url: https://www.developersdigest.tech/models/speech/deepgram
   used_for: "Speech-to-text API price: Nova-3 monolingual $0.0043 per minute pre-recorded ($0.258 per hour), $0.0077 per minute streaming ($0.462 per hour)"
   type: Price tracker
+- id: S101
+  title: "WCO Annual Report 2014-2015"
+  publisher: World Customs Organization
+  url: https://www.wcoomd.org/-/media/wco/public/global/pdf/about-us/annual-reports/annual-report-2014_2015.pdf
+  used_for: "610 million customs declarations a year worldwide, excluding postal items and express consignments; declarations by region"
+  type: International organisation report
+- id: S102
+  title: "World trade statistics and outlook, April 2015"
+  publisher: WTO (via tralac)
+  url: https://www.tralac.org/images/docs/7270/wto-trade-statistics-and-outlook-april-2015.pdf
+  used_for: "World merchandise exports $18.95 trillion in 2014 (imports about the same): with S101, 16 declarations per $1 million of merchandise trade"
+  type: International organisation report
+- id: S103
+  title: "Microsoft 365 Copilot evaluation, Department for Business and Trade"
+  publisher: UK Department for Business and Trade (2025)
+  url: https://assets.publishing.service.gov.uk/media/68adbe409e1cebdd2c96a19d/dbt-microsoft-365-copilot-evaluation.pdf
+  used_for: "Measured usage: 1,000 licences, 72 Copilot actions per licence over 63 working days (1.14 per working day); 30% of licence holders active per working day, 64% per week; top uses: meeting summaries 234, emails 167, summarising written communication 153 of 1,424"
+  type: Government evaluation
+- id: S104
+  title: "Evaluation of a trial of generative AI (Copilot) in the Department of the Treasury"
+  publisher: Australian Centre for Evaluation (2025)
+  url: https://evaluation.treasury.gov.au/publications/evaluation-generative-artificial-intelligence
+  used_for: "Usage lower than expected: most participants used Copilot two or three times a week, or less (copilot Low)"
+  type: Government evaluation
+- id: S105
+  title: "Memento: Fine-tuning LLM Agents without Fine-tuning LLMs"
+  publisher: arXiv 2508.16153
+  url: https://arxiv.org/pdf/2508.16153
+  used_for: "Measured tokens per deep-research task on GAIA: Level 1 26k in / 4.7k out, Level 2 48k / 6.9k, Level 3 121k / 9.8k (confirms the research agent at ~55k)"
+  type: Research
+- id: S106
+  title: "NIST IR 8197: Face Recognition Prize Challenge 2017"
+  publisher: NIST
+  url: https://nvlpubs.nist.gov/nistpubs/ir/2017/NIST.IR.8197.pdf
+  used_for: "1:N face search over 691,282 identities in 590 microseconds on one core of a 2016 server CPU; 30x gallery size gives 3x search time (deduplication search runs on CPUs)"
+  type: Government benchmark
+- id: S107
+  title: "FarmerChat Agricultural Q&A Dataset (Large)"
+  publisher: Digital Green, Hugging Face (CC-BY 4.0)
+  url: https://huggingface.co/datasets/DigiGreen/farmerchat-queries-large
+  used_for: "1,446,866 farmer questions, August 2024 to June 2026 (Kenya 858,674, Nigeria 296,671, India 238,030, Ethiopia 38,114); service reaches 1.2M+ farmers; no user ID"
+  type: Open dataset
+- id: S108
+  title: "HM Land Registry Annual Report and Accounts 2025 to 2026"
+  publisher: HM Land Registry
+  url: https://www.gov.uk/government/publications/hm-land-registry-annual-report-and-accounts-2025-to-2026/annual-report-and-accounts-2025-to-2026-html
+  used_for: "4.6 million register change applications (dealings and new titles) a year for England and Wales: ~75 per 1,000 people, close to the example rule (83 per 1,000)"
+  type: Government annual report
