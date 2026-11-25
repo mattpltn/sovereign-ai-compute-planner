@@ -563,7 +563,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | Reserved (default): GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. On demand: hours of work ÷ 0.6 × on-demand price, never more than renting all year. Rented capacity follows demand year by year. |
+| GPU rental (GPU-as-a-service) | On demand (default): hours of work ÷ 0.6 × on-demand price, never more than renting all year. Reserved: GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. Rented capacity follows demand year by year. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -641,13 +641,16 @@ A government can also commit for several years and negotiate a discount. Publish
 | AWS p5en | $7.91 [S113] | up to -40% [S113] |
 | Average used | $9.255 = 3.56 × neocloud | $5.76 = 2.216 × neocloud |
 
-The same multiples are applied to B200 and GB300 (assumption). *Reserved* (default) rents the GPUs all year, 24/7. *On demand* bills only the hours of work, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
+The same multiples are applied to B200 and GB300 (assumption). *On demand* (default) bills only the hours of work, switching GPUs off when they are not needed, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. *Reserved* rents the GPUs all year, 24/7, at the reserved price. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
 
 **Serving software on owned GPUs.** By default the NVIDIA AI Enterprise licence, $4,500 per GPU per year [S115], because serving skills are scarce in most low- and middle-income countries. The open-source option (vLLM or SGLang on Kubernetes) has no licence fee; staff is unchanged, which may understate the skills it needs.
 
-**Servers kept in service.** Governments rarely sell servers. Owned servers stay in service for 8 years by default (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). After the 5-year refresh period they are out of warranty, so their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity. Set 5 years to replace servers at the refresh period, as before v0.9.11.
+**After the 5-year refresh period: keep or sell.** Two policies, and by default the tool takes the cheaper of the two for the portfolio (by the cost of owning with colocation), and says which one it chose:
 
-Keeping servers is not always cheaper. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. When demand is flat, replacing year-1 servers in year 6 by fewer, newer ones can cost less than keeping them to year 8. Both settings can be compared.
+- *Keep in service.* Servers stay in service until year 8 (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). Out of warranty, their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity.
+- *Replace and sell at auction.* At the refresh period the servers are replaced by newer ones and sold at a public auction for 5% of their purchase price (assumption, Low). A 5-year-old HGX H100 server sits at 5-14% of its price new in American Compute's conservative band for 2028, and 2-6% a year later [S117]; a quick public sale gets the low end.
+
+Keeping servers is often the dearer policy. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. For a copilot for 1 million civil servants with flat demand, keeping costs $5.40M and replacing and selling $4.77M over 10 years (own + colocation); the auction itself brings little ($0.04M in present value): the saving comes from running fewer, newer GPUs. Keeping wins when demand grows fast enough to use the old servers alongside the new ones.
 
 **Idle hours opened to universities and research (option).** Owned or reserved GPUs sized for office-hour peaks are idle most of the night and at weekends: typical government use leaves 85-90% of GPU-hours idle. A share of those idle hours (Setup, 30% when ticked) can be opened to universities and research. The shared hours are valued at half the neocloud rental price (what they would otherwise pay, at an academic rate; assumption, Low) and shown as a negative cost; their electricity is added. This is the strongest economic case for owning: the same servers serve two communities.
 
@@ -656,9 +659,12 @@ Keeping servers is not always cheaper. Newer GPUs do much more work each (25% pe
 | Settings | API | GPU rental | Own + colocation |
 |---|---|---|---|
 | Before v0.9.11 (open market, neocloud, servers replaced at 5 years) | $2.57M | $2.35M | $4.81M |
-| v0.9.11 defaults (hyperscaler API and rental, servers kept 8 years) | $3.04M | $5.21M | $5.40M |
-| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $4.12M |
-| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $4.12M |
+| v0.9.11 defaults (hyperscaler API; hyperscaler GPUs on demand; servers replaced and sold, the cheaper policy here) | $3.04M | $1.53M | $4.77M |
+| Same, GPUs reserved all year | $3.04M | $5.21M | $4.77M |
+| Defaults + open-source software + 30% of idle hours shared | $3.04M | $1.53M | $3.74M |
+| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $1.53M | $3.74M |
+
+On demand is the cheapest way to serve office-hour demand: GPUs are paid only while they work, even at 3.56 times the neocloud price. It assumes the hyperscaler has the capacity when needed, which is not guaranteed for large fleets; reserving removes that risk at a higher cost. Shared idle hours apply to owned and reserved GPUs only.
 
 Independent studies that find owning cheaper compare it with frontier APIs or hyperscaler on-demand prices; against the cheapest open-model APIs, owning rarely wins [S116]. The tool shows both, by its choice of reference.
 
@@ -827,7 +833,7 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | api_reference | hyperscaler | S109, S110, S111 | Which API prices the API option uses. hyperscaler (default): open models on a hyperscaler in a regional data centre, as most governments would buy. open_market: synced median of the same open models on OpenRouter (S21), the cheapest. frontier: proprietary frontier models (GPT-5.4 family) with the 10% regional-processing uplift |
 | api_commit_discount | 0.0 | S111, client | Discount negotiated for a multi-year API commitment. 0 by default: published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% monthly, 70% yearly, against the hourly provisioned rate, S111), not to the per-token price. Set it from a real offer |
 | gpu_rental_reference | hyperscaler | S112, S113, S11 | hyperscaler (default): Azure or AWS, as most governments would rent. neocloud: specialised GPU cloud, the hardware profile price |
-| gpu_rental_mode | reserved | S112, S113 | reserved: GPUs rented all year on a 1-year commitment (24/7). on_demand: rented only for the hours of work, at the on-demand price |
+| gpu_rental_mode | on_demand | S112, S113 | on_demand (default): rented only for the hours of work, at the on-demand price, switched off when not needed. reserved: GPUs rented all year on a 1-year commitment (24/7) |
 | gpu_rental_multipliers | {'neocloud': {'reserved': 1.0, 'on_demand': 1.0}, 'hyperscaler': {'reserved': 2.216, 'on_demand': 3.56}} | S112, S113, S11 | Multiple of the hardware profile price (neocloud H200 $2.60, S11). Hyperscaler H200 on demand: Azure ND H200 v5 $84.80 per 8-GPU hour = $10.60 per GPU-hour (S112); AWS p5en $63.296 = $7.91 (S113); average $9.255 = 3.56x. Reserved 1 year: Azure 1-year reservation -35% (ND H100 v5 $7.93 vs $12.29, S112), AWS 1-year savings plan up to -40% (S113); average -37.75%, $5.76 = 2.216x. Applied to every hardware profile (assumption for B200 and GB300) |
 | on_demand_utilisation | 0.6 | assumption (confidence Low) | On-demand GPUs are billed for the hours of work divided by this share: autoscaling keeps headroom and GPUs start before the load arrives |
 | software_stack | nvidia | S115, assumption | nvidia (default): NVIDIA AI Enterprise licence per GPU per year, the usual choice where serving skills are scarce. open_source: vLLM / SGLang on Kubernetes, no licence fee (staff unchanged) |
@@ -835,6 +841,8 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | maintenance_after_warranty_multiplier | 2.0 | assumption (confidence Low) | Maintenance share of capex for servers past the refresh period (out of warranty): 2x the 5% per year |
 | idle_sharing_share | 0.0 | option | Share of idle GPU-hours of owned or reserved GPUs opened to universities and research at night and weekends. 0 = off |
 | idle_sharing_price_share | 0.5 | assumption (confidence Low) | Value of a shared GPU-hour as a share of the neocloud rental price: what universities would pay at an academic rate, or the cost they avoid |
+| server_end_policy | auto | S114, S117, analyst | What happens to owned servers after the 5-year refresh period. keep: kept in service until server_life_years, out of warranty. sell: replaced at the refresh period and sold at auction for resale_share of their price. auto (default): the cheaper of the two for the portfolio, shown in the results |
+| resale_share | 0.05 | S117, assumption (confidence Low) | Auction price of a 5-year-old GPU server, as a share of its purchase price. AM Compute's conservative residual band for an HGX H100 server is 5-14% in 2028 and 2-6% in 2029, about 5 years after its launch (S117); a quick public auction sells at the low end |
 
 **Cost ranges (replaced by client quotes when entered)**
 
@@ -1115,5 +1123,6 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s114"></a>S114 | Hyperscalers lengthen server lifespans; depreciation lives of servers | The Stack; Fortune (2026) | Microsoft and Amazon depreciate servers over 6 years, Meta 5.5; AI hardware physically runs longer than its accounting life (Fortune, April 2026) | https://thestack.technology/meta-extends-server-life-again-saving-it-2-9-billion |
 | <a id="src-s115"></a>S115 | NVIDIA AI Enterprise licensing guide: pricing | NVIDIA | Software licence $4,500 per GPU for 1 year ($18,000 for 5 years); a 5-year subscription is included with H100 PCIe/NVL and H200 NVL, not with HGX servers | https://docs.nvidia.com/ai-enterprise/planning-resource/licensing-guide/latest/pricing.html |
 | <a id="src-s116"></a>S116 | Studies on on-premises versus cloud and API costs: ESG for Dell (2025); Lenovo GenAI TCO 2026 edition; Pan et al., Cost-Benefit Analysis of On-Premise LLM Deployment (arXiv 2509.18101) | Enterprise Strategy Group; Lenovo; Carnegie Mellon University | Owning is found cheaper against GPT-4o / frontier APIs (up to 4.1x, ESG) and hyperscaler on-demand instances (break-even in about 4 months above 20% utilisation, Lenovo); break-even from months (small models) to 5 years (large models) against commercial APIs (Pan et al.) | https://arxiv.org/abs/2509.18101 |
+| <a id="src-s117"></a>S117 | GPU server values and residual value bands (Rack Report, October 2026; GPU residual value report, June 2026) | American Compute | Residual value of used 8-GPU servers, % of the price new, conservative bands: HGX H100 27-53% (2026), 11-42% (2027), 5-14% (2028), 2-6% (2029), 1-3% (2030); HGX B200 6-11% after 48 months | https://www.amcompute.com/gpu-server-values |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.
