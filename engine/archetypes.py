@@ -45,13 +45,34 @@ def to_engine_rows(apps: list[dict], archetypes: dict) -> tuple[list, list]:
             ))
         else:
             per_day = vol / 365 if t["unit"] == "gpu_hours_year" else vol
+            mode, api_price = processing_for(a, t)
             nt.append(dict(
                 id=a["uid"], name=a["name"], include=1, unit=t["unit_label"], units_per_day=per_day,
-                gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=t["mode"],
+                gpu_seconds_per_unit=t["gpu_seconds_per_unit"], mode=mode,
                 peak_share=t["peak_share"], peak_window_h=t["peak_window_h"], burst=t["burst"],
-                data_class=cls, type=a["type"], api_price=t.get("api_price"),
+                data_class=cls, type=a["type"], api_price=api_price,
             ))
     return llm, nt
+
+
+def processing_key(app: dict, t: dict) -> str | None:
+    """'batch' / 'realtime' for types that offer both (speech-to-text), else None.
+
+    Missing or unknown values take the type default (v0.9.8)."""
+    opts = t.get("processing")
+    if not opts:
+        return None
+    k = app.get("processing")
+    return k if k in opts and k != "default" else opts["default"]
+
+
+def processing_for(app: dict, t: dict) -> tuple[str, dict | None]:
+    """GPU sizing mode and per-unit API price for an application."""
+    k = processing_key(app, t)
+    if k is None:
+        return t["mode"], t.get("api_price")
+    o = t["processing"][k]
+    return o["mode"], o["api_price"]
 
 
 POPULATION_BASIS = {
@@ -66,6 +87,8 @@ def normalize_app(a: dict) -> dict:
     population_basis (v0.7): missing means "eligible", which reproduces earlier results.
     """
     a = dict(a)
+    if a.get("processing") not in (None, "batch", "realtime"):
+        a["processing"] = None
     if a.get("population_basis") not in POPULATION_BASIS:
         a["population_basis"] = "eligible"
     return a
@@ -81,8 +104,12 @@ def rate_for(app: dict, t: dict) -> dict:
 
 def basis_label(app: dict, archetypes: dict) -> str | None:
     """'everyone eligible' / 'service users' for types that distinguish them, else None."""
-    if archetypes[app["type"]].get("rate_by_basis"):
+    t = archetypes[app["type"]]
+    if t.get("rate_by_basis"):
         return POPULATION_BASIS[normalize_app(app)["population_basis"]]
+    k = processing_key(app, t)
+    if k:
+        return {"batch": "batch", "realtime": "real-time"}[k]
     return None
 
 
@@ -296,6 +323,8 @@ def example_portfolio(country: dict) -> tuple[list, list]:
             continue
         vol = max(1.0, _sig2(base * r["share"]))
         a = {k: r[k] for k in ("name", "type", "data_class", "start_year", "growth")}
+        if r.get("processing"):
+            a["processing"] = r["processing"]
         a["volume"] = int(vol) if vol >= 1 else vol
         if r.get("population_basis"):
             a["population_basis"] = r["population_basis"]

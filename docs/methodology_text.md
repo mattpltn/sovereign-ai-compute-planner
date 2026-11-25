@@ -465,6 +465,8 @@ Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.
 
 **Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
 
+**Where API data is processed.** Every API price in the tool (language models, transcription, OCR, face verification, embeddings) is a public list price. These providers mostly process data outside the client's country, often in the United States, and may move it between regions; the price does not fix the location. In-region or in-country processing, where offered, can cost more and must be agreed in the contract. The results page says so in its footnote.
+
 **Data regulation.** The tool does not check whether an option is allowed. The results page states that the client must assess, for each application, whether its data may be processed by an API provider or a cloud outside the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a government data centre.
 
 ### Which applications can be bought as an API
@@ -473,7 +475,8 @@ All language-model types can be bought from API providers. For other AI work the
 
 | Type | Unit | Low | Base | High | Basis |
 |---|---|---|---|---|---|
-| Speech-to-text | audio hour | $0.18 | $0.36 | $1.44 | $0.003 / $0.006 / $0.024 per minute (batch tiers, OpenAI, AWS Transcribe) [S76, S77] |
+| Speech-to-text, batch (default) | audio hour | $0.04 | $0.185 | $0.36 | Average of eight list prices, below |
+| Speech-to-text, real-time | audio hour | $0.15 | $0.705 | $1.44 | Average of six list prices, below |
 | Text-to-speech | audio hour | $0.20 | $0.80 | $1.50 | $4 / $16 / $30 per million characters [S78] × ~50,000 characters per spoken hour (assumption) |
 | OCR | page | $0.0006 | $0.0015 | $0.01 | $1.50 per 1,000 pages on AWS, Google and Azure, $0.60 above 5 million a month, ~$10 with layout [S79] |
 | Face verification (1:1) | verification | $0.0004 | $0.001 | $0.002 | Amazon Rekognition, Face++ [S80]; liveness not included; some providers restrict identity use |
@@ -482,7 +485,26 @@ All language-model types can be bought from API providers. For other AI work the
 | Image and satellite analysis | – | not available | | | Custom models; priced as rented GPUs |
 | Fine-tuning | – | not available | | | Training an open model; priced as rented GPUs |
 
-API prices can exceed GPU rental at steady volume: 500 audio hours a day of transcription cost about $66,000 a year at $0.006 per minute, while the same work fits on one rented GPU.
+**Speech-to-text prices are a blend.** Transcription APIs differ by a factor of ten, so the Base price is the simple, unweighted average of the list prices of the main providers in November 2026, and Low and High are the cheapest and dearest of them. Each transcription application is either batch (recorded audio, transcribed within hours; the default) or real-time (live captions and voice services).
+
+| Provider and model | Batch $/audio hour | Real-time $/audio hour | Source |
+|---|---|---|---|
+| Groq Whisper large-v3 turbo | 0.04 | – (files only) | [S95] |
+| Groq Whisper large-v3 | 0.111 | – (files only) | [S95] |
+| AssemblyAI Universal-2 / Universal-Streaming | 0.15 | 0.15 | [S76] |
+| Azure AI Speech batch / real-time | 0.18 | 1.00 | [S97] |
+| Google Cloud dynamic batch / standard | 0.18 | 0.96 | [S98] |
+| ElevenLabs Scribe v3 / Scribe v3 Live | 0.20 | 0.22 | [S99] |
+| Deepgram Nova-3 pre-recorded / streaming | 0.258 | 0.462 | [S100], [S96] |
+| OpenAI Whisper | 0.36 | – | [S77], [S96] |
+| AWS Transcribe | – | 1.44 | [S77] |
+| **Average (Base)** | **0.185** | **0.705** | |
+
+Batch is sized as steady work over 24 hours, real-time for the busy hours (70% of the audio in 10 hours, bursts of 1.5). Both use 12 GPU-seconds per audio hour: streaming servers batch concurrent streams.
+
+**Confirmation of the GPU estimate.** Groq sells Whisper large-v3 turbo at $0.04 per audio hour at about 216 times real time [S95]. Our rented-GPU cost is about $0.04 per audio hour (12 GPU-seconds, derated, at $2.60 per GPU-hour, sized for peaks). The cheapest API is priced at about what the GPU work costs, which supports the throughput used.
+
+At the Base batch price, 20,000 audio hours a day cost $1.35M a year through an API, against about $0.27M for the GPUs that do the same work. At Groq's price the two are level.
 
 Beyond technical availability, an API may be ruled out by data rules (see the note on the results page), offline use in the field, latency for real-time voice, local-language coverage, rate limits at national scale, or payment in foreign currency.
 

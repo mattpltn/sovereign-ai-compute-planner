@@ -5,6 +5,16 @@ Every change to the model, defaults or sources must also update `docs/METHODOLOG
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-11-25
+### Added
+- Speech-to-text: "How is the audio processed?" choice, batch (default) or real-time. Batch is sized as steady work over 24 hours; real-time for the busy hours.
+- Results page: a note that API prices do not fix where the data is processed (applies to every API price).
+- Sources S95-S100: Groq, Azure, Google Cloud, ElevenLabs, Deepgram and a comparison of Whisper APIs.
+### Changed
+- Speech-to-text API prices are now a blend of provider list prices (November 2026). Batch: $0.04 / $0.185 / $0.36 per audio hour (was $0.18 / $0.36 / $1.44), the average of eight providers. Real-time: $0.15 / $0.705 / $1.44, the average of six. Saved scenarios without a choice are treated as batch.
+- Court transcription in the example portfolio is batch.
+- Methodology: the Groq price ($0.04 per audio hour at ~216x real time) is recorded as confirming our GPU throughput for transcription.
+
 ## [0.9.7] - 2026-11-24
 Calibration against Epoch AI chip data and new price and power sources.
 ### Added

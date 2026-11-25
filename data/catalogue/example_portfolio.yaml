@@ -59,6 +59,7 @@ apps:
     driver: population
     share: 0.0000143
     rule: "1 hour of hearings recorded per day per 70,000 people"
+    processing: batch
     data_class: 3
     start_year: 1
     growth: 0.0

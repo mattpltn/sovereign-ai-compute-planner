@@ -310,7 +310,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 | Type | Volume entered by user | GPU-seconds per unit | Basis | Mode | Default data class | Confidence |
 |---|---|---|---|---|---|---|
-| Speech-to-text | Audio hours per day | 12 | derived | Interactive | 3 | Medium |
+| Speech-to-text | Audio hours per day | 12 | derived | Batch | 3 | Medium |
 | OCR and layout extraction | Pages per day | 0.75 | observed | Batch | 3 | Low |
 | Face verification (1:1 authentication) | Verifications per day | 0.02 | derived | Interactive | 4 | Low |
 | Biometric deduplication (1:N at enrolment) | Enrolments per day | 2 | uncalibrated | Batch | 4 | Low |
@@ -398,7 +398,7 @@ Each type also states the **basis** of its rate and size, so a reader can tell m
 
 **Speech-to-text**
 
-- *gpu*: 12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node ([S55](#src-s55)); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) ([S56](#src-s56)): raise it for real-time voice. Derated 0.6. MLPerf Inference v5.1 now includes Whisper ([S45](#src-s45)).
+- *gpu*: 12 GPU-seconds per audio hour (~300x real time per GPU) for batched, optimised Whisper. Baseten reports 1,800-2,400x real time for a full H100 node ([S55](#src-s55)); read conservatively as 8 GPUs, that is ~225-300x per GPU, i.e. 12-16 GPU-seconds per audio hour. Unbatched single-stream decoding is far slower (~27x real time on H100, ~130 GPU-seconds per hour) ([S56](#src-s56)); streaming servers batch concurrent streams, so real-time keeps 12 but is sized for the busy hours. Derated 0.6. MLPerf Inference v5.1 now includes Whisper ([S45](#src-s45)). Confirmed by price: Groq sells Whisper large-v3 turbo at $0.04 per audio hour at ~216x real time ([S95](#src-s95)), close to our rented-GPU cost of about $0.04 per audio hour.
 
 **OCR and layout extraction**
 
@@ -611,6 +611,8 @@ Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.
 
 **Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
 
+**Where API data is processed.** Every API price in the tool (language models, transcription, OCR, face verification, embeddings) is a public list price. These providers mostly process data outside the client's country, often in the United States, and may move it between regions; the price does not fix the location. In-region or in-country processing, where offered, can cost more and must be agreed in the contract. The results page says so in its footnote.
+
 **Data regulation.** The tool does not check whether an option is allowed. The results page states that the client must assess, for each application, whether its data may be processed by an API provider or a cloud outside the country, hosted by a private operator in-country (colocation or GPU rental), or must stay in a government data centre.
 
 ### Which applications can be bought as an API
@@ -619,7 +621,8 @@ All language-model types can be bought from API providers. For other AI work the
 
 | Type | Unit | Low | Base | High | Basis |
 |---|---|---|---|---|---|
-| Speech-to-text | audio hour | $0.18 | $0.36 | $1.44 | $0.003 / $0.006 / $0.024 per minute (batch tiers, OpenAI, AWS Transcribe) [S76, S77] |
+| Speech-to-text, batch (default) | audio hour | $0.04 | $0.185 | $0.36 | Average of eight list prices, below |
+| Speech-to-text, real-time | audio hour | $0.15 | $0.705 | $1.44 | Average of six list prices, below |
 | Text-to-speech | audio hour | $0.20 | $0.80 | $1.50 | $4 / $16 / $30 per million characters [S78] × ~50,000 characters per spoken hour (assumption) |
 | OCR | page | $0.0006 | $0.0015 | $0.01 | $1.50 per 1,000 pages on AWS, Google and Azure, $0.60 above 5 million a month, ~$10 with layout [S79] |
 | Face verification (1:1) | verification | $0.0004 | $0.001 | $0.002 | Amazon Rekognition, Face++ [S80]; liveness not included; some providers restrict identity use |
@@ -628,7 +631,26 @@ All language-model types can be bought from API providers. For other AI work the
 | Image and satellite analysis | – | not available | | | Custom models; priced as rented GPUs |
 | Fine-tuning | – | not available | | | Training an open model; priced as rented GPUs |
 
-API prices can exceed GPU rental at steady volume: 500 audio hours a day of transcription cost about $66,000 a year at $0.006 per minute, while the same work fits on one rented GPU.
+**Speech-to-text prices are a blend.** Transcription APIs differ by a factor of ten, so the Base price is the simple, unweighted average of the list prices of the main providers in November 2026, and Low and High are the cheapest and dearest of them. Each transcription application is either batch (recorded audio, transcribed within hours; the default) or real-time (live captions and voice services).
+
+| Provider and model | Batch $/audio hour | Real-time $/audio hour | Source |
+|---|---|---|---|
+| Groq Whisper large-v3 turbo | 0.04 | – (files only) | [S95] |
+| Groq Whisper large-v3 | 0.111 | – (files only) | [S95] |
+| AssemblyAI Universal-2 / Universal-Streaming | 0.15 | 0.15 | [S76] |
+| Azure AI Speech batch / real-time | 0.18 | 1.00 | [S97] |
+| Google Cloud dynamic batch / standard | 0.18 | 0.96 | [S98] |
+| ElevenLabs Scribe v3 / Scribe v3 Live | 0.20 | 0.22 | [S99] |
+| Deepgram Nova-3 pre-recorded / streaming | 0.258 | 0.462 | [S100], [S96] |
+| OpenAI Whisper | 0.36 | – | [S77], [S96] |
+| AWS Transcribe | – | 1.44 | [S77] |
+| **Average (Base)** | **0.185** | **0.705** | |
+
+Batch is sized as steady work over 24 hours, real-time for the busy hours (70% of the audio in 10 hours, bursts of 1.5). Both use 12 GPU-seconds per audio hour: streaming servers batch concurrent streams.
+
+**Confirmation of the GPU estimate.** Groq sells Whisper large-v3 turbo at $0.04 per audio hour at about 216 times real time [S95]. Our rented-GPU cost is about $0.04 per audio hour (12 GPU-seconds, derated, at $2.60 per GPU-hour, sized for peaks). The cheapest API is priced at about what the GPU work costs, which supports the throughput used.
+
+At the Base batch price, 20,000 audio hours a day cost $1.35M a year through an API, against about $0.27M for the GPUs that do the same work. At Groq's price the two are level.
 
 Beyond technical availability, an API may be ruled out by data rules (see the note on the results page), offline use in the field, latency for real-time voice, local-language coverage, rate limits at national scale, or payment in foreign currency.
 
@@ -982,7 +1004,7 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s71"></a>S71 | Colocation pricing, as published (77 rate-card prices from 42 operators, Oct 2026) | Watt & Rack | Retail price per kW for small deployments (median $364 per kW per month, US cabinets) | https://wattandrack.com/colocation/pricing/ |
 | <a id="src-s72"></a>S72 | Colocation hosting pricing across Indian data center providers | Cyfuture Cloud (knowledge base) | India retail power charges, INR 12,000-25,000 per kW per month (cross-check for South Asia) | https://cyfuture.cloud/kb/colocation/colocation-hosting-pricing-across-indian-data-center-providers |
 | <a id="src-s73"></a>S73 | Colocation in Nairobi, Dar es Salaam and Lagos (published rate card) | Lineserve | Africa retail cross-check: power above the rack allowance at $500 per kW per month | https://www.lineserve.net/colocation |
-| <a id="src-s76"></a>S76 | Speech-to-text API pricing guide (2026): per-hour rates, add-ons and hidden costs | AssemblyAI | Speech-to-text API price: Google Cloud dynamic batch $0.003/min, standard $0.016/min | https://assemblyai.com/blog/speech-to-text-api-pricing |
+| <a id="src-s76"></a>S76 | Speech-to-text API pricing guide (2026): per-hour rates, add-ons and hidden costs | AssemblyAI | Speech-to-text API price: AssemblyAI Universal-2 $0.15 per hour batch and Universal-Streaming $0.15 per hour (prices as of 3 November 2026, linked to each vendor's pricing page) | https://assemblyai.com/blog/speech-to-text-api-pricing |
 | <a id="src-s77"></a>S77 | Speech-to-Text API Pricing 2026: Real Costs Compared | convertaudiototext.com | Speech-to-text API price: OpenAI $0.003-0.006/min, AWS Transcribe $0.024/min | https://convertaudiototext.com/blog/speech-to-text-api-pricing-2026 |
 | <a id="src-s78"></a>S78 | Cloud Text-to-Speech pricing | Google Cloud | Text-to-speech API price per million characters ($4 Standard, $16 Neural2 / latest, $30 Chirp 3 HD) | https://cloud.google.com/text-to-speech/pricing |
 | <a id="src-s79"></a>S79 | Google Vision vs AWS Textract vs Azure: Cloud OCR comparison 2026 | imagetotable.ai | OCR API price: $1.50 per 1,000 pages, $0.60 above 5 million a month; specialised processors $10-30 | https://imagetotable.ai/blog/google-vs-aws-vs-azure-ocr-2026 |
@@ -1001,5 +1023,11 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s92"></a>S92 | NVIDIA GB300 NVL72 chip page | SemiAnalysis InferenceX (2026) | 1,400 W TDP and 2.12 kW all-in power per GB300 chip (confirms 2.1 kW per GPU) | https://inferencex.semianalysis.com/chips/gb300-nvl72 |
 | <a id="src-s93"></a>S93 | HPE NVIDIA GB300 NVL72 specification sheet | Flopper.io (HPE data) | 132 kW nominal per 72-GPU rack (1.83 kW per GPU before networking and storage), ~155 kW electrical peak | https://flopper.io/system/hpe-nvidia-gb300-nvl72 |
 | <a id="src-s94"></a>S94 | Supermicro SYS-822GS-NBRT datasheet (HGX B200 8-GPU) | Supermicro | 1000 W TDP per B200 GPU, air cooled (the 2.0 kW all-in figure is about 2x TDP, as for H200) | https://www.supermicro.com/en/products/system/datasheet/sys-822gs-nbrt |
+| <a id="src-s95"></a>S95 | Groq ASR model guide: Whisper Large v3, Whisper Large v3 Turbo, Distil-Whisper | Groq | Speech-to-text API price: Whisper large-v3 $0.111, large-v3 turbo $0.04 per hour (~216x real time); file-based only, no streaming. Also confirms our GPU throughput | https://groq.com/GroqDocs/Groq%20ASR%20Model%20Guide.pdf |
+| <a id="src-s96"></a>S96 | Speech-to-text API comparison: Whisper API options in 2026 | DEV Community | Cross-check of per-hour prices: OpenAI $0.36, Deepgram Nova-3 $0.26 batch / $0.46 stream, AssemblyAI | https://dev.to/pietrus914/speech-to-text-api-comparison-whisper-api-options-in-2026-400h |
+| <a id="src-s97"></a>S97 | Azure AI Speech: speech-to-text models and prices (read from azure.microsoft.com, 18 October 2026) | Developers Digest | Speech-to-text API price: Azure batch transcription $0.18 per hour, real-time $1 per hour (Azure's own page renders prices only after region selection) | https://www.developersdigest.tech/models/speech/azure |
+| <a id="src-s98"></a>S98 | Speech-to-Text pricing (V2 API) | Google Cloud | Speech-to-text API price: dynamic batch $0.003 per minute ($0.18 per hour, results within 24 hours); standard $0.016 per minute ($0.96 per hour) up to 500,000 minutes a month | https://cloud.google.com/speech-to-text/pricing |
+| <a id="src-s99"></a>S99 | ElevenLabs API pricing | ElevenLabs | Speech-to-text API price: Scribe v3 $0.20 per hour, Scribe v3 Live $0.22 per hour (90+ languages) | https://elevenlabs.io/pricing/api |
+| <a id="src-s100"></a>S100 | Deepgram speech-to-text models and prices (read from deepgram.com, 18 October 2026) | Developers Digest | Speech-to-text API price: Nova-3 monolingual $0.0043 per minute pre-recorded ($0.258 per hour), $0.0077 per minute streaming ($0.462 per hour) | https://www.developersdigest.tech/models/speech/deepgram |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.
