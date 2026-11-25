@@ -614,11 +614,11 @@ def _gain(g):
 
 
 def test_fleet_covers_need_and_refreshes():
-    b = _opts(APPS3, META3)["total"]["base"]
+    b = _opts(APPS3, META3, finance={"server_life_years": 5})["total"]["base"]
     for y, f in b["fleet"].items():
         assert f["capacity"] >= b["sizing"][y]["gpus"] - 1e-9      # installed work covers the need (year-1 GPUs)
     assert b["fleet"][6]["buy"] >= 1                               # year-1 servers replaced after 5 years
-    z = _opts(APPS3, META3, finance=_gain(0.0))["total"]["base"]   # no compute gain: the v0.9.6 fleet
+    z = _opts(APPS3, META3, finance=dict(_gain(0.0), server_life_years=5))["total"]["base"]   # the v0.9.6 fleet
     for y, f in z["fleet"].items():
         assert f["servers"] >= _m.ceil(z["sizing"][y]["gpus"] / 8) and f["capacity"] == f["gpus"]
     assert z["fleet"][6]["buy"] >= z["fleet"][1]["buy"]
@@ -626,8 +626,9 @@ def test_fleet_covers_need_and_refreshes():
 
 def test_compute_gain_lowers_rental_and_owned_costs():
     flat = {"cop": {"start_year": 1, "growth": 0}}
-    a = _opts(APPS3[:1], flat, finance=_gain(0.0))["total"]["base"]
-    b = _opts(APPS3[:1], flat, finance=_gain(0.25))["total"]["base"]
+    big = [dict(COP, uid="cop", volume=400000)]                     # enough GPUs for the gain to show
+    a = _opts(big, flat, finance=dict(_gain(0.0), server_life_years=5))["total"]["base"]
+    b = _opts(big, flat, finance=dict(_gain(0.25), server_life_years=5))["total"]["base"]
     assert b["gain"][6] == pytest.approx(1.25 ** 5)
     assert b["pv"]["API"] == pytest.approx(a["pv"]["API"])        # API prices have their own decline
     assert b["pv"]["GPU-as-a-service"] < a["pv"]["GPU-as-a-service"]
@@ -789,3 +790,82 @@ def test_spare_capacity_rows_are_api_cheapest():
     meta = {"s": {"start_year": 1, "growth": 0}}
     r = _opts([dict(uid="s", name="S", type="speech_to_text", volume=5, data_class=3)], meta)["apps"]["s"]
     assert r["spare_capacity"] and r["cheapest"] == "API"          # GPU options are $0 (spare), not cheapest
+
+
+
+def test_sync_retries_rate_limits():
+    import requests
+    import sync.worldbank as wb
+
+    class R:
+        def __init__(self, code, headers=None):
+            self.status_code, self.headers, self.url = code, headers or {}, "u"
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                raise requests.HTTPError(str(self.status_code), response=self)
+
+    calls, waits = [], []
+    seq = [R(429, {"Retry-After": "7"}), R(503), R(200)]
+    orig = wb.SESSION.get
+    wb.SESSION.get = lambda *a, **k: (calls.append(1), seq.pop(0))[1]
+    try:
+        assert wb.fetch("u", {}, sleep=waits.append).status_code == 200
+        assert waits[:2] == [7.0, 30] and len(calls) == 3       # Retry-After honoured, then backoff
+        seq[:] = [R(404)]
+        with pytest.raises(requests.HTTPError):                 # not retried
+            wb.fetch("u", {}, sleep=waits.append)
+    finally:
+        wb.SESSION.get = orig
+
+
+# ---------------------------------------------------------------- v0.9.11: price references and ownership choices
+FLAT = {"cop": {"start_year": 1, "growth": 0}}
+
+
+def test_api_reference_prices():
+    from engine.options import api_reference_prices
+    m = {"S": {"input": 1, "output": 1}, "M": {"input": 1, "output": 1}, "L": {"input": 1, "output": 1}}
+    assert api_reference_prices(D, "open_market", m) is m
+    assert api_reference_prices(D, "hyperscaler", m)["L"] == {"input": 0.74, "output": 2.22}          # Bedrock [S109]
+    assert api_reference_prices(D, "frontier", m)["M"]["output"] == pytest.approx(4.50 * 1.10)       # +10% regional [S110]
+    assert D["api_reference"]["value"] == "hyperscaler"
+    r = lambda ref, disc=0.0: _opts(APPS3[:1], FLAT, finance={"api_reference": ref, "api_commit_discount": disc}
+                                    )["total"]["base"]["pv"]["API"]
+    assert r("open_market") < r("frontier") and r("hyperscaler") < r("frontier")
+    assert r("frontier", 0.3) == pytest.approx(r("frontier") * 0.7)
+
+
+def test_gpu_rental_reference_and_on_demand():
+    run_ = lambda **f: _opts(APPS3[:1], FLAT, finance=f)["total"]["base"]
+    neo, hyp = run_(gpu_rental_reference="neocloud"), run_(gpu_rental_reference="hyperscaler")
+    assert hyp["gpu_hour"] == pytest.approx(neo["gpu_hour"] * 2.216)
+    assert hyp["pv"]["GPU-as-a-service"] == pytest.approx(neo["pv"]["GPU-as-a-service"] * 2.216)
+    od = run_(gpu_rental_reference="hyperscaler", gpu_rental_mode="on_demand")
+    assert od["gpu_hour_on_demand"] == pytest.approx(neo["gpu_hour"] * 3.56)
+    s = od["sizing"][1]                                             # billed hours: work / 0.6, at most all year
+    assert s["gpu_hours_billed"] <= s["gpus_rented"] * 8760 + 1e-6
+    assert s["gpu_hours_billed"] == pytest.approx(min(s["gpus_rented"] * 8760, s["busy_h"] * 365 / 0.6))
+
+
+def test_software_stack_and_server_life():
+    run_ = lambda **f: _opts(APPS3[:1], FLAT, finance=dict(_gain(0.0), **f))["total"]["base"]
+    nv, os_ = run_(), run_(software_stack="open_source")
+    assert nv["pv_parts"]["Owned + colocation"]["software"] > 0 and os_["pv_parts"]["Owned + colocation"]["software"] == 0
+    keep, repl = run_(server_life_years=8), run_(server_life_years=5)
+    assert keep["fleet"][6]["buy"] == 0 and repl["fleet"][6]["buy"] > 0          # kept, not replaced
+    assert keep["fleet"][6]["gpus_old"] == keep["fleet"][6]["gpus"]             # all out of warranty in year 6
+    assert keep["pv_parts"]["Owned + colocation"]["gpu_servers"] < repl["pv_parts"]["Owned + colocation"]["gpu_servers"]
+    y = 6                                                                        # maintenance x2 past warranty
+    assert keep["yearly_parts"]["Owned + colocation"][y]["maintenance_gpu"] == pytest.approx(
+        2 * keep["yearly_parts"]["Owned + colocation"][1]["maintenance_gpu"])
+
+
+def test_idle_hours_shared_with_universities():
+    run_ = lambda sh: _opts(APPS3[:1], FLAT, finance={"idle_sharing_share": sh})["total"]["base"]
+    off, on = run_(0.0), run_(0.3)
+    assert "shared_capacity_value" not in off["pv_parts"]["Owned + colocation"]
+    assert on["pv_parts"]["Owned + colocation"]["shared_capacity_value"] < 0
+    assert on["pv"]["Owned + colocation"] < off["pv"]["Owned + colocation"]
+    assert on["pv_parts"]["Owned + colocation"]["energy"] > off["pv_parts"]["Owned + colocation"]["energy"]
+    assert on["pv"]["GPU-as-a-service"] < off["pv"]["GPU-as-a-service"]           # reserved GPUs idle too

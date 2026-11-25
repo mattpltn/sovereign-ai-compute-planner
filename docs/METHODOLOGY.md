@@ -99,7 +99,7 @@ The volume is always something a client can give: staff with access, people in t
 
 ### 3.2 What the tool provides
 
-Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population) is synced weekly from the World Bank API; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
+Each application type carries defaults for usage rate, request size, peak pattern and model size, each with its evidence and a confidence level (Section 9). Country data (population, internet use, outages, labour force, agricultural employment, rural population, merchandise imports and exports) is synced weekly from the World Bank API; when the API limits requests (HTTP 429) or times out, the sync waits and retries (honouring the API's Retry-After, otherwise 15 s doubling to 5 min, up to about 13 minutes) and pauses 1 s between calls; indicator codes used for the agriculture check are confirmed against the API's own metadata at each sync, and the code, name and source are recorded in the snapshot. A code whose name no longer matches is not stored and the sync log says so; API prices are synced weekly from OpenRouter [S21]. Electricity tariffs and EGDI are curated tables because no free API exists.
 
 ## 4. Layer 0: requests per day
 
@@ -563,7 +563,7 @@ The global demand growth setting is replaced by these per-application rates (old
 | Option | Cost each year |
 |---|---|
 | API | Language-model tokens × API prices (cached input at a discount, Section 11). Other AI work at per-unit cloud API prices (table below). Work with no cloud API is priced as rented GPUs (marked † in the results); below 0.25 GPU it runs on existing servers. |
-| GPU rental (GPU-as-a-service) | GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × rental price. Rented capacity follows demand, so there is no idle server. |
+| GPU rental (GPU-as-a-service) | Reserved (default): GPUs needed that year (newer GPUs do more each, below) × 8,760 hours × reserved price. On demand: hours of work ÷ 0.6 × on-demand price, never more than renting all year. Rented capacity follows demand year by year. |
 | Own + colocation | Server purchases (whole 8-GPU servers, bought when the pooled need exceeds what is installed, replaced after 5 years, never sold; optionally one spare server, N+1) + network, storage and security equipment (15% of each server purchase) + software + GPU maintenance + staff + energy (IT energy × PUE × tariff, paid to the operator) + colocation fee (installed IT kW × price per kW per month × 12). |
 | Own + own data centre | The same server, software, maintenance, staff and energy lines + facility build in the first year with demand + facility maintenance every year from then on. If an existing facility has spare power and cooling (Setup), there is no build and no facility maintenance cost. |
 
@@ -618,6 +618,57 @@ Example: a peak of 1 MW of IT in Ghana is built as 1.3 MW. Curve at 1.3 MW: $24.
 **Per application and for the portfolio.** The per-application table prices each application alone, so each owned row carries its own servers, staff and facility. The portfolio row prices all applications together. The difference between the portfolio and the sum of the rows is the saving from sharing: large for owned options (one team, one facility, pooled servers), small for GPU rental (pooled peaks), nil for API (tokens add up).
 
 **Hardware.** For each set of applications the tool picks the hardware with the lowest cost of its cheapest option, with the same grid and size rules as before (Section 8).
+
+### Price references and ownership choices (v0.9.11)
+
+The cost of each option depends on what the government actually buys. The defaults follow what a government usually buys, not the cheapest offer on the market; every choice is in Setup.
+
+**API prices.** Three references, per model class (dollars per million tokens, input / output):
+
+| Reference | Small (8B) | Medium (70B) | Large (DeepSeek class) | Source |
+|---|---|---|---|---|
+| Hyperscaler in region (default): the same open models on AWS or Azure | 0.15 / 0.15 (Ministral 8B) | 0.72 / 0.72 (Llama 3.3 70B) | 0.74 / 2.22 (DeepSeek v3.2, Mumbai, São Paulo, Jakarta) | [S109] |
+| Open market: median of the cheapest providers | synced weekly | synced weekly | synced weekly | [S21] |
+| Proprietary frontier models, regional processing (+10%) | 0.22 / 1.375 (GPT-5.4 nano) | 0.825 / 4.95 (GPT-5.4 mini) | 2.75 / 16.50 (GPT-5.4) | [S110] |
+
+A government can also commit for several years and negotiate a discount. Published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% for a month, 70% for a year, against the hourly provisioned rate [S111]), not to the per-token price, so the default is 0% and the discount is set from a real offer.
+
+**GPU rental.** The hardware profiles carry a specialised-cloud (neocloud) price, $2.60 per H200 GPU-hour [S11]. Hyperscalers, which governments usually choose, cost more:
+
+| H200, per GPU-hour | On demand | Reserved 1 year |
+|---|---|---|
+| Azure ND H200 v5 | $10.60 [S112] | -35% (ND H100 v5: $7.93 vs $12.29) [S112] |
+| AWS p5en | $7.91 [S113] | up to -40% [S113] |
+| Average used | $9.255 = 3.56 × neocloud | $5.76 = 2.216 × neocloud |
+
+The same multiples are applied to B200 and GB300 (assumption). *Reserved* (default) rents the GPUs all year, 24/7. *On demand* bills only the hours of work, divided by 0.6 for autoscaling headroom (assumption, Low), at the on-demand price, and never more than renting all year. On demand suits work concentrated in office hours; large on-demand capacity is not always available at hyperscalers.
+
+**Serving software on owned GPUs.** By default the NVIDIA AI Enterprise licence, $4,500 per GPU per year [S115], because serving skills are scarce in most low- and middle-income countries. The open-source option (vLLM or SGLang on Kubernetes) has no licence fee; staff is unchanged, which may understate the skills it needs.
+
+**Servers kept in service.** Governments rarely sell servers. Owned servers stay in service for 8 years by default (assumption, Low; hyperscalers depreciate servers over 6 years and the hardware physically lasts longer [S114]). After the 5-year refresh period they are out of warranty, so their maintenance doubles (10% of capex per year, assumption), and new servers are bought only when the need exceeds the installed capacity. Set 5 years to replace servers at the refresh period, as before v0.9.11.
+
+Keeping servers is not always cheaper. Newer GPUs do much more work each (25% per year), while software, maintenance, colocation and energy are paid per GPU. When demand is flat, replacing year-1 servers in year 6 by fewer, newer ones can cost less than keeping them to year 8. Both settings can be compared.
+
+**Idle hours opened to universities and research (option).** Owned or reserved GPUs sized for office-hour peaks are idle most of the night and at weekends: typical government use leaves 85-90% of GPU-hours idle. A share of those idle hours (Setup, 30% when ticked) can be opened to universities and research. The shared hours are valued at half the neocloud rental price (what they would otherwise pay, at an academic rate; assumption, Low) and shown as a negative cost; their electricity is added. This is the strongest economic case for owning: the same servers serve two communities.
+
+**Effect on a large example** (copilot for 1 million civil servants, India, present value over 10 years):
+
+| Settings | API | GPU rental | Own + colocation |
+|---|---|---|---|
+| Before v0.9.11 (open market, neocloud, servers replaced at 5 years) | $2.57M | $2.35M | $4.81M |
+| v0.9.11 defaults (hyperscaler API and rental, servers kept 8 years) | $3.04M | $5.21M | $5.40M |
+| Defaults + open-source software + 30% of idle hours shared | $3.04M | $4.89M | $4.12M |
+| Frontier API + open-source software + 30% of idle hours shared | $5.38M | $4.89M | $4.12M |
+
+Independent studies that find owning cheaper compare it with frontier APIs or hyperscaler on-demand prices; against the cheapest open-model APIs, owning rarely wins [S116]. The tool shows both, by its choice of reference.
+
+### Availability: export controls, sanctions and supply (context only)
+
+Not every option is open to every country, whatever its cost. The tool does not model this, because the rules change several times a year and no maintained dataset exists; the results page reminds the user to check.
+
+- **Buying GPUs** depends on export licences. Some countries need a licence for advanced GPUs, some get only older generations under quotas, and sanctioned countries are closed. New GPUs also have long delivery times when supply is short.
+- **Renting GPUs** abroad is being brought under the same controls for customers from restricted countries; renting in-country means the provider imports the GPUs, with the same constraints.
+- **APIs** from some providers are not offered in, or to entities owned from, some countries, and a provider can suspend access to a model at short notice. Open models served by several providers reduce that risk.
 
 **Where API data is processed.** Every API price in the tool (language models, transcription, OCR, face verification, embeddings) is a public list price. These providers mostly process data outside the client's country, often in the United States, and may move it between regions; the price does not fix the location. In-region or in-country processing, where offered, can cost more and must be agreed in the contract. The results page says so in its footnote.
 
@@ -773,6 +824,17 @@ Utilisation of that single GPU is 0%: one copilot for 1,000 staff does not justi
 | hw_price_decline | 0.0 | S84 | Yearly fall in GPU rental and GPU server prices. H100 rental fell more than 60% in 2025 and then rose about 40% between October 2025 and March 2026 (S84): no stable trend, so 0% by default |
 | compute_gain_per_year | 0.25 | S86, S87, assumption (confidence Medium) | Yearly gain in inference work per GPU for hardware bought or rented later, at the same price per GPU. Epoch AI: FLOP/s per dollar of ML GPUs doubles every 2.07 years, about +40% per year (S86); memory bandwidth doubles every ~4.1 years, about +18% per year (S87). LLM decoding is mostly memory-bound, so 25% is taken between the two |
 | owned_infra_share | 0.15 | S85, assumption (confidence Medium) | Owned options: network switches, storage, firewalls and security appliances (incl. key management), bought with each server batch, as a share of the GPU server price. AI cluster bills of materials put networking at 10-25% of capex (S85); a small inference deployment needs little storage |
+| api_reference | hyperscaler | S109, S110, S111 | Which API prices the API option uses. hyperscaler (default): open models on a hyperscaler in a regional data centre, as most governments would buy. open_market: synced median of the same open models on OpenRouter (S21), the cheapest. frontier: proprietary frontier models (GPT-5.4 family) with the 10% regional-processing uplift |
+| api_commit_discount | 0.0 | S111, client | Discount negotiated for a multi-year API commitment. 0 by default: published discounts apply to reserved capacity (Azure provisioned reservations: up to 64% monthly, 70% yearly, against the hourly provisioned rate, S111), not to the per-token price. Set it from a real offer |
+| gpu_rental_reference | hyperscaler | S112, S113, S11 | hyperscaler (default): Azure or AWS, as most governments would rent. neocloud: specialised GPU cloud, the hardware profile price |
+| gpu_rental_mode | reserved | S112, S113 | reserved: GPUs rented all year on a 1-year commitment (24/7). on_demand: rented only for the hours of work, at the on-demand price |
+| gpu_rental_multipliers | {'neocloud': {'reserved': 1.0, 'on_demand': 1.0}, 'hyperscaler': {'reserved': 2.216, 'on_demand': 3.56}} | S112, S113, S11 | Multiple of the hardware profile price (neocloud H200 $2.60, S11). Hyperscaler H200 on demand: Azure ND H200 v5 $84.80 per 8-GPU hour = $10.60 per GPU-hour (S112); AWS p5en $63.296 = $7.91 (S113); average $9.255 = 3.56x. Reserved 1 year: Azure 1-year reservation -35% (ND H100 v5 $7.93 vs $12.29, S112), AWS 1-year savings plan up to -40% (S113); average -37.75%, $5.76 = 2.216x. Applied to every hardware profile (assumption for B200 and GB300) |
+| on_demand_utilisation | 0.6 | assumption (confidence Low) | On-demand GPUs are billed for the hours of work divided by this share: autoscaling keeps headroom and GPUs start before the load arrives |
+| software_stack | nvidia | S115, assumption | nvidia (default): NVIDIA AI Enterprise licence per GPU per year, the usual choice where serving skills are scarce. open_source: vLLM / SGLang on Kubernetes, no licence fee (staff unchanged) |
+| server_life_years | 8 | S114, assumption (confidence Low) | Servers are kept in service this long, not sold. After the 5-year refresh period they stay out of warranty and new servers are only bought when the need exceeds what is installed. Hyperscalers depreciate servers over 6 years (S114) and the hardware physically lasts longer; 8 is an assumption for governments. Set 5 to replace at the refresh period (v0.9.10 behaviour) |
+| maintenance_after_warranty_multiplier | 2.0 | assumption (confidence Low) | Maintenance share of capex for servers past the refresh period (out of warranty): 2x the 5% per year |
+| idle_sharing_share | 0.0 | option | Share of idle GPU-hours of owned or reserved GPUs opened to universities and research at night and weekends. 0 = off |
+| idle_sharing_price_share | 0.5 | assumption (confidence Low) | Value of a shared GPU-hour as a share of the neocloud rental price: what universities would pay at an academic rate, or the cost they avoid |
 
 **Cost ranges (replaced by client quotes when entered)**
 
@@ -1045,5 +1107,13 @@ For a mixed government portfolio the tool now gives a liquid-versus-air gap of r
 | <a id="src-s106"></a>S106 | NIST IR 8197: Face Recognition Prize Challenge 2017 | NIST | 1:N face search over 691,282 identities in 590 microseconds on one core of a 2016 server CPU; 30x gallery size gives 3x search time (deduplication search runs on CPUs) | https://nvlpubs.nist.gov/nistpubs/ir/2017/NIST.IR.8197.pdf |
 | <a id="src-s107"></a>S107 | FarmerChat Agricultural Q&A Dataset (Large) | Digital Green, Hugging Face (CC-BY 4.0) | 1,446,866 farmer questions, August 2024 to June 2026 (Kenya 858,674, Nigeria 296,671, India 238,030, Ethiopia 38,114); service reaches 1.2M+ farmers; no user ID | https://huggingface.co/datasets/DigiGreen/farmerchat-queries-large |
 | <a id="src-s108"></a>S108 | HM Land Registry Annual Report and Accounts 2025 to 2026 | HM Land Registry | 4.6 million register change applications (dealings and new titles) a year for England and Wales: ~75 per 1,000 people, close to the example rule (83 per 1,000) | https://www.gov.uk/government/publications/hm-land-registry-annual-report-and-accounts-2025-to-2026/annual-report-and-accounts-2025-to-2026-html |
+| <a id="src-s109"></a>S109 | Amazon Bedrock pricing | AWS (November 2026) | Hyperscaler API prices for open models, per 1M tokens: Ministral 8B $0.15 / $0.15; Llama 3.3 70B Instruct $0.72 / $0.72 (also on llmreference.com, October 2026); DeepSeek v3.2 $0.74 / $2.22 in Mumbai, Sao Paulo, Jakarta, Tokyo and Stockholm ($0.62 / $1.85 in the US); Claude Sonnet 5 $3 / $15 | https://aws.amazon.com/bedrock/pricing/ |
+| <a id="src-s110"></a>S110 | OpenAI API pricing: GPT-5.4, GPT-5.4 mini, GPT-5.4 nano | OpenAI (2026) | Frontier API prices per 1M tokens: GPT-5.4 $2.50 / $15, GPT-5.4 mini $0.75 / $4.50, GPT-5.4 nano $0.20 / $1.25; regional processing (data residency) endpoints +10% | https://developers.openai.com/api/docs/models/gpt-5.4-mini |
+| <a id="src-s111"></a>S111 | Azure OpenAI Service provisioned reservations | Microsoft | Commitment discounts on reserved API capacity: up to 64% (1 month) and 70% (1 year) against the hourly provisioned rate | https://techcommunity.microsoft.com/blog/aiazureaiservicesblog/unveiling-azure-openai-service-provisioned-reservations-and/4214560 |
+| <a id="src-s112"></a>S112 | Best Azure GPU VMs for AI training in 2026 (Azure Retail Prices API, 14 November 2026); Azure ND H100 v5 reserved prices | Qovery; Spheron | Azure ND H200 v5: $84.80 per hour for 8 GPUs ($10.60 per GPU-hour) pay-as-you-go, East US 2; ND H100 v5 1-year reserved $7.93 vs $12.29 pay-as-you-go per GPU-hour (-35%, spheron.network/blog/azure-h100-pricing) | https://www.qovery.com/blog/best-azure-gpu-vms-ai-training-2026 |
+| <a id="src-s113"></a>S113 | Amazon EC2 p5en.48xlarge pricing; One-year EC2 Instance Savings Plans for P5 and P5en | Vantage; AWS | AWS p5en (8 x H200): $63.296 per hour on demand ($7.91 per GPU-hour); 1-year Savings Plans save up to 40% (aws.amazon.com/about-aws/whats-new/2025/06/one-year-ec2-instance-savings-plans-p5-p5en-instances) | https://instances.vantage.sh/aws/ec2/p5en.48xlarge |
+| <a id="src-s114"></a>S114 | Hyperscalers lengthen server lifespans; depreciation lives of servers | The Stack; Fortune (2026) | Microsoft and Amazon depreciate servers over 6 years, Meta 5.5; AI hardware physically runs longer than its accounting life (Fortune, April 2026) | https://thestack.technology/meta-extends-server-life-again-saving-it-2-9-billion |
+| <a id="src-s115"></a>S115 | NVIDIA AI Enterprise licensing guide: pricing | NVIDIA | Software licence $4,500 per GPU for 1 year ($18,000 for 5 years); a 5-year subscription is included with H100 PCIe/NVL and H200 NVL, not with HGX servers | https://docs.nvidia.com/ai-enterprise/planning-resource/licensing-guide/latest/pricing.html |
+| <a id="src-s116"></a>S116 | Studies on on-premises versus cloud and API costs: ESG for Dell (2025); Lenovo GenAI TCO 2026 edition; Pan et al., Cost-Benefit Analysis of On-Premise LLM Deployment (arXiv 2509.18101) | Enterprise Strategy Group; Lenovo; Carnegie Mellon University | Owning is found cheaper against GPT-4o / frontier APIs (up to 4.1x, ESG) and hyperscaler on-demand instances (break-even in about 4 months above 20% utilisation, Lenovo); break-even from months (small models) to 5 years (large models) against commercial APIs (Pan et al.) | https://arxiv.org/abs/2509.18101 |
 
 Additional sanity-check tools (not used as sources): AI-DC calculator, Netray, GPUAdvisor.
